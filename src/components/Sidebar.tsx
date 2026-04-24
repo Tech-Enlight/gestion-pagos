@@ -1,12 +1,23 @@
 import React from "react";
 import { useAuth } from "../context/AuthContext";
 import type { Role } from "../types/auth";
+import { 
+  LayoutDashboard, 
+  FilePlus2, 
+  ListTodo, 
+  ShieldCheck, 
+  CreditCard, 
+  Search, 
+  TrendingUp, 
+  Settings,
+  LogOut
+} from "lucide-react";
 
 interface NavItem {
   id: string;
   label: string;
   roles: Role[] | "all";
-  icon: string;
+  icon: React.ReactNode;
 }
 
 const navItems: NavItem[] = [
@@ -14,10 +25,10 @@ const navItems: NavItem[] = [
     id: "dashboard",
     label: "Dashboard",
     roles: ["admin", "superadmin"],
-    icon: "📊",
+    icon: <LayoutDashboard size={18} />,
   },
-  { id: "nueva-solicitud", label: "Nueva Solicitud", roles: "all", icon: "📝" },
-  { id: "mis-solicitudes", label: "Mis Solicitudes", roles: "all", icon: "📋" },
+  { id: "nueva-solicitud", label: "Nueva Solicitud", roles: "all", icon: <FilePlus2 size={18} /> },
+  { id: "mis-solicitudes", label: "Mis Solicitudes", roles: "all", icon: <ListTodo size={18} /> },
   {
     id: "aprobaciones",
     label: "Aprobaciones",
@@ -29,31 +40,31 @@ const navItems: NavItem[] = [
       "admin",
       "superadmin",
     ],
-    icon: "✅",
+    icon: <ShieldCheck size={18} />,
   },
   {
     id: "finanzas",
     label: "Finanzas",
     roles: ["admin", "superadmin"],
-    icon: "💰",
+    icon: <CreditCard size={18} />,
   },
   {
     id: "explorador",
     label: "Explorador",
     roles: ["admin", "superadmin"],
-    icon: "🔍",
+    icon: <Search size={18} />,
   },
   {
     id: "tipo-de-cambio",
     label: "Tipo de Cambio",
     roles: ["admin", "superadmin"],
-    icon: "💱",
+    icon: <TrendingUp size={18} />,
   },
   {
     id: "configuracion",
     label: "Configuración",
     roles: ["superadmin"],
-    icon: "⚙️",
+    icon: <Settings size={18} />,
   },
 ];
 
@@ -214,8 +225,13 @@ export const Sidebar: React.FC<Props> = ({ currentView, setCurrentView }) => {
               fontSize: 12,
               fontFamily: "Alexandria, sans-serif",
               fontWeight: 500,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
             }}
           >
+            <LogOut size={14} />
             Cerrar sesión
           </button>
         </div>

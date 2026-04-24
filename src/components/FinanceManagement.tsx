@@ -1,14 +1,24 @@
 import React, { useState, useMemo } from "react";
+import { 
+  CheckCircle2, 
+  Banknote, 
+  HelpCircle, 
+  XCircle,
+  Save,
+  History,
+  User,
+  Clock
+} from "lucide-react";
 import StatusPill from "./StatusPill";
 import RejectModal from "./RejectModal";
 import PaymentModal from "./PaymentModal";
 import { STATUS, exchangeRates } from "../data/mockData";
-import type { Request } from "../data/mockData";
+import type { Request, FinanceNote } from "../data/mockData";
 import type { PaymentData } from "./PaymentModal";
 
 interface Props {
   requests: Request[];
-  onUpdateRequest: (id: string, status: string, comment?: string) => void;
+  onUpdateRequest: (id: string, status: string, extra?: any) => void;
   onUpdateFinanceFields: (id: string, fields: Partial<Request>) => void;
 }
 
@@ -51,9 +61,13 @@ const FinanceManagement: React.FC<Props> = ({
     return { pending, approved, all: pending + approved };
   }, [requests]);
 
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
   // When selecting a row, load its current finObs
   const handleSelect = (id: string | null) => {
     setSelectedId(id);
+    setSaveSuccess(false);
     if (id) {
       const req = requests.find((r) => r.id === id);
       setFinObs(req?.financeObservations || "");
@@ -101,7 +115,7 @@ const FinanceManagement: React.FC<Props> = ({
     if (finObs.trim()) {
       onUpdateFinanceFields(id, { financeObservations: finObs.trim() });
     }
-    onUpdateRequest(id, STATUS.REJECTED, comment);
+    onUpdateRequest(id, STATUS.REJECTED, { rejectReason: comment });
     setRejectTarget(null);
     setSelectedId(null);
   };
@@ -110,14 +124,24 @@ const FinanceManagement: React.FC<Props> = ({
     if (finObs.trim()) {
       onUpdateFinanceFields(id, { financeObservations: finObs.trim() });
     }
-    onUpdateRequest(id, STATUS.DRAFT, comment);
+    onUpdateRequest(id, STATUS.DRAFT, { clarificationRequest: comment });
     setClarifyTarget(null);
     setSelectedId(null);
   };
 
-  const handleSaveObs = () => {
-    if (!selected) return;
-    onUpdateFinanceFields(selected.id, { financeObservations: finObs.trim() });
+  const handleSaveObs = async () => {
+    if (!selected || isSaving || !finObs.trim()) return;
+    setIsSaving(true);
+    try {
+      await onUpdateFinanceFields(selected.id, { financeObservations: finObs.trim() });
+      setFinObs(""); // Clear the input
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2000);
+    } catch (error) {
+      console.error("Error saving note:", error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -395,11 +419,75 @@ const FinanceManagement: React.FC<Props> = ({
               />
               <button
                 onClick={handleSaveObs}
-                className="px-3 py-2 rounded-lg text-xs font-medium text-gray-300 border border-gray-600 hover:border-[#00aa85] hover:text-[#00aa85] transition-colors h-fit"
+                disabled={isSaving || !finObs.trim()}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all h-fit ${
+                  saveSuccess 
+                    ? "bg-green-600/20 text-green-400 border border-green-600" 
+                    : !finObs.trim()
+                      ? "opacity-50 cursor-not-allowed text-gray-500 border border-gray-700"
+                      : "text-gray-300 border border-gray-600 hover:border-[#00aa85] hover:text-[#00aa85]"
+                }`}
+                style={{
+                  backgroundColor: saveSuccess ? undefined : "#293C47",
+                }}
               >
-                Guardar nota
+                {isSaving ? (
+                  <>
+                    <div className="w-3 h-3 border-2 border-t-transparent border-white rounded-full animate-spin" />
+                    Guardando...
+                  </>
+                ) : saveSuccess ? (
+                  <>
+                    <CheckCircle2 size={14} />
+                    ¡Guardado!
+                  </>
+                ) : (
+                  <>
+                    <Save size={14} />
+                    Guardar nota
+                  </>
+                )}
               </button>
             </div>
+
+            {/* Observation History Timeline */}
+            {selected.financeObservations && (
+              <div className="mt-4 space-y-3 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
+                {(() => {
+                  let notes: FinanceNote[] = [];
+                  try {
+                    const parsed = JSON.parse(selected.financeObservations);
+                    notes = Array.isArray(parsed) ? parsed : [{ text: selected.financeObservations, timestamp: new Date().toISOString(), user: "Nota anterior" }];
+                  } catch {
+                    notes = [{ text: selected.financeObservations, timestamp: new Date().toISOString(), user: "Nota anterior" }];
+                  }
+                  
+                  return notes.slice().reverse().map((note, idx) => (
+                    <div key={idx} className="bg-[#1a2b34] p-3 rounded-lg border border-gray-700/50">
+                      <div className="flex justify-between items-start mb-1">
+                        <div className="flex items-center gap-1.5 text-[10px] text-[#00aa85] font-medium uppercase tracking-wider">
+                          <User size={10} />
+                          {note.user}
+                        </div>
+                        <div className="flex items-center gap-1 text-[10px] text-gray-500">
+                          <Clock size={10} />
+                          {new Date(note.timestamp).toLocaleString('es-MX', { 
+                            day: '2-digit', 
+                            month: '2-digit', 
+                            year: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </div>
+                      </div>
+                      <p className="text-gray-300 text-xs leading-relaxed" style={{ fontFamily: "Alexandria, sans-serif" }}>
+                        {note.text}
+                      </p>
+                    </div>
+                  ));
+                })()}
+              </div>
+            )}
           </div>
 
           {/* Show previously saved finance data if exists */}
@@ -481,30 +569,34 @@ const FinanceManagement: React.FC<Props> = ({
             {selected.status === STATUS.PENDING_FIN && (
               <button
                 onClick={handleApprove}
-                className="px-5 py-2 rounded-lg text-white text-sm font-semibold bg-green-600 hover:bg-green-700 transition-colors"
+                className="flex items-center gap-2 px-5 py-2 rounded-lg text-white text-sm font-semibold bg-green-600 hover:bg-green-700 transition-colors shadow-lg shadow-green-900/20"
               >
-                ✓ Aprobar
+                <CheckCircle2 size={16} />
+                Aprobar
               </button>
             )}
             {selected.status === STATUS.APPROVED && (
               <button
                 onClick={() => setPayTarget(selected.id)}
-                className="px-5 py-2 rounded-lg text-white text-sm font-semibold bg-purple-600 hover:bg-purple-700 transition-colors"
+                className="flex items-center gap-2 px-5 py-2 rounded-lg text-white text-sm font-semibold bg-purple-600 hover:bg-purple-700 transition-colors shadow-lg shadow-purple-900/20"
               >
-                💰 Marcar Pagado
+                <Banknote size={16} />
+                Marcar Pagado
               </button>
             )}
             <button
               onClick={() => setClarifyTarget(selected.id)}
-              className="px-5 py-2 rounded-lg text-white text-sm font-semibold bg-yellow-600 hover:bg-yellow-700 transition-colors"
+              className="flex items-center gap-2 px-5 py-2 rounded-lg text-white text-sm font-semibold bg-yellow-600 hover:bg-yellow-700 transition-colors shadow-lg shadow-yellow-900/20"
             >
-              ? Solicitar Aclaración
+              <HelpCircle size={16} />
+              Aclaración
             </button>
             <button
               onClick={() => setRejectTarget(selected.id)}
-              className="px-5 py-2 rounded-lg text-white text-sm font-semibold bg-red-600 hover:bg-red-700 transition-colors"
+              className="flex items-center gap-2 px-5 py-2 rounded-lg text-white text-sm font-semibold bg-red-600 hover:bg-red-700 transition-colors shadow-lg shadow-red-900/20"
             >
-              ✗ Rechazar
+              <XCircle size={16} />
+              Rechazar
             </button>
           </div>
         </div>

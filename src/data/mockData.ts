@@ -3,11 +3,20 @@ export interface ExchangeRate {
   rate: number;
 }
 
+export interface FinanceNote {
+  text: string;
+  timestamp: string;
+  user: string;
+}
+
 export interface StatusEvent {
   status: string;
   timestamp: string;
   changedBy: string;
   comment?: string;
+  rejectReason?: string;
+  clarificationRequest?: string;
+  clarificationResponse?: string;
 }
 
 export interface Request {
@@ -25,6 +34,9 @@ export interface Request {
   submittedBy: string;
   date: string;
   comment?: string;
+  rejectReason?: string;
+  clarificationRequest?: string;
+  clarificationResponse?: string;
   financeObservations?: string;
   amountPaid?: number;
   exchangeRateUsed?: number;

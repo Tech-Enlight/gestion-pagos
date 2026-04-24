@@ -41,12 +41,17 @@ function AppContent() {
   const handleUpdateRequest = async (
     id: string,
     status: string,
-    comment?: string
+    extra?: {
+      comment?: string;
+      rejectReason?: string;
+      clarificationRequest?: string;
+      clarificationResponse?: string;
+    }
   ) => {
-    await updateRequestStatus(id, status, user?.email || "unknown@enlight.mx", comment);
+    await updateRequestStatus(id, status, user?.email || "unknown@enlight.mx", extra);
     setRequests((prev) =>
       prev.map((r) =>
-        r.id === id ? { ...r, status, comment: comment || r.comment } : r
+        r.id === id ? { ...r, status, ...extra } : r
       )
     );
   };

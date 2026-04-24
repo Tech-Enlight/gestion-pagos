@@ -10,6 +10,14 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { 
+  Wallet, 
+  FileText, 
+  CheckCircle2, 
+  Clock, 
+  XCircle, 
+  Activity 
+} from "lucide-react";
 import KPICard from "./KPICard";
 import ExchangeChart from "./ExchangeChart";
 import RecentRequestsTable from "./RecentRequestsTable";
@@ -136,38 +144,38 @@ const Dashboard: React.FC<DashboardProps> = ({ requests }) => {
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <KPICard
           label="Total Pendiente"
-          value={`${fmtMXN(kpis.totalPending)} MXN`}
-          icon="💰"
+          value={`${fmtMXN(kpis.totalPending)}`}
+          icon={<Wallet size={20} />}
           color="#00aa85"
         />
         <KPICard
           label="Solicitudes Activas"
           value={String(kpis.active)}
-          icon="📋"
+          icon={<FileText size={20} />}
           color="#3d7d80"
         />
         <KPICard
           label="Monto Pagado"
-          value={`${fmtMXN(kpis.totalPaid)} MXN`}
-          icon="✅"
+          value={`${fmtMXN(kpis.totalPaid)}`}
+          icon={<CheckCircle2 size={20} />}
           color="#a855f7"
         />
         <KPICard
           label="Pend. Autorización"
           value={String(kpis.pendingAuth)}
-          icon="⏳"
+          icon={<Clock size={20} />}
           color="#eab308"
         />
         <KPICard
           label="Tasa de Rechazo"
           value={`${kpis.rejectRate}%`}
-          icon="🚫"
+          icon={<XCircle size={20} />}
           color="#ef4444"
         />
         <KPICard
           label="Ciclo Promedio"
           value={kpis.avgDays > 0 ? `${kpis.avgDays.toFixed(1)} días` : "—"}
-          icon="⏱️"
+          icon={<Activity size={20} />}
           color="#3b82f6"
         />
       </div>
@@ -176,57 +184,106 @@ const Dashboard: React.FC<DashboardProps> = ({ requests }) => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Status donut */}
         <div
-          className="rounded-xl p-5 shadow-lg border border-gray-700"
-          style={{ backgroundColor: "#1e2d3d" }}
+          className="rounded-xl p-6 shadow-2xl border border-gray-700/50 flex flex-col"
+          style={{
+            backgroundColor: "#1e2d3d",
+            background: "linear-gradient(145deg, #1e2d3d 0%, #16222c 100%)",
+          }}
         >
-          <h3
-            className="text-white text-lg font-semibold mb-4"
-            style={{ fontFamily: font }}
-          >
-            Distribución por Estado
-          </h3>
-          <ResponsiveContainer width="100%" height={240}>
-            <PieChart>
-              <Pie
-                data={statusData}
-                cx="50%"
-                cy="50%"
-                innerRadius={55}
-                outerRadius={90}
-                paddingAngle={3}
-                dataKey="value"
-              >
-                {statusData.map((entry) => (
-                  <Cell
-                    key={entry.name}
-                    fill={PIE_COLORS[entry.name] || "#6b7280"}
+          <div className="mb-4">
+            <h3
+              className="text-white text-lg font-bold"
+              style={{ fontFamily: font }}
+            >
+              Distribución por Estado
+            </h3>
+            <p className="text-gray-500 text-xs mt-0.5">
+              Estado actual de la cola de pagos
+            </p>
+          </div>
+
+          <div className="flex-1 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="relative w-full max-w-[220px] aspect-square flex items-center justify-center">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={statusData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={68}
+                    outerRadius={88}
+                    paddingAngle={6}
+                    cornerRadius={8}
+                    dataKey="value"
+                    stroke="none"
+                    animationBegin={0}
+                    animationDuration={1500}
+                  >
+                    {statusData.map((entry) => (
+                      <Cell
+                        key={entry.name}
+                        fill={PIE_COLORS[entry.name] || "#6b7280"}
+                        className="outline-none"
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#1e2d3d",
+                      border: "1px solid #3d7d80",
+                      borderRadius: 12,
+                      boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.5)",
+                    }}
+                    itemStyle={{ fontSize: "12px", fontFamily: font }}
                   />
-                ))}
-              </Pie>
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "#293C47",
-                  border: "1px solid #3d7d80",
-                  borderRadius: 8,
-                  color: "#fff",
-                  fontFamily: font,
-                  fontSize: 12,
-                }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-          <div className="flex flex-wrap gap-3 justify-center mt-2">
-            {statusData.map((s) => (
-              <div key={s.name} className="flex items-center gap-1.5">
-                <div
-                  className="w-2.5 h-2.5 rounded-full"
-                  style={{ backgroundColor: PIE_COLORS[s.name] || "#6b7280" }}
-                />
-                <span className="text-gray-400 text-[11px]">
-                  {s.name} <span className="text-gray-500">({s.value})</span>
+                </PieChart>
+              </ResponsiveContainer>
+              {/* Center KPI */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <span className="text-gray-500 text-[10px] uppercase tracking-widest font-semibold">
+                  Total
+                </span>
+                <span
+                  className="text-white text-2xl font-bold"
+                  style={{ fontFamily: font }}
+                >
+                  {requests.length}
                 </span>
               </div>
-            ))}
+            </div>
+
+            {/* Premium Legend */}
+            <div className="flex-1 w-full grid grid-cols-2 gap-x-6 gap-y-3">
+              {statusData.map((s) => {
+                const percentage = ((s.value / requests.length) * 100).toFixed(0);
+                return (
+                  <div
+                    key={s.name}
+                    className="flex items-center justify-between group transition-all"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div
+                        className="w-1.5 h-4 rounded-full"
+                        style={{
+                          backgroundColor: PIE_COLORS[s.name] || "#6b7280",
+                        }}
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-gray-300 text-xs font-medium group-hover:text-white transition-colors">
+                          {s.name}
+                        </span>
+                        <span className="text-gray-500 text-[10px]">
+                          {s.value} unidad{s.value !== 1 ? "es" : ""}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="text-gray-400 text-xs font-semibold bg-gray-800/50 px-1.5 py-0.5 rounded">
+                      {percentage}%
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
 

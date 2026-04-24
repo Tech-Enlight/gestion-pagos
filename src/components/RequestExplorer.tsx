@@ -6,7 +6,7 @@ import type { Request } from "../data/mockData";
 
 interface Props {
   requests: Request[];
-  onUpdateRequest: (id: string, status: string, comment?: string) => void;
+  onUpdateRequest: (id: string, status: string, extra?: any) => void;
 }
 
 const statuses = [
@@ -20,7 +20,7 @@ const statuses = [
 ];
 
 const isClarification = (r: Request): boolean =>
-  r.status === "Draft" && !!r.comment && r.comment.length > 0;
+  r.status === "Draft" && !!r.clarificationRequest;
 
 const RequestExplorer: React.FC<Props> = ({ requests, onUpdateRequest }) => {
   const [search, setSearch] = useState("");
@@ -46,7 +46,7 @@ const RequestExplorer: React.FC<Props> = ({ requests, onUpdateRequest }) => {
   const handleResubmit = () => {
     if (!selected) return;
     const note = clarificationNote.trim();
-    onUpdateRequest(selected.id, STATUS.AUTORIZACION, note || undefined);
+    onUpdateRequest(selected.id, STATUS.AUTORIZACION, { clarificationResponse: note || undefined });
     setSelected(null);
     setClarificationNote("");
   };
@@ -247,9 +247,23 @@ const RequestExplorer: React.FC<Props> = ({ requests, onUpdateRequest }) => {
                     Comentario del revisor
                   </p>
                   <p className="text-gray-200 text-xs leading-relaxed">
-                    {selected.comment}
+                    {selected.clarificationRequest}
                   </p>
                 </div>
+
+                {/* Show previous response if exists */}
+                {selected.clarificationResponse && (
+                  <div
+                    className="rounded-lg p-3 border border-gray-700 bg-gray-800/20"
+                  >
+                    <p className="text-gray-500 text-[10px] uppercase tracking-wider mb-1 font-semibold">
+                      Tu respuesta anterior
+                    </p>
+                    <p className="text-gray-300 text-xs leading-relaxed italic">
+                      "{selected.clarificationResponse}"
+                    </p>
+                  </div>
+                )}
 
                 {/* Response textarea */}
                 <div>
@@ -410,7 +424,7 @@ const RequestExplorer: React.FC<Props> = ({ requests, onUpdateRequest }) => {
             )}
 
             {/* Rejection info (read-only) */}
-            {selected.status === "Rejected" && selected.comment && (
+            {selected.status === "Rejected" && selected.rejectReason && (
               <div
                 className="rounded-xl border border-red-800 p-4 space-y-2"
                 style={{ backgroundColor: "#1e2d3d" }}
@@ -445,7 +459,7 @@ const RequestExplorer: React.FC<Props> = ({ requests, onUpdateRequest }) => {
                     Motivo del rechazo
                   </p>
                   <p className="text-gray-200 text-xs leading-relaxed">
-                    {selected.comment}
+                    {selected.rejectReason}
                   </p>
                 </div>
               </div>

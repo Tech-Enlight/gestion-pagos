@@ -3,22 +3,43 @@ import React from 'react';
 interface KPICardProps {
   label: string;
   value: string;
-  icon: string;
+  icon: React.ReactNode;
   color: string;
 }
 
 const KPICard: React.FC<KPICardProps> = ({ label, value, icon, color }) => {
   return (
     <div
-      className="rounded-xl p-5 shadow-lg border border-gray-700"
-      style={{ backgroundColor: '#1e2d3d' }}
+      className="rounded-xl p-5 shadow-lg border border-gray-700 group hover:border-gray-500 transition-all duration-300"
+      style={{
+        backgroundColor: "#1e2d3d",
+        background: "linear-gradient(145deg, #1e2d3d 0%, #16222c 100%)",
+      }}
     >
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-2xl">{icon}</span>
-        <div className="w-2 h-10 rounded-full" style={{ backgroundColor: color }}></div>
+      <div className="flex items-center justify-between mb-4">
+        <div
+          className="p-2.5 rounded-lg bg-gray-800/50 text-white"
+          style={{ color }}
+        >
+          {icon}
+        </div>
+        <div
+          className="w-1 h-8 rounded-full opacity-50 group-hover:opacity-100 transition-opacity"
+          style={{ backgroundColor: color }}
+        ></div>
       </div>
-      <p className="text-gray-400 text-xs uppercase tracking-wider mb-1" style={{ fontFamily: 'Alexandria, sans-serif' }}>{label}</p>
-      <p className="text-white text-2xl font-bold" style={{ fontFamily: 'Alexandria, sans-serif', color }}>{value}</p>
+      <p
+        className="text-gray-500 text-[10px] uppercase tracking-[0.15em] font-semibold mb-1"
+        style={{ fontFamily: "Alexandria, sans-serif" }}
+      >
+        {label}
+      </p>
+      <p
+        className="text-white text-xl font-bold tracking-tight"
+        style={{ fontFamily: "Alexandria, sans-serif" }}
+      >
+        {value}
+      </p>
     </div>
   );
 };

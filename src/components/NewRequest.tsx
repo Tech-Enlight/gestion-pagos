@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { CheckCircle2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import type { Request } from "../data/mockData";
 
@@ -110,7 +111,9 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate }) => {
           className="rounded-xl p-8 text-center border border-[#00aa85] shadow-xl max-w-md w-full"
           style={{ backgroundColor: "#1e2d3d" }}
         >
-          <div className="text-5xl mb-4">✅</div>
+          <div className="flex justify-center mb-4">
+            <CheckCircle2 size={64} className="text-[#00aa85]" />
+          </div>
           <h2
             className="text-white text-2xl font-bold mb-2"
             style={{ fontFamily: "Alexandria, sans-serif" }}

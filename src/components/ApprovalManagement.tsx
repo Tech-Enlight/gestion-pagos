@@ -1,4 +1,9 @@
 import React, { useState } from "react";
+import { 
+  CheckCircle2, 
+  HelpCircle, 
+  XCircle 
+} from "lucide-react";
 import StatusPill from "./StatusPill";
 import RejectModal from "./RejectModal";
 import { STATUS } from "../data/mockData";
@@ -6,7 +11,7 @@ import type { Request } from "../data/mockData";
 
 interface Props {
   requests: Request[];
-  onUpdateRequest: (id: string, status: string, comment?: string) => void;
+  onUpdateRequest: (id: string, status: string, extra?: any) => void;
 }
 
 const ApprovalManagement: React.FC<Props> = ({ requests, onUpdateRequest }) => {
@@ -15,27 +20,23 @@ const ApprovalManagement: React.FC<Props> = ({ requests, onUpdateRequest }) => {
   const [clarifyTarget, setClarifyTarget] = useState<string | null>(null);
 
   const pendingRequests = requests.filter(
-    (r) => r.status === STATUS.AUTORIZACION || r.status === STATUS.PENDING_FIN
+    (r) => r.status === STATUS.AUTORIZACION
   );
 
   const selected = pendingRequests.find((r) => r.id === selectedId) ?? null;
 
   const canAct = selected
-    ? selected.status === "Autorización" || selected.status === "Pending Fin"
+    ? selected.status === STATUS.AUTORIZACION
     : false;
 
   const handleApprove = () => {
     if (!selected) return;
-    const next =
-      selected.status === STATUS.AUTORIZACION
-        ? STATUS.PENDING_FIN
-        : STATUS.APPROVED;
-    onUpdateRequest(selected.id, next);
+    onUpdateRequest(selected.id, STATUS.PENDING_FIN);
     setSelectedId(null);
   };
 
   const handleReject = (id: string, comment: string) => {
-    onUpdateRequest(id, "Rejected", comment);
+    onUpdateRequest(id, STATUS.REJECTED, { rejectReason: comment });
     setRejectTarget(null);
     setSelectedId(null);
   };
@@ -46,7 +47,7 @@ const ApprovalManagement: React.FC<Props> = ({ requests, onUpdateRequest }) => {
   };
 
   const handleClarifyConfirm = (id: string, comment: string) => {
-    onUpdateRequest(id, STATUS.DRAFT, comment);
+    onUpdateRequest(id, STATUS.DRAFT, { clarificationRequest: comment });
     setClarifyTarget(null);
     setSelectedId(null);
   };
@@ -213,28 +214,33 @@ const ApprovalManagement: React.FC<Props> = ({ requests, onUpdateRequest }) => {
           )}
 
           {/* Actions */}
-          {canAct && (
-            <div className="flex items-center gap-3 px-5 py-4 border-t border-gray-700">
-              <button
-                onClick={handleApprove}
-                className="px-5 py-2 rounded-lg text-white text-sm font-semibold bg-green-600 hover:bg-green-700 transition-colors"
-              >
-                ✓ Aprobar
-              </button>
-              <button
-                onClick={handleClarification}
-                className="px-5 py-2 rounded-lg text-white text-sm font-semibold bg-yellow-600 hover:bg-yellow-700 transition-colors"
-              >
-                ? Solicitar Aclaración
-              </button>
-              <button
-                onClick={() => setRejectTarget(selected.id)}
-                className="px-5 py-2 rounded-lg text-white text-sm font-semibold bg-red-600 hover:bg-red-700 transition-colors"
-              >
-                ✗ Rechazar
-              </button>
-            </div>
-          )}
+          <div className="flex items-center gap-3 px-5 py-4 border-t border-gray-700 flex-wrap">
+            {canAct && (
+              <>
+                <button
+                  onClick={handleApprove}
+                  className="flex items-center gap-2 px-5 py-2 rounded-lg text-white text-sm font-semibold bg-green-600 hover:bg-green-700 transition-colors shadow-lg shadow-green-900/20"
+                >
+                  <CheckCircle2 size={16} />
+                  Aprobar
+                </button>
+                <button
+                  onClick={handleClarification}
+                  className="flex items-center gap-2 px-5 py-2 rounded-lg text-white text-sm font-semibold bg-yellow-600 hover:bg-yellow-700 transition-colors shadow-lg shadow-yellow-900/20"
+                >
+                  <HelpCircle size={16} />
+                  Aclaración
+                </button>
+                <button
+                  onClick={() => setRejectTarget(selected.id)}
+                  className="flex items-center gap-2 px-5 py-2 rounded-lg text-white text-sm font-semibold bg-red-600 hover:bg-red-700 transition-colors shadow-lg shadow-red-900/20"
+                >
+                  <XCircle size={16} />
+                  Rechazar
+                </button>
+              </>
+            )}
+          </div>
         </div>
       )}
 

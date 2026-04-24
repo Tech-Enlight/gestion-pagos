@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   LineChart,
   Line,
@@ -24,77 +24,175 @@ const ExchangeChart: React.FC = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  const data = rateData.map((r) => ({
-    date: r.date.slice(5),
-    rate: r.rate,
-  }));
+  // Format and sort data for better display
+  const data = useMemo(() => {
+    if (!rateData.length) return [];
+
+    const monthNames = [
+      "Ene",
+      "Feb",
+      "Mar",
+      "Abr",
+      "May",
+      "Jun",
+      "Jul",
+      "Ago",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dic",
+    ];
+
+    // Parse, sort and unique
+    const uniqueMap = new Map<string, { name: string; rate: number; timestamp: number }>();
+
+    rateData.forEach((r) => {
+      const parts = r.date.includes("/") ? r.date.split("/") : r.date.split("-");
+      let day, month, year;
+
+      if (r.date.includes("/")) {
+        // D/M/YYYY
+        [day, month, year] = parts;
+      } else {
+        // YYYY-MM-DD
+        [year, month, day] = parts;
+      }
+
+      const d = new Date(
+        parseInt(year),
+        parseInt(month) - 1,
+        parseInt(day)
+      );
+      
+      const key = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      
+      if (!uniqueMap.has(key)) {
+        uniqueMap.set(key, {
+          name: `${day} ${monthNames[parseInt(month) - 1]}`,
+          rate: r.rate,
+          timestamp: d.getTime(),
+        });
+      }
+    });
+
+    return Array.from(uniqueMap.values()).sort((a, b) => a.timestamp - b.timestamp);
+  }, [rateData]);
 
   const minRate =
     data.length > 0
-      ? Math.floor(Math.min(...data.map((d) => d.rate)) * 10) / 10 - 0.2
+      ? Math.floor(Math.min(...data.map((d) => d.rate)) * 10) / 10 - 0.1
       : 17.2;
   const maxRate =
     data.length > 0
-      ? Math.ceil(Math.max(...data.map((d) => d.rate)) * 10) / 10 + 0.2
+      ? Math.ceil(Math.max(...data.map((d) => d.rate)) * 10) / 10 + 0.1
       : 18.2;
 
   return (
     <div
-      className="rounded-xl p-5 shadow-lg border border-gray-700"
-      style={{ backgroundColor: "#1e2d3d" }}
+      className="rounded-xl p-6 shadow-2xl border border-gray-700/50"
+      style={{
+        backgroundColor: "#1e2d3d",
+        background: "linear-gradient(145deg, #1e2d3d 0%, #16222c 100%)",
+      }}
     >
-      <h3
-        className="text-white text-lg font-semibold mb-4"
-        style={{ fontFamily: "Alexandria, sans-serif" }}
-      >
-        Tipo de Cambio USD/MXN — Últimos 30 días
-      </h3>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h3
+            className="text-white text-lg font-bold"
+            style={{ fontFamily: "Alexandria, sans-serif" }}
+          >
+            Tipo de Cambio USD/MXN
+          </h3>
+          <p className="text-gray-500 text-xs mt-1">
+            Tendencia de los últimos 30 días (Banxico)
+          </p>
+        </div>
+        {data.length > 0 && (
+          <div className="text-right">
+            <span className="text-[#00aa85] text-xl font-bold block">
+              ${data[data.length - 1].rate.toFixed(4)}
+            </span>
+            <span className="text-gray-500 text-[10px] uppercase tracking-wider">
+              Último Cierre
+            </span>
+          </div>
+        )}
+      </div>
+
       {loading ? (
-        <p className="text-gray-400 text-sm py-10 text-center">
-          Cargando tipo de cambio...
-        </p>
+        <div className="h-[280px] flex items-center justify-center">
+          <p className="text-gray-400 text-sm animate-pulse">
+            Cargando indicadores...
+          </p>
+        </div>
       ) : data.length === 0 ? (
-        <p className="text-gray-500 text-sm py-10 text-center">
-          Sin datos disponibles
-        </p>
+        <div className="h-[280px] flex items-center justify-center">
+          <p className="text-gray-500 text-sm italic">Sin datos disponibles</p>
+        </div>
       ) : (
         <ResponsiveContainer width="100%" height={280}>
           <LineChart
             data={data}
-            margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+            margin={{ top: 10, right: 10, left: -15, bottom: 0 }}
           >
-            <CartesianGrid strokeDasharray="3 3" stroke="#2d4a5a" />
+            <defs>
+              <linearGradient id="lineGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#00aa85" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#00aa85" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid
+              vertical={false}
+              strokeDasharray="3 3"
+              stroke="#2d4a5a"
+              opacity={0.5}
+            />
             <XAxis
-              dataKey="date"
-              tick={{ fill: "#9ca3af", fontSize: 11 }}
+              dataKey="name"
+              axisLine={false}
               tickLine={false}
-              interval={4}
+              tick={{ fill: "#64748b", fontSize: 9 }}
+              interval={0}
+              angle={-45}
+              textAnchor="end"
+              height={60}
+              padding={{ left: 15, right: 15 }}
             />
             <YAxis
               domain={[minRate, maxRate]}
-              tick={{ fill: "#9ca3af", fontSize: 11 }}
+              axisLine={false}
               tickLine={false}
-              tickFormatter={(v: number) => v.toFixed(2)}
+              tick={{ fill: "#64748b", fontSize: 10 }}
+              tickFormatter={(v) => v.toFixed(2)}
             />
             <Tooltip
               contentStyle={{
-                backgroundColor: "#293C47",
+                backgroundColor: "#1e2d3d",
                 border: "1px solid #3d7d80",
-                borderRadius: "8px",
-                color: "#fff",
+                borderRadius: "12px",
+                boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.5)",
               }}
-              labelStyle={{ color: "#00aa85" }}
-              formatter={(value: number) => [`$${value.toFixed(4)}`, "USD/MXN"]}
+              itemStyle={{ color: "#00aa85", fontSize: "12px" }}
+              labelStyle={{
+                color: "#94a3b8",
+                fontSize: "11px",
+                marginBottom: "4px",
+              }}
+              formatter={(value: number) => [`$${value.toFixed(4)}`, "T/C"]}
             />
-            <Legend wrapperStyle={{ color: "#9ca3af" }} />
             <Line
               type="monotone"
               dataKey="rate"
               stroke="#00aa85"
-              strokeWidth={2}
+              strokeWidth={3}
               dot={false}
-              activeDot={{ r: 5, fill: "#00aa85" }}
-              name="USD/MXN"
+              activeDot={{
+                r: 6,
+                fill: "#00aa85",
+                stroke: "#1e2d3d",
+                strokeWidth: 2,
+              }}
+              animationDuration={1500}
             />
           </LineChart>
         </ResponsiveContainer>

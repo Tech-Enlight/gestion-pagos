@@ -51,12 +51,17 @@ export async function updateRequestStatus(
   id: string,
   status: string,
   changedBy: string,
-  comment?: string
+  extra?: {
+    comment?: string;
+    rejectReason?: string;
+    clarificationRequest?: string;
+    clarificationResponse?: string;
+  }
 ): Promise<void> {
   const res = await fetch(`${BASE}/solicitudes/status`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id, status, changedBy, comment }),
+    body: JSON.stringify({ id, status, changedBy, ...extra }),
   });
   if (!res.ok) throw new Error("Error al actualizar status");
 }
