@@ -1,23 +1,26 @@
-import React, { useState, useMemo } from "react";
-import { 
-  CheckCircle2, 
-  Banknote, 
-  HelpCircle, 
+import React, { useState, useMemo, useEffect } from "react";
+import {
+  CheckCircle2,
+  Banknote,
+  HelpCircle,
   XCircle,
   Save,
-  History,
   User,
-  Clock
+  Clock,
+  Loader2
 } from "lucide-react";
 import StatusPill from "./StatusPill";
 import RejectModal from "./RejectModal";
 import PaymentModal from "./PaymentModal";
-import { STATUS, exchangeRates } from "../data/mockData";
-import type { Request, FinanceNote } from "../data/mockData";
+import { STATUS } from "../data/mockData";
+import type { Request, FinanceNote, ExchangeRate } from "../data/mockData";
 import type { PaymentData } from "./PaymentModal";
+import { fetchBillsByOC } from "../services/sheets";
+import type { NSBill } from "../services/sheets";
 
 interface Props {
   requests: Request[];
+  lastExchangeRate: ExchangeRate;
   onUpdateRequest: (id: string, status: string, extra?: any) => void;
   onUpdateFinanceFields: (id: string, fields: Partial<Request>) => void;
 }
@@ -26,6 +29,7 @@ type Filter = "all" | "pending" | "approved";
 
 const FinanceManagement: React.FC<Props> = ({
   requests,
+  lastExchangeRate,
   onUpdateRequest,
   onUpdateFinanceFields,
 }) => {
@@ -34,11 +38,28 @@ const FinanceManagement: React.FC<Props> = ({
   const [rejectTarget, setRejectTarget] = useState<string | null>(null);
   const [clarifyTarget, setClarifyTarget] = useState<string | null>(null);
   const [payTarget, setPayTarget] = useState<string | null>(null);
+  const [estimatedDateTarget, setEstimatedDateTarget] = useState<string | null>(null);
+
+  // Bulk Selection States
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isBulkOperating, setIsBulkOperating] = useState(false);
+  const [isBulkPaying, setIsBulkPaying] = useState(false);
+  const [bulkClarifyTarget, setBulkClarifyTarget] = useState<string[] | null>(null);
+  const [bulkRejectTarget, setBulkRejectTarget] = useState<string[] | null>(null);
+  const [bulkEstimatedDateTarget, setBulkEstimatedDateTarget] = useState<string[] | null>(null);
+
+  // NS bills gate state
+  const [nsLoading, setNsLoading] = useState(false);
+  const [nsBlockMessage, setNsBlockMessage] = useState<string | null>(null);
+  const [nsPaidBills, setNsPaidBills] = useState<NSBill[] | null>(null);
+  // For bulk: track which requests were blocked
+  const [nsBulkBlocked, setNsBulkBlocked] = useState<string[]>([]);
+  const [nsPaidBillsMap, setNsPaidBillsMap] = useState<Record<string, NSBill[]> | null>(null);
 
   // Editable finance fields for the selected request
   const [finObs, setFinObs] = useState("");
 
-  const lastRate = exchangeRates[exchangeRates.length - 1];
+  const lastRate = lastExchangeRate;
 
   // Filter logic
   const financeRequests = useMemo(() => {
@@ -50,6 +71,11 @@ const FinanceManagement: React.FC<Props> = ({
   }, [requests, filter]);
 
   const selected = financeRequests.find((r) => r.id === selectedId) ?? null;
+
+  // Clear selections when filter/tab changes
+  useEffect(() => {
+    setSelectedIds([]);
+  }, [filter]);
 
   const counts = useMemo(() => {
     const pending = requests.filter(
@@ -63,6 +89,15 @@ const FinanceManagement: React.FC<Props> = ({
 
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // Selection calculations
+  const selectedRequests = useMemo(() => {
+    return requests.filter((r) => selectedIds.includes(r.id));
+  }, [requests, selectedIds]);
+
+  const allPending = selectedRequests.length > 0 && selectedRequests.every(r => r.status === STATUS.PENDING_FIN);
+  const allApproved = selectedRequests.length > 0 && selectedRequests.every(r => r.status === STATUS.APPROVED);
+  const isMixed = selectedRequests.length > 0 && !allPending && !allApproved;
 
   // When selecting a row, load its current finObs
   const handleSelect = (id: string | null) => {
@@ -129,6 +164,14 @@ const FinanceManagement: React.FC<Props> = ({
     setSelectedId(null);
   };
 
+  const handleSaveEstimatedDate = (id: string, date: string) => {
+    onUpdateFinanceFields(id, {
+      estimatedPaymentDate: date,
+      financeObservations: finObs.trim() || undefined,
+    });
+    setEstimatedDateTarget(null);
+  };
+
   const handleSaveObs = async () => {
     if (!selected || isSaving || !finObs.trim()) return;
     setIsSaving(true);
@@ -137,17 +180,209 @@ const FinanceManagement: React.FC<Props> = ({
       setFinObs(""); // Clear the input
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 2000);
-    } catch (error) {
-      console.error("Error saving note:", error);
+    } catch (e) {
+      console.error(e);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  // NS-gated "Marcar Pagado" — individual
+  const handleMarkPaidGate = async (req: Request) => {
+    if (!req.nsOcInternalId) {
+      setNsBlockMessage("No hay OC vinculada a NetSuite para esta solicitud.");
+      return;
+    }
+    setNsLoading(true);
+    setNsBlockMessage(null);
+    try {
+      const data = await fetchBillsByOC(req.nsOcInternalId);
+      const paidBills = data.bills.filter((b) => b.is_paid);
+      if (paidBills.length === 0) {
+        setNsBlockMessage(
+          "El pago aún no está registrado en NetSuite. Registra el pago en NS antes de marcar como pagado en el portal."
+        );
+      } else {
+        setNsPaidBills(paidBills);
+        setPayTarget(req.id);
+      }
+    } catch (err) {
+      console.error(err);
+      setNsBlockMessage("Error al consultar NetSuite. Intenta de nuevo.");
+    } finally {
+      setNsLoading(false);
+    }
+  };
+
+  // NS-gated "Marcar Pagadas" — bulk
+  const handleBulkMarkPaidGate = async () => {
+    if (selectedIds.length === 0) return;
+    setNsLoading(true);
+    setNsBlockMessage(null);
+    setNsBulkBlocked([]);
+
+    const eligible: Request[] = [];
+    const blocked: string[] = [];
+    const allPaidBillsMap: Record<string, NSBill[]> = {};
+
+    try {
+      for (const req of selectedRequests) {
+        if (!req.nsOcInternalId) {
+          blocked.push(req.id);
+          continue;
+        }
+        const data = await fetchBillsByOC(req.nsOcInternalId);
+        const paidBills = data.bills.filter((b) => b.is_paid);
+        if (paidBills.length === 0) {
+          blocked.push(req.id);
+        } else {
+          eligible.push(req);
+          allPaidBillsMap[req.id] = paidBills;
+        }
+      }
+
+      if (blocked.length > 0) {
+        setNsBulkBlocked(blocked);
+      }
+      if (eligible.length === 0) {
+        setNsBlockMessage(
+          "Ninguna solicitud tiene pago registrado en NetSuite. Registra los pagos en NS primero."
+        );
+      } else {
+        setNsPaidBillsMap(allPaidBillsMap);
+        // Filter selectedIds to only eligible, then open bulk payment modal
+        setSelectedIds(eligible.map((r) => r.id));
+        setIsBulkPaying(true);
+      }
+    } catch (err) {
+      console.error(err);
+      setNsBlockMessage("Error al consultar NetSuite. Intenta de nuevo.");
+    } finally {
+      setNsLoading(false);
+    }
+  };
+
+  // Bulk Action Handlers
+  const allSelected = financeRequests.length > 0 && selectedIds.length === financeRequests.length;
+
+  const handleSelectAll = () => {
+    if (allSelected) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(financeRequests.map(r => r.id));
+    }
+  };
+
+  const handleSelectRow = (e: React.ChangeEvent<HTMLInputElement>, id: string) => {
+    e.stopPropagation();
+    setSelectedIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkApprove = async () => {
+    if (selectedIds.length === 0) return;
+    if (!window.confirm(`¿Aprobar las ${selectedIds.length} solicitudes de finanzas seleccionadas?`)) return;
+    setIsBulkOperating(true);
+    try {
+      for (const id of selectedIds) {
+        if (finObs.trim()) {
+          await onUpdateFinanceFields(id, { financeObservations: finObs.trim() });
+        }
+        await onUpdateRequest(id, STATUS.APPROVED);
+      }
+      setSelectedIds([]);
+      setSelectedId(null);
+    } catch (error) {
+      console.error("Error bulk approving:", error);
+    } finally {
+      setIsBulkOperating(false);
+    }
+  };
+
+  const handleBulkClarificationConfirm = async (_labelId: string, comment: string) => {
+    if (!bulkClarifyTarget) return;
+    setIsBulkOperating(true);
+    try {
+      for (const id of bulkClarifyTarget) {
+        if (finObs.trim()) {
+          await onUpdateFinanceFields(id, { financeObservations: finObs.trim() });
+        }
+        await onUpdateRequest(id, STATUS.DRAFT, { clarificationRequest: comment });
+      }
+      setSelectedIds([]);
+      setBulkClarifyTarget(null);
+      setSelectedId(null);
+    } catch (error) {
+      console.error("Error bulk clarifying:", error);
+    } finally {
+      setIsBulkOperating(false);
+    }
+  };
+
+  const handleBulkRejectConfirm = async (_labelId: string, comment: string) => {
+    if (!bulkRejectTarget) return;
+    setIsBulkOperating(true);
+    try {
+      for (const id of bulkRejectTarget) {
+        if (finObs.trim()) {
+          await onUpdateFinanceFields(id, { financeObservations: finObs.trim() });
+        }
+        await onUpdateRequest(id, STATUS.REJECTED, { rejectReason: comment });
+      }
+      setSelectedIds([]);
+      setBulkRejectTarget(null);
+      setSelectedId(null);
+    } catch (error) {
+      console.error("Error bulk rejecting:", error);
+    } finally {
+      setIsBulkOperating(false);
+    }
+  };
+
+  const handleBulkSaveEstimatedDate = async (_labelId: string, date: string) => {
+    if (!bulkEstimatedDateTarget) return;
+    setIsBulkOperating(true);
+    try {
+      for (const id of bulkEstimatedDateTarget) {
+        await onUpdateFinanceFields(id, {
+          estimatedPaymentDate: date,
+          financeObservations: finObs.trim() || undefined,
+        });
+      }
+      setSelectedIds([]);
+      setBulkEstimatedDateTarget(null);
+    } catch (error) {
+      console.error("Error bulk saving estimated date:", error);
+    } finally {
+      setIsBulkOperating(false);
+    }
+  };
+
+  const handleBulkMarkPaidConfirm = async (data: { id: string; paymentData: PaymentData }[]) => {
+    setIsBulkOperating(true);
+    setIsBulkPaying(false);
+    try {
+      for (const item of data) {
+        await onUpdateFinanceFields(item.id, {
+          ...item.paymentData,
+          financeObservations: finObs.trim() || undefined,
+        });
+        await onUpdateRequest(item.id, STATUS.PAID);
+      }
+      setSelectedIds([]);
+      setSelectedId(null);
+    } catch (error) {
+      console.error("Error bulk marking paid:", error);
+    } finally {
+      setIsBulkOperating(false);
     }
   };
 
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="flex items-end justify-between flex-wrap gap-4">
+      <div className="flex items-center justify-between">
         <div>
           <h2
             className="text-white text-2xl font-bold mb-1"
@@ -156,65 +391,145 @@ const FinanceManagement: React.FC<Props> = ({
             Gestión de Finanzas
           </h2>
           <p className="text-gray-400 text-sm">
-            {counts.all} solicitud{counts.all !== 1 ? "es" : ""} en gestión
-            financiera
+            Control de tesorería y programación de pagos
           </p>
         </div>
 
-        {/* T/C badge */}
-        <div
-          className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-700"
-          style={{ backgroundColor: "#293C47" }}
-        >
-          <span className="text-gray-400 text-xs">T/C Banxico</span>
-          <span
-            className="text-[#00aa85] text-sm font-semibold"
-            style={{ fontFamily: "Alexandria, sans-serif" }}
+        <div className="flex items-center gap-2">
+          {isBulkOperating && (
+            <div className="flex items-center gap-2 text-xs text-[#00aa85] font-semibold bg-[#243545] px-3 py-1.5 rounded-lg border border-[#00aa85]/20 animate-pulse mr-2">
+              <Loader2 size={14} className="animate-spin" />
+              Procesando lote...
+            </div>
+          )}
+
+          {/* Banxico T/C indicator */}
+          <div
+            className="px-3 py-1.5 rounded-lg border border-gray-700 text-xs text-gray-400 flex items-center gap-1.5"
+            style={{ backgroundColor: "#1e2d3d" }}
           >
-            ${lastRate.rate.toFixed(4)}
-          </span>
-          <span className="text-gray-500 text-xs">({lastRate.date})</span>
+            <span className="text-[#00aa85]">💵</span>
+            <span>T/C Banxico:</span>
+            <strong className="text-white">
+              ${lastRate.rate.toFixed(4)}
+            </strong>
+            <span className="text-gray-500">({lastRate.date})</span>
+          </div>
         </div>
       </div>
 
-      {/* Filter tabs */}
+      {/* Tabs / Filters */}
       <div className="flex gap-2">
-        {(
-          [
-            { key: "all", label: "Todas", count: counts.all },
-            { key: "pending", label: "Pending Fin", count: counts.pending },
-            { key: "approved", label: "Approved", count: counts.approved },
-          ] as { key: Filter; label: string; count: number }[]
-        ).map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setFilter(tab.key)}
-            className={`px-4 py-2 rounded-lg text-xs font-medium transition-colors ${
-              filter === tab.key
-                ? "text-white border border-[#00aa85]"
-                : "text-gray-400 border border-gray-700 hover:border-gray-500"
+        <button
+          onClick={() => setFilter("all")}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === "all"
+              ? "bg-[#00aa85] text-white"
+              : "bg-[#1e2d3d] text-gray-400 hover:text-white"
             }`}
-            style={{
-              backgroundColor:
-                filter === tab.key ? "rgba(0,170,133,0.15)" : "#293C47",
-              fontFamily: "Alexandria, sans-serif",
-            }}
-          >
-            {tab.label}
-            <span
-              className={`ml-2 px-1.5 py-0.5 rounded-full text-xs ${
-                filter === tab.key
-                  ? "bg-[#00aa85] text-white"
-                  : "bg-gray-600 text-gray-300"
-              }`}
-            >
-              {tab.count}
-            </span>
-          </button>
-        ))}
+          style={{ fontFamily: "Alexandria, sans-serif" }}
+        >
+          Todas ({counts.all})
+        </button>
+        <button
+          onClick={() => setFilter("pending")}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === "pending"
+              ? "bg-[#00aa85] text-white"
+              : "bg-[#1e2d3d] text-gray-400 hover:text-white"
+            }`}
+          style={{ fontFamily: "Alexandria, sans-serif" }}
+        >
+          Pendientes Finanzas ({counts.pending})
+        </button>
+        <button
+          onClick={() => setFilter("approved")}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === "approved"
+              ? "bg-[#00aa85] text-white"
+              : "bg-[#1e2d3d] text-gray-400 hover:text-white"
+            }`}
+          style={{ fontFamily: "Alexandria, sans-serif" }}
+        >
+          Aprobadas ({counts.approved})
+        </button>
       </div>
 
-      {/* Table */}
+      {/* Bulk Actions Bar */}
+      {selectedIds.length > 0 && (
+        <div className="flex items-center justify-between p-4 rounded-xl border border-[#00aa85]/30 bg-[#243545] shadow-lg shadow-[#00aa85]/5 transition-all duration-300">
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center gap-2">
+              <span className="text-[#00aa85] text-sm font-bold">✓</span>
+              <span className="text-gray-200 text-sm font-medium">
+                {selectedIds.length} solicitud{selectedIds.length !== 1 ? "es" : ""} seleccionada{selectedIds.length !== 1 ? "s" : ""}
+              </span>
+            </div>
+            {isMixed && (
+              <span className="text-yellow-400 text-[10px] font-medium">
+                ⚠ Selección mixta: Filtra por pestaña para ver acciones específicas (Aprobación/Pago).
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {allPending && (
+              <button
+                onClick={handleBulkApprove}
+                disabled={isBulkOperating}
+                className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-white text-xs font-semibold bg-green-600 hover:bg-green-700 disabled:opacity-50 transition-colors shadow shadow-green-950/20"
+              >
+                <CheckCircle2 size={14} />
+                Aprobar Finanzas
+              </button>
+            )}
+
+            {allApproved && (
+              <>
+                <button
+                  onClick={handleBulkMarkPaidGate}
+                  disabled={isBulkOperating || nsLoading}
+                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-white text-xs font-semibold bg-purple-600 hover:bg-purple-700 disabled:opacity-50 transition-colors shadow shadow-purple-950/20"
+                >
+                  {nsLoading ? <Loader2 size={14} className="animate-spin" /> : <Banknote size={14} />}
+                  {nsLoading ? "Consultando NS..." : "Marcar Pagadas"}
+                </button>
+                <button
+                  onClick={() => setBulkEstimatedDateTarget(selectedIds)}
+                  disabled={isBulkOperating}
+                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-white text-xs font-semibold bg-blue-600 hover:bg-blue-700 disabled:opacity-50 transition-colors shadow shadow-blue-950/20"
+                >
+                  <Clock size={14} />
+                  Fecha Estimada
+                </button>
+              </>
+            )}
+
+            <button
+              onClick={() => setBulkClarifyTarget(selectedIds)}
+              disabled={isBulkOperating}
+              className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-white text-xs font-semibold bg-yellow-600 hover:bg-yellow-700 disabled:opacity-50 transition-colors shadow shadow-yellow-950/20"
+            >
+              <HelpCircle size={14} />
+              Aclaración
+            </button>
+            <button
+              onClick={() => setBulkRejectTarget(selectedIds)}
+              disabled={isBulkOperating}
+              className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-white text-xs font-semibold bg-red-600 hover:bg-red-700 disabled:opacity-50 transition-colors shadow shadow-red-950/20"
+            >
+              <XCircle size={14} />
+              Rechazar
+            </button>
+            <div className="w-[1px] h-6 bg-gray-700 mx-1"></div>
+            <button
+              onClick={() => setSelectedIds([])}
+              disabled={isBulkOperating}
+              className="px-3 py-1.5 rounded-lg text-gray-400 hover:text-white text-xs font-medium border border-gray-600 hover:border-gray-500 transition-colors"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Main Table */}
       <div
         className="rounded-xl border border-gray-700 overflow-hidden"
         style={{ backgroundColor: "#1e2d3d" }}
@@ -222,23 +537,26 @@ const FinanceManagement: React.FC<Props> = ({
         <table className="w-full text-sm">
           <thead>
             <tr style={{ backgroundColor: "#293C47" }}>
-              <th className="text-left px-4 py-3 text-gray-300 font-semibold">
-                ID
+              <th className="px-4 py-3 w-10 text-center">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  onChange={handleSelectAll}
+                  disabled={isBulkOperating || financeRequests.length === 0}
+                  className="rounded border-gray-600 text-[#00aa85] focus:ring-0 focus:ring-offset-0 bg-[#293C47] cursor-pointer disabled:opacity-50"
+                />
               </th>
               <th className="text-left px-4 py-3 text-gray-300 font-semibold">
-                OC
+                ID
               </th>
               <th className="text-left px-4 py-3 text-gray-300 font-semibold">
                 Beneficiario
               </th>
               <th className="text-left px-4 py-3 text-gray-300 font-semibold">
-                Proyecto
+                Proyecto / Depto
               </th>
               <th className="text-right px-4 py-3 text-gray-300 font-semibold">
                 Monto
-              </th>
-              <th className="text-right px-4 py-3 text-gray-300 font-semibold">
-                Equiv. MXN
               </th>
               <th className="text-center px-4 py-3 text-gray-300 font-semibold">
                 Estado
@@ -251,78 +569,61 @@ const FinanceManagement: React.FC<Props> = ({
           <tbody>
             {financeRequests.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
-                  No hay solicitudes en esta vista
+                <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                  No hay solicitudes en esta bandeja
                 </td>
               </tr>
             )}
-            {financeRequests.map((r) => {
-              const equivMXN =
-                r.currency === "USD" ? r.amount * lastRate.rate : r.amount;
-              return (
-                <tr
-                  key={r.id}
-                  className={`border-t border-gray-700 transition-colors cursor-pointer ${
-                    selectedId === r.id ? "bg-[#243545]" : "hover:bg-[#243545]"
+            {financeRequests.map((r) => (
+              <tr
+                key={r.id}
+                className={`border-t border-gray-700 transition-colors cursor-pointer ${selectedId === r.id ? "bg-[#243545]" : "hover:bg-[#243545]"
                   }`}
-                  onClick={() =>
-                    handleSelect(selectedId === r.id ? null : r.id)
-                  }
-                >
-                  <td className="px-4 py-3 text-[#00aa85] font-medium">
-                    {r.id}
-                  </td>
-                  <td className="px-4 py-3 text-gray-400">{r.poNumber}</td>
-                  <td className="px-4 py-3 text-gray-300">{r.beneficiary}</td>
-                  <td className="px-4 py-3 text-gray-400">{r.projectNumber}</td>
-                  <td className="px-4 py-3 text-gray-200 text-right font-medium">
-                    {r.amount.toLocaleString("es-MX", {
-                      minimumFractionDigits: 2,
-                    })}{" "}
-                    {r.currency}
-                  </td>
-                  <td className="px-4 py-3 text-gray-400 text-right">
-                    {r.currency === "USD" ? (
-                      <span>
-                        $
-                        {equivMXN.toLocaleString("es-MX", {
-                          minimumFractionDigits: 2,
-                        })}
-                        <span className="text-gray-600 text-xs ml-1">MXN</span>
-                      </span>
-                    ) : (
-                      <span className="text-gray-600">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <StatusPill status={r.status} />
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleSelect(r.id);
-                      }}
-                      className="px-3 py-1 rounded text-xs font-medium text-white transition-colors"
-                      style={{ backgroundColor: "#3d7d80" }}
-                    >
-                      Revisar
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
+                onClick={() => handleSelect(selectedId === r.id ? null : r.id)}
+              >
+                <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(r.id)}
+                    onChange={(e) => handleSelectRow(e, r.id)}
+                    disabled={isBulkOperating}
+                    className="rounded border-gray-600 text-[#00aa85] focus:ring-0 focus:ring-offset-0 bg-[#293C47] cursor-pointer disabled:opacity-50"
+                  />
+                </td>
+                <td className="px-4 py-3 text-[#00aa85] font-medium">{r.id}</td>
+                <td className="px-4 py-3 text-gray-300">{r.beneficiary}</td>
+                <td className="px-4 py-3 text-gray-400">{r.projectNumber}</td>
+                <td className="px-4 py-3 text-gray-200 text-right">
+                  {r.amount.toLocaleString("es-MX")} {r.currency}
+                </td>
+                <td className="px-4 py-3 text-center">
+                  <StatusPill status={r.status} />
+                </td>
+                <td className="px-4 py-3 text-center">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSelect(r.id);
+                    }}
+                    className="px-3 py-1 rounded text-xs font-medium text-white transition-colors hover:opacity-90 animate-fadeIn"
+                    style={{ backgroundColor: "#3d7d80" }}
+                  >
+                    Revisar
+                  </button>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
 
-      {/* Inline detail */}
+      {/* Inline Detail Panel (when selected) */}
       {selected && (
         <div
-          className="rounded-xl border border-gray-700 overflow-hidden"
+          className="rounded-xl border border-gray-700 overflow-hidden animate-fadeIn"
           style={{ backgroundColor: "#1e2d3d" }}
         >
-          {/* Detail header */}
+          {/* Panel Header */}
           <div
             className="flex items-center justify-between px-5 py-3 border-b border-gray-700"
             style={{ backgroundColor: "#293C47" }}
@@ -335,32 +636,19 @@ const FinanceManagement: React.FC<Props> = ({
                 {selected.id}
               </span>
               <StatusPill status={selected.status} />
-              {selected.currency === "USD" && (
-                <span className="text-xs text-yellow-400 bg-yellow-400/10 px-2 py-0.5 rounded">
-                  USD → MXN
-                </span>
-              )}
             </div>
             <button
-              onClick={() => setSelectedId(null)}
+              onClick={() => handleSelect(null)}
               className="text-gray-400 hover:text-white text-lg leading-none"
             >
               ×
             </button>
           </div>
 
-          {/* Detail body — solicitor info (read-only) */}
-          <div className="px-5 pt-5 pb-2">
-            <p
-              className="text-gray-500 text-xs font-semibold mb-3 uppercase tracking-wide"
-              style={{ fontFamily: "Alexandria, sans-serif" }}
-            >
-              Datos de la solicitud
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 px-5 pb-4">
+          {/* Core Info */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-5">
             <Field label="Beneficiario" value={selected.beneficiary} />
-            <Field label="Proyecto" value={selected.projectNumber} />
+            <Field label="Proyecto / Depto." value={selected.projectNumber} />
             <Field label="OC" value={selected.poNumber} />
             <Field label="Concepto" value={selected.concept} />
             <Field label="Departamento" value={selected.department} />
@@ -378,64 +666,35 @@ const FinanceManagement: React.FC<Props> = ({
               })}`}
             />
             <Field
-              label="Monto Total"
+              label="Monto Solicitado"
               value={`$${selected.amount.toLocaleString("es-MX", {
                 minimumFractionDigits: 2,
               })} ${selected.currency}`}
               highlight
             />
-            <Field label="Fecha" value={selected.date} />
-            {selected.currency === "USD" && (
-              <Field
-                label="Equivalente MXN (T/C actual)"
-                value={`$${(selected.amount * lastRate.rate).toLocaleString(
-                  "es-MX",
-                  { minimumFractionDigits: 2 }
-                )} MXN`}
-                highlight
-              />
-            )}
           </div>
 
-          {/* Finance fields section */}
-          <div className="px-5 pt-2 pb-2 border-t border-gray-700">
-            <p
-              className="text-[#00aa85] text-xs font-semibold mb-3 mt-3 uppercase tracking-wide"
-              style={{ fontFamily: "Alexandria, sans-serif" }}
-            >
-              Observaciones de Finanzas
-            </p>
-            <div className="flex gap-3 items-end">
+          {/* Finance notes section */}
+          <div className="px-5 py-4 border-t border-gray-700">
+            <label className="text-gray-400 text-xs font-medium mb-1 block">
+              Notas y Observaciones de Finanzas
+            </label>
+            <div className="flex gap-2">
               <textarea
                 value={finObs}
                 onChange={(e) => setFinObs(e.target.value)}
-                placeholder="Notas internas de finanzas..."
+                placeholder="Escribe una observación interna..."
                 rows={2}
-                className="flex-1 px-3 py-2 rounded-lg text-white text-sm outline-none border border-gray-600 focus:border-[#00aa85] resize-none transition-colors"
-                style={{
-                  backgroundColor: "#293C47",
-                  fontFamily: "Alexandria, sans-serif",
-                }}
+                className="flex-1 px-3 py-1.5 rounded-lg text-white text-sm outline-none border border-gray-600 focus:border-[#00aa85] resize-none"
+                style={{ backgroundColor: "#293C47", fontFamily: "Alexandria, sans-serif" }}
               />
               <button
                 onClick={handleSaveObs}
                 disabled={isSaving || !finObs.trim()}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all h-fit ${
-                  saveSuccess 
-                    ? "bg-green-600/20 text-green-400 border border-green-600" 
-                    : !finObs.trim()
-                      ? "opacity-50 cursor-not-allowed text-gray-500 border border-gray-700"
-                      : "text-gray-300 border border-gray-600 hover:border-[#00aa85] hover:text-[#00aa85]"
-                }`}
-                style={{
-                  backgroundColor: saveSuccess ? undefined : "#293C47",
-                }}
+                className="px-4 rounded-lg text-white text-xs font-semibold bg-[#00aa85] hover:opacity-90 disabled:opacity-50 flex items-center gap-1.5 transition-all"
               >
                 {isSaving ? (
-                  <>
-                    <div className="w-3 h-3 border-2 border-t-transparent border-white rounded-full animate-spin" />
-                    Guardando...
-                  </>
+                  <Loader2 size={12} className="animate-spin" />
                 ) : saveSuccess ? (
                   <>
                     <CheckCircle2 size={14} />
@@ -461,7 +720,7 @@ const FinanceManagement: React.FC<Props> = ({
                   } catch {
                     notes = [{ text: selected.financeObservations, timestamp: new Date().toISOString(), user: "Nota anterior" }];
                   }
-                  
+
                   return notes.slice().reverse().map((note, idx) => (
                     <div key={idx} className="bg-[#1a2b34] p-3 rounded-lg border border-gray-700/50">
                       <div className="flex justify-between items-start mb-1">
@@ -471,9 +730,9 @@ const FinanceManagement: React.FC<Props> = ({
                         </div>
                         <div className="flex items-center gap-1 text-[10px] text-gray-500">
                           <Clock size={10} />
-                          {new Date(note.timestamp).toLocaleString('es-MX', { 
-                            day: '2-digit', 
-                            month: '2-digit', 
+                          {new Date(note.timestamp).toLocaleString('es-MX', {
+                            day: '2-digit',
+                            month: '2-digit',
                             year: '2-digit',
                             hour: '2-digit',
                             minute: '2-digit'
@@ -493,61 +752,68 @@ const FinanceManagement: React.FC<Props> = ({
           {/* Show previously saved finance data if exists */}
           {(selected.amountPaid ||
             selected.bankName ||
-            selected.operationRef) && (
-            <div className="px-5 py-3 border-t border-gray-700">
-              <p
-                className="text-purple-400 text-xs font-semibold mb-3 uppercase tracking-wide"
-                style={{ fontFamily: "Alexandria, sans-serif" }}
-              >
-                Datos de Pago Registrados
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {selected.amountPaid && (
-                  <Field
-                    label="Monto Pagado"
-                    value={`$${selected.amountPaid.toLocaleString("es-MX", {
-                      minimumFractionDigits: 2,
-                    })} ${selected.currency}`}
-                  />
-                )}
-                {selected.bankName && (
-                  <Field label="Banco" value={selected.bankName} />
-                )}
-                {selected.operationRef && (
-                  <Field label="Ref. Operación" value={selected.operationRef} />
-                )}
-                {selected.paymentMode && (
-                  <Field label="Modo Pago" value={selected.paymentMode} />
-                )}
-                {selected.exchangeRateUsed && (
-                  <Field
-                    label="T/C Usado"
-                    value={selected.exchangeRateUsed.toFixed(4)}
-                  />
-                )}
-                {selected.amountMXN && (
-                  <Field
-                    label="Monto MXN"
-                    value={`$${selected.amountMXN.toLocaleString("es-MX", {
-                      minimumFractionDigits: 2,
-                    })}`}
-                  />
-                )}
-                {selected.invoiceNumber && (
-                  <Field label="Factura" value={selected.invoiceNumber} />
-                )}
-                {selected.operationType && (
-                  <Field
-                    label="Tipo Operación"
-                    value={selected.operationType}
-                  />
-                )}
-                {selected.expenseType && (
-                  <Field label="Tipo Gasto" value={selected.expenseType} />
-                )}
+            selected.operationRef ||
+            selected.estimatedPaymentDate) && (
+              <div className="px-5 py-3 border-t border-gray-700">
+                <p
+                  className="text-purple-400 text-xs font-semibold mb-3 uppercase tracking-wide"
+                  style={{ fontFamily: "Alexandria, sans-serif" }}
+                >
+                  Datos de Pago Registrados / Programados
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {selected.estimatedPaymentDate && (
+                    <Field
+                      label="Fecha Est. Pago"
+                      value={selected.estimatedPaymentDate}
+                    />
+                  )}
+                  {selected.amountPaid && (
+                    <Field
+                      label="Monto Pagado"
+                      value={`$${selected.amountPaid.toLocaleString("es-MX", {
+                        minimumFractionDigits: 2,
+                      })} ${selected.currency}`}
+                    />
+                  )}
+                  {selected.bankName && (
+                    <Field label="Banco" value={selected.bankName} />
+                  )}
+                  {selected.operationRef && (
+                    <Field label="Ref. Operación" value={selected.operationRef} />
+                  )}
+                  {selected.paymentMode && (
+                    <Field label="Modo Pago" value={selected.paymentMode} />
+                  )}
+                  {selected.exchangeRateUsed && (
+                    <Field
+                      label="T/C Usado"
+                      value={selected.exchangeRateUsed.toFixed(4)}
+                    />
+                  )}
+                  {selected.amountMXN && (
+                    <Field
+                      label="Monto MXN"
+                      value={`$${selected.amountMXN.toLocaleString("es-MX", {
+                        minimumFractionDigits: 2,
+                      })}`}
+                    />
+                  )}
+                  {selected.invoiceNumber && (
+                    <Field label="Factura" value={selected.invoiceNumber} />
+                  )}
+                  {selected.operationType && (
+                    <Field
+                      label="Tipo Operación"
+                      value={selected.operationType}
+                    />
+                  )}
+                  {selected.expenseType && (
+                    <Field label="Tipo Gasto" value={selected.expenseType} />
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
           {/* Comment from previous step */}
           {selected.comment && (
@@ -557,7 +823,7 @@ const FinanceManagement: React.FC<Props> = ({
                 style={{ backgroundColor: "#2a2a1a" }}
               >
                 <p className="text-yellow-400 text-xs font-medium mb-1">
-                  Comentario
+                  Comentario de Aclaración / Rechazo anterior
                 </p>
                 <p className="text-yellow-200 text-xs">{selected.comment}</p>
               </div>
@@ -576,13 +842,23 @@ const FinanceManagement: React.FC<Props> = ({
               </button>
             )}
             {selected.status === STATUS.APPROVED && (
-              <button
-                onClick={() => setPayTarget(selected.id)}
-                className="flex items-center gap-2 px-5 py-2 rounded-lg text-white text-sm font-semibold bg-purple-600 hover:bg-purple-700 transition-colors shadow-lg shadow-purple-900/20"
-              >
-                <Banknote size={16} />
-                Marcar Pagado
-              </button>
+              <>
+                <button
+                  onClick={() => handleMarkPaidGate(selected)}
+                  disabled={nsLoading}
+                  className="flex items-center gap-2 px-5 py-2 rounded-lg text-white text-sm font-semibold bg-purple-600 hover:bg-purple-700 disabled:opacity-50 transition-colors shadow-lg shadow-purple-900/20"
+                >
+                  {nsLoading ? <Loader2 size={16} className="animate-spin" /> : <Banknote size={16} />}
+                  {nsLoading ? "Consultando NS..." : "Marcar Pagado"}
+                </button>
+                <button
+                  onClick={() => setEstimatedDateTarget(selected.id)}
+                  className="flex items-center gap-2 px-5 py-2 rounded-lg text-white text-sm font-semibold bg-blue-600 hover:bg-blue-700 transition-colors shadow-lg shadow-blue-900/20"
+                >
+                  <Clock size={16} />
+                  Fecha Estimada
+                </button>
+              </>
             )}
             <button
               onClick={() => setClarifyTarget(selected.id)}
@@ -602,7 +878,31 @@ const FinanceManagement: React.FC<Props> = ({
         </div>
       )}
 
-      {/* Modals */}
+      {/* NS Block Message Banner */}
+      {nsBlockMessage && (
+        <div
+          className="rounded-xl border border-red-600/50 p-4 flex items-start gap-3 animate-fadeIn"
+          style={{ backgroundColor: "#2a1a1a" }}
+        >
+          <XCircle size={20} className="text-red-400 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-red-300 text-sm font-medium">{nsBlockMessage}</p>
+            {nsBulkBlocked.length > 0 && (
+              <p className="text-red-400/70 text-xs mt-1">
+                Solicitudes bloqueadas: {nsBulkBlocked.join(", ")}
+              </p>
+            )}
+          </div>
+          <button
+            onClick={() => { setNsBlockMessage(null); setNsBulkBlocked([]); }}
+            className="text-gray-500 hover:text-white text-lg leading-none"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
+      {/* Individual Modals */}
       {rejectTarget && (
         <RejectModal
           requestId={rejectTarget}
@@ -620,8 +920,51 @@ const FinanceManagement: React.FC<Props> = ({
       {payTarget && selected && (
         <PaymentModal
           request={selected}
+          lastExchangeRate={lastExchangeRate}
+          nsPaidBills={nsPaidBills ?? undefined}
           onConfirm={handleMarkPaid}
-          onCancel={() => setPayTarget(null)}
+          onCancel={() => { setPayTarget(null); setNsPaidBills(null); }}
+        />
+      )}
+      {estimatedDateTarget && selected && (
+        <EstimatedDateModal
+          requestId={estimatedDateTarget}
+          currentDate={selected.estimatedPaymentDate}
+          onConfirm={handleSaveEstimatedDate}
+          onCancel={() => setEstimatedDateTarget(null)}
+        />
+      )}
+
+      {/* Bulk Action Modals */}
+      {bulkClarifyTarget && (
+        <ClarifyModal
+          requestId={`${bulkClarifyTarget.length} solicitudes`}
+          onConfirm={handleBulkClarificationConfirm}
+          onCancel={() => setBulkClarifyTarget(null)}
+        />
+      )}
+      {bulkRejectTarget && (
+        <RejectModal
+          requestId={`de ${bulkRejectTarget.length} solicitudes`}
+          onConfirm={handleBulkRejectConfirm}
+          onCancel={() => setBulkRejectTarget(null)}
+        />
+      )}
+      {bulkEstimatedDateTarget && (
+        <EstimatedDateModal
+          requestId={`${bulkEstimatedDateTarget.length} solicitudes`}
+          onConfirm={handleBulkSaveEstimatedDate}
+          onCancel={() => setBulkEstimatedDateTarget(null)}
+        />
+      )}
+      {isBulkPaying && (
+        <PaymentModal
+          requests={selectedRequests}
+          lastExchangeRate={lastExchangeRate}
+          nsPaidBillsMap={nsPaidBillsMap ?? undefined}
+          onConfirm={() => { }}
+          onConfirmBulk={handleBulkMarkPaidConfirm}
+          onCancel={() => { setIsBulkPaying(false); setNsPaidBillsMap(null); }}
         />
       )}
     </div>
@@ -637,9 +980,8 @@ const Field: React.FC<{
   <div className="flex flex-col gap-0.5">
     <span className="text-gray-500 text-xs">{label}</span>
     <span
-      className={`text-sm font-medium ${
-        highlight ? "text-[#00aa85]" : "text-gray-200"
-      }`}
+      className={`text-sm font-medium ${highlight ? "text-[#00aa85]" : "text-gray-200"
+        }`}
       style={{ fontFamily: "Alexandria, sans-serif" }}
     >
       {value}
@@ -647,7 +989,7 @@ const Field: React.FC<{
   </div>
 );
 
-/* Clarify modal (same pattern as in ApprovalManagement) */
+/* Clarify modal */
 const ClarifyModal: React.FC<{
   requestId: string;
   onConfirm: (id: string, comment: string) => void;
@@ -658,7 +1000,7 @@ const ClarifyModal: React.FC<{
 
   const handleConfirm = () => {
     if (!comment.trim()) {
-      setError("Describe qué necesitas que el solicitante aclare.");
+      setError("Describe qué necesitas que se aclare.");
       return;
     }
     onConfirm(requestId, comment.trim());
@@ -680,8 +1022,7 @@ const ClarifyModal: React.FC<{
           Solicitar Aclaración — {requestId}
         </h3>
         <p className="text-gray-400 text-sm mb-4">
-          Describe qué información necesitas que el solicitante corrija o
-          aclare.
+          Describe qué información necesitas que se corrija o se aclare.
         </p>
         <textarea
           value={comment}
@@ -710,6 +1051,75 @@ const ClarifyModal: React.FC<{
             className="px-4 py-2 rounded-lg text-white text-sm font-semibold bg-yellow-600 hover:bg-yellow-700 transition-colors"
           >
             Enviar Aclaración
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* Estimated Date modal */
+const EstimatedDateModal: React.FC<{
+  requestId: string;
+  currentDate?: string;
+  onConfirm: (id: string, date: string) => void;
+  onCancel: () => void;
+}> = ({ requestId, currentDate = "", onConfirm, onCancel }) => {
+  const [date, setDate] = React.useState(currentDate);
+  const [error, setError] = React.useState("");
+
+  const handleConfirm = () => {
+    if (!date) {
+      setError("Por favor selecciona una fecha.");
+      return;
+    }
+    onConfirm(requestId, date);
+  };
+
+  return (
+    <div
+      className="fixed inset-0 flex items-center justify-center z-50"
+      style={{ backgroundColor: "rgba(0,0,0,0.7)" }}
+    >
+      <div
+        className="rounded-xl p-6 border border-blue-700 shadow-2xl max-w-md w-full mx-4"
+        style={{ backgroundColor: "#1e2d3d" }}
+      >
+        <h3
+          className="text-white text-lg font-bold mb-2"
+          style={{ fontFamily: "Alexandria, sans-serif" }}
+        >
+          Fecha Estimada de Pago — {requestId}
+        </h3>
+        <p className="text-gray-400 text-sm mb-4">
+          Selecciona la fecha estimada en la que se realizará el pago de esta solicitud o lote.
+        </p>
+        <input
+          type="date"
+          value={date}
+          onChange={(e) => {
+            setDate(e.target.value);
+            setError("");
+          }}
+          className="w-full px-3 py-2 rounded-lg text-white text-sm outline-none border border-gray-600 focus:border-blue-500"
+          style={{
+            backgroundColor: "#293C47",
+            fontFamily: "Alexandria, sans-serif",
+          }}
+        />
+        {error && <p className="text-red-400 text-xs mt-1">{error}</p>}
+        <div className="flex gap-3 mt-6 justify-end">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 rounded-lg text-gray-300 text-sm font-medium border border-gray-600 hover:border-gray-400 transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleConfirm}
+            className="px-5 py-2 rounded-lg text-white text-sm font-semibold bg-blue-600 hover:bg-blue-700 transition-colors"
+          >
+            Guardar Fecha
           </button>
         </div>
       </div>

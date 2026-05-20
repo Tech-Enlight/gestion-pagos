@@ -305,6 +305,7 @@ const RequestExplorer: React.FC<Props> = ({ requests, onUpdateRequest }) => {
             {(selected.amountPaid ||
               selected.bankName ||
               selected.operationRef ||
+              selected.estimatedPaymentDate ||
               selected.status === "Paid" ||
               selected.status === "Approved") && (
               <div
@@ -324,6 +325,12 @@ const RequestExplorer: React.FC<Props> = ({ requests, onUpdateRequest }) => {
                 </div>
 
                 <div className="space-y-2">
+                  {selected.estimatedPaymentDate && (
+                    <DetailRow
+                      label="Fecha Est. Pago"
+                      value={selected.estimatedPaymentDate}
+                    />
+                  )}
                   {selected.amountPaid != null && (
                     <DetailRow
                       label="Monto Pagado"

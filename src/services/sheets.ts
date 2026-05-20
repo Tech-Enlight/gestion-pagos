@@ -88,3 +88,81 @@ export async function fetchExchangeRates(): Promise<
   if (!res.ok) throw new Error("Error al cargar tipo de cambio");
   return res.json();
 }
+
+export async function fetchProjects(): Promise<any[]> {
+  const res = await fetch(`${BASE}/lista-proyectos-completos`);
+  if (!res.ok) throw new Error("Error al cargar proyectos");
+  const data = await res.json();
+  return data.proj_list || [];
+}
+
+export async function fetchOCsByProject(projectId: string): Promise<any> {
+  const res = await fetch(`${BASE}/ocs-por-proyecto?projectId=${projectId}`);
+  if (!res.ok) throw new Error("Error al cargar OCs");
+  return res.json();
+}
+
+export async function fetchVendorName(vendorId: string): Promise<any> {
+  const res = await fetch(`${BASE}/vendor-name?id=${vendorId}`);
+  if (!res.ok) throw new Error("Error al cargar vendor");
+  return res.json();
+}
+
+/* ---------- NetSuite: bills por OC ---------- */
+
+function normalizeCurrency(nsCurrency: string): string {
+  const map: Record<string, string> = {
+    "US Dollar": "USD",
+    "Mexican Peso": "MXN",
+    "Canadian Dollar": "CAD",
+    "Euro": "EUR",
+  };
+  return map[nsCurrency] ?? nsCurrency;
+}
+
+export interface NSBill {
+  bill_id: string;
+  bill_number: string;
+  bill_date: string;
+  bill_total: number;
+  bill_status: string;
+  currency: string;          // normalized to USD/MXN
+  exchange_rate: number;
+  account: string;
+  subsidiary: string;
+  memo: string;
+  is_paid: boolean;
+  payment_date: string | null;
+  payment_amount: number | null;
+  payment_count: number;
+}
+
+export interface NSBillsResponse {
+  bills: NSBill[];
+  summary: {
+    total_bills: number;
+    total_billed: number;
+    paid_count: number;
+    paid_total: number;
+    open_count: number;
+    open_total: number;
+  };
+}
+
+export async function fetchBillsByOC(
+  poInternalId: string
+): Promise<NSBillsResponse> {
+  const res = await fetch(
+    `${BASE}/pagos-por-oc?poInternalId=${encodeURIComponent(poInternalId)}`
+  );
+  if (!res.ok) throw new Error("Error al cargar pagos de NS");
+  const data = await res.json();
+
+  // Normalize currency on each bill
+  data.bills = (data.bills || []).map((b: any) => ({
+    ...b,
+    currency: normalizeCurrency(b.currency),
+  }));
+
+  return data as NSBillsResponse;
+}

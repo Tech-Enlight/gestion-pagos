@@ -54,6 +54,14 @@ export interface Request {
   proposal?: string;
   paymentProof?: string;
   statusHistory: StatusEvent[];
+  nsProjectId?: string;
+  nsOcInternalId?: string;
+  vendorId?: string;
+  vendorRfc?: string;
+  paymentType?: string;
+  ocTotal?: number;
+  exchangeRate?: number;
+  estimatedPaymentDate?: string;
 }
 
 export const exchangeRates: ExchangeRate[] = [

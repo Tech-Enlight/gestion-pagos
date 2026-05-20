@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { LoginScreen } from "./components/LoginScreen";
@@ -8,29 +8,38 @@ import Dashboard from "./components/Dashboard";
 import NewRequest from "./components/NewRequest";
 import ApprovalManagement from "./components/ApprovalManagement";
 import RequestExplorer from "./components/RequestExplorer";
-import RecentRequestsTable from "./components/RecentRequestsTable";
 import ExchangeChart from "./components/ExchangeChart";
 import FinanceManagement from "./components/FinanceManagement";
-import { mockRequests } from "./data/mockData";
-import type { Request } from "./data/mockData";
+import type { Request, ExchangeRate } from "./data/mockData";
 import {
   fetchRequests,
   createRequest,
   updateRequestStatus,
   updateFinanceFields,
+  fetchExchangeRates,
 } from "./services/sheets";
 
 function AppContent() {
   const { isAuthenticated, user } = useAuth();
   const [currentView, setCurrentView] = useState("nueva-solicitud");
   const [requests, setRequests] = useState<Request[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [lastExchangeRate, setLastExchangeRate] = useState<ExchangeRate>({
+    date: "2023-10-30",
+    rate: 17.72,
+  });
 
   useEffect(() => {
     fetchRequests()
       .then(setRequests)
-      .catch(console.error)
-      .finally(() => setLoading(false));
+      .catch(console.error);
+
+    fetchExchangeRates()
+      .then((rates) => {
+        if (rates && rates.length > 0) {
+          setLastExchangeRate(rates[rates.length - 1]);
+        }
+      })
+      .catch(console.error);
   }, []);
 
   const handleAddRequest = async (data: any) => {
@@ -73,7 +82,9 @@ function AppContent() {
       <Sidebar currentView={currentView} setCurrentView={setCurrentView} />
       <main style={{ flex: 1, overflow: "auto", padding: "2rem" }}>
         <RoleGate allowedRoles={["admin", "superadmin"]}>
-          {currentView === "dashboard" && <Dashboard requests={requests} />}
+          {currentView === "dashboard" && (
+            <Dashboard requests={requests} lastExchangeRate={lastExchangeRate} />
+          )}
         </RoleGate>
 
         {currentView === "nueva-solicitud" && (
@@ -112,6 +123,7 @@ function AppContent() {
           {currentView === "finanzas" && (
             <FinanceManagement
               requests={requests}
+              lastExchangeRate={lastExchangeRate}
               onUpdateRequest={handleUpdateRequest}
               onUpdateFinanceFields={handleUpdateFinanceFields}
             />

@@ -21,11 +21,12 @@ import {
 import KPICard from "./KPICard";
 import ExchangeChart from "./ExchangeChart";
 import RecentRequestsTable from "./RecentRequestsTable";
-import { STATUS, exchangeRates } from "../data/mockData";
-import type { Request } from "../data/mockData";
+import { STATUS } from "../data/mockData";
+import type { Request, ExchangeRate } from "../data/mockData";
 
 interface DashboardProps {
   requests: Request[];
+  lastExchangeRate: ExchangeRate;
 }
 
 const PIE_COLORS: Record<string, string> = {
@@ -43,8 +44,8 @@ const fmtMXN = (n: number) =>
     maximumFractionDigits: 0,
   })}`;
 
-const Dashboard: React.FC<DashboardProps> = ({ requests }) => {
-  const lastRate = exchangeRates[exchangeRates.length - 1].rate;
+const Dashboard: React.FC<DashboardProps> = ({ requests, lastExchangeRate }) => {
+  const lastRate = lastExchangeRate.rate;
 
   const toMXN = (r: Request) =>
     r.currency === "USD" ? r.amount * lastRate : r.amount;
