@@ -159,6 +159,7 @@ export interface NSBill {
   payment_date: string | null;
   payment_amount: number | null;
   payment_count: number;
+  bank_account: string | null;
 }
 
 export interface NSBillsResponse {

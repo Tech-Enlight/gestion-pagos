@@ -120,6 +120,9 @@ const PaymentModal: React.FC<Props> = ({
       setAmountPaid(activeBill.payment_amount?.toString() ?? activeBill.bill_total.toString());
       setExchangeRate(activeBill.exchange_rate.toString());
       setSingleInvoiceNumber(activeBill.bill_number);
+      if (activeBill.bank_account) {
+        setBankName(activeBill.bank_account);
+      }
     }
   }, [activeBill]);
 
@@ -363,23 +366,36 @@ const PaymentModal: React.FC<Props> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Banco */}
               <div>
-                <label className={labelClass}>Banco*</label>
-                <select
-                  value={bankName}
-                  onChange={(e) => {
-                    setBankName(e.target.value);
-                    setErrors((p) => ({ ...p, bankName: "" }));
-                  }}
-                  className={inputClass}
-                  style={inputStyle}
-                >
-                  <option value="">Seleccionar...</option>
-                  {BANK_OPTIONS.map((b) => (
-                    <option key={b} value={b}>
-                      {b}
-                    </option>
-                  ))}
-                </select>
+                <label className={labelClass}>
+                  Banco*
+                  {activeBill?.bank_account && <span className="text-[#00aa85] ml-1">(NS)</span>}
+                </label>
+                {activeBill?.bank_account ? (
+                  <input
+                    type="text"
+                    value={bankName}
+                    readOnly
+                    className={`${inputClass} opacity-70 cursor-not-allowed`}
+                    style={inputStyle}
+                  />
+                ) : (
+                  <select
+                    value={bankName}
+                    onChange={(e) => {
+                      setBankName(e.target.value);
+                      setErrors((p) => ({ ...p, bankName: "" }));
+                    }}
+                    className={inputClass}
+                    style={inputStyle}
+                  >
+                    <option value="">Seleccionar...</option>
+                    {BANK_OPTIONS.map((b) => (
+                      <option key={b} value={b}>
+                        {b}
+                      </option>
+                    ))}
+                  </select>
+                )}
                 {errors.bankName && (
                   <p className="text-red-400 text-xs mt-1">{errors.bankName}</p>
                 )}
