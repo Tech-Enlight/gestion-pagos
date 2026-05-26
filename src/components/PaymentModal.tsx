@@ -51,6 +51,16 @@ const OPERATION_TYPES = [
   "Pago de nómina",
   "Otro",
 ];
+const SERVICE_DELIVERY_OPTIONS = [
+  "Mano de obra",
+  "Material eléctrico",
+  "Otros gastos de la operación",
+  "Gastos de departamento",
+];
+const PROPOSAL_OPTIONS = [
+  "Autorizado",
+  "Aplazado",
+];
 
 const PaymentModal: React.FC<Props> = ({
   request,
@@ -73,7 +83,7 @@ const PaymentModal: React.FC<Props> = ({
 
   // Shared state
   const [bankName, setBankName] = useState("");
-  const [paymentMode, setPaymentMode] = useState("");
+  const [paymentMode, setPaymentMode] = useState("Transferencia");
   const [expenseType, setExpenseType] = useState("");
   const [operationType, setOperationType] = useState("");
   const [ocStatus, setOcStatus] = useState("");
@@ -620,22 +630,34 @@ const PaymentModal: React.FC<Props> = ({
                           />
                         </td>
                         <td className="px-3 py-2">
-                          <input
-                            type="text"
+                          <select
                             value={individualServiceDeliveries[r.id] || ""}
                             onChange={(e) => handleIndividualFieldChange("delivery", r.id, e.target.value)}
                             className="w-full px-2 py-1 rounded text-white text-xs outline-none border border-gray-600 focus:border-[#00aa85] transition-colors"
                             style={{ backgroundColor: "#293C47", fontFamily: "Alexandria, sans-serif" }}
-                          />
+                          >
+                            <option value="">Seleccionar...</option>
+                            {SERVICE_DELIVERY_OPTIONS.map((opt) => (
+                              <option key={opt} value={opt}>
+                                {opt}
+                              </option>
+                            ))}
+                          </select>
                         </td>
                         <td className="px-3 py-2">
-                          <input
-                            type="text"
+                          <select
                             value={individualProposals[r.id] || ""}
                             onChange={(e) => handleIndividualFieldChange("proposal", r.id, e.target.value)}
                             className="w-full px-2 py-1 rounded text-white text-xs outline-none border border-gray-600 focus:border-[#00aa85] transition-colors"
                             style={{ backgroundColor: "#293C47", fontFamily: "Alexandria, sans-serif" }}
-                          />
+                          >
+                            <option value="">Seleccionar...</option>
+                            {PROPOSAL_OPTIONS.map((opt) => (
+                              <option key={opt} value={opt}>
+                                {opt}
+                              </option>
+                            ))}
+                          </select>
                         </td>
                         <td className="px-3 py-2">
                           <input
@@ -710,24 +732,36 @@ const PaymentModal: React.FC<Props> = ({
                     <label className={labelClass}>
                       Prestación del Bien o Servicio
                     </label>
-                    <input
-                      type="text"
+                    <select
                       value={serviceDelivery}
                       onChange={(e) => setServiceDelivery(e.target.value)}
                       className={inputClass}
                       style={inputStyle}
-                    />
+                    >
+                      <option value="">Seleccionar...</option>
+                      {SERVICE_DELIVERY_OPTIONS.map((opt) => (
+                        <option key={opt} value={opt}>
+                          {opt}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   <div>
                     <label className={labelClass}>Propuesta</label>
-                    <input
-                      type="text"
+                    <select
                       value={proposal}
                       onChange={(e) => setProposal(e.target.value)}
                       className={inputClass}
                       style={inputStyle}
-                    />
+                    >
+                      <option value="">Seleccionar...</option>
+                      {PROPOSAL_OPTIONS.map((opt) => (
+                        <option key={opt} value={opt}>
+                          {opt}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </>
               )}
