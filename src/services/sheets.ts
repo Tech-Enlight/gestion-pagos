@@ -102,6 +102,28 @@ export async function fetchOCsByProject(projectId: string): Promise<any> {
   return res.json();
 }
 
+// Agregar después de fetchOCsByProject:
+export async function fetchProjectById(projectId: string): Promise<{ internal_id: string; code: string; name: string; customer: { id: string; name: string } } | null> {
+  try {
+    const res = await fetch(`${BASE}/proyecto-detalle?projectId=${encodeURIComponent(projectId)}`);
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchInvoiceLinkByOC(ocNumber: string): Promise<{ drive_folder_url: string | null } | null> {
+  try {
+    const res = await fetch(`${BASE}/link-factura?ocNumber=${encodeURIComponent(ocNumber)}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.found ? { drive_folder_url: data.drive_folder_url } : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchVendorName(vendorId: string): Promise<any> {
   const res = await fetch(`${BASE}/vendor-name?id=${vendorId}`);
   if (!res.ok) throw new Error("Error al cargar vendor");
@@ -139,6 +161,8 @@ export interface NSBill {
 
 export interface NSBillsResponse {
   bills: NSBill[];
+  po_status?: string;
+  po_number?: string;
   summary: {
     total_bills: number;
     total_billed: number;
@@ -148,6 +172,8 @@ export interface NSBillsResponse {
     open_total: number;
   };
 }
+
+
 
 export async function fetchBillsByOC(
   poInternalId: string

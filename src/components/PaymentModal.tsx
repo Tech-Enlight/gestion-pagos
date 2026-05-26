@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import type { Request, ExchangeRate } from "../data/mockData";
+import { fetchProjectById, fetchInvoiceLinkByOC } from "../services/sheets";
 import type { NSBill } from "../services/sheets";
 
 interface Props {
@@ -8,6 +9,8 @@ interface Props {
   lastExchangeRate: ExchangeRate;
   nsPaidBills?: NSBill[];
   nsPaidBillsMap?: Record<string, NSBill[]>;
+  nsPoStatus?: string;
+  nsPoStatusMap?: Record<string, string>;
   onConfirm: (id: string, paymentData: PaymentData) => void;
   onConfirmBulk?: (data: { id: string; paymentData: PaymentData }[]) => void;
   onCancel: () => void;
@@ -68,6 +71,8 @@ const PaymentModal: React.FC<Props> = ({
   lastExchangeRate,
   nsPaidBills,
   nsPaidBillsMap,
+  nsPoStatus,
+  nsPoStatusMap,
   onConfirm,
   onConfirmBulk,
   onCancel,
@@ -86,7 +91,7 @@ const PaymentModal: React.FC<Props> = ({
   const [paymentMode, setPaymentMode] = useState("Transferencia");
   const [expenseType, setExpenseType] = useState("");
   const [operationType, setOperationType] = useState("");
-  const [ocStatus, setOcStatus] = useState("");
+  const [ocStatus, setOcStatus] = useState(nsPoStatus ?? "");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Single-only state
@@ -140,6 +145,106 @@ const PaymentModal: React.FC<Props> = ({
       setIndividualInvoices((prev) => ({ ...prev, ...prefilledInvoices }));
     }
   }, [isBulk, nsPaidBillsMap, requests]);
+
+  // Fetch project details to pre-fill client name
+  useEffect(() => {
+    let active = true;
+
+    async function loadProjects() {
+      if (!isBulk && request?.nsProjectId) {
+        try {
+          const proj = await fetchProjectById(request.nsProjectId);
+          if (active && proj?.customer?.name) {
+            setClient(proj.customer.name);
+          }
+        } catch (error) {
+          console.error("Error fetching project for client pre-fill:", error);
+        }
+      } else if (isBulk && requests) {
+        const projectIds = Array.from(new Set(requests.map(r => r.nsProjectId).filter(Boolean))) as string[];
+        const clientMap: Record<string, string> = {};
+        
+        await Promise.all(
+          projectIds.map(async (pId) => {
+            try {
+              const proj = await fetchProjectById(pId);
+              if (proj?.customer?.name) {
+                clientMap[pId] = proj.customer.name;
+              }
+            } catch (error) {
+              console.error(`Error fetching project ${pId}:`, error);
+            }
+          })
+        );
+
+        if (active) {
+          const updatedClients: Record<string, string> = {};
+          requests.forEach((r) => {
+            if (r.nsProjectId && clientMap[r.nsProjectId]) {
+              updatedClients[r.id] = clientMap[r.nsProjectId];
+            }
+          });
+          setIndividualClients((prev) => ({ ...prev, ...updatedClients }));
+        }
+      }
+    }
+
+    loadProjects();
+
+    return () => {
+      active = false;
+    };
+  }, [isBulk, request, requests]);
+
+  // Fetch invoice link by OC number
+  useEffect(() => {
+    let active = true;
+
+    async function loadInvoiceLinks() {
+      if (!isBulk && request?.poNumber) {
+        try {
+          const res = await fetchInvoiceLinkByOC(request.poNumber);
+          if (active && res?.drive_folder_url) {
+            setInvoiceLink(res.drive_folder_url);
+          }
+        } catch (error) {
+          console.error("Error fetching invoice link:", error);
+        }
+      } else if (isBulk && requests) {
+        const ocNumbers = Array.from(new Set(requests.map(r => r.poNumber).filter(Boolean))) as string[];
+        const linkMap: Record<string, string> = {};
+
+        await Promise.all(
+          ocNumbers.map(async (ocNum) => {
+            try {
+              const res = await fetchInvoiceLinkByOC(ocNum);
+              if (res?.drive_folder_url) {
+                linkMap[ocNum] = res.drive_folder_url;
+              }
+            } catch (error) {
+              console.error(`Error fetching invoice link for ${ocNum}:`, error);
+            }
+          })
+        );
+
+        if (active) {
+          const updatedLinks: Record<string, string> = {};
+          requests.forEach((r) => {
+            if (r.poNumber && linkMap[r.poNumber]) {
+              updatedLinks[r.id] = linkMap[r.poNumber];
+            }
+          });
+          setIndividualInvoiceLinks((prev) => ({ ...prev, ...updatedLinks }));
+        }
+      }
+    }
+
+    loadInvoiceLinks();
+
+    return () => {
+      active = false;
+    };
+  }, [isBulk, request, requests]);
 
   // Handle common reference changes for bulk
   const handleCommonRefChange = (val: string) => {

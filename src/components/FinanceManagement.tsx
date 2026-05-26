@@ -52,9 +52,11 @@ const FinanceManagement: React.FC<Props> = ({
   const [nsLoading, setNsLoading] = useState(false);
   const [nsBlockMessage, setNsBlockMessage] = useState<string | null>(null);
   const [nsPaidBills, setNsPaidBills] = useState<NSBill[] | null>(null);
+  const [nsPoStatus, setNsPoStatus] = useState<string | null>(null);
   // For bulk: track which requests were blocked
   const [nsBulkBlocked, setNsBulkBlocked] = useState<string[]>([]);
   const [nsPaidBillsMap, setNsPaidBillsMap] = useState<Record<string, NSBill[]> | null>(null);
+  const [nsPoStatusMap, setNsPoStatusMap] = useState<Record<string, string> | null>(null);
 
   // Editable finance fields for the selected request
   const [finObs, setFinObs] = useState("");
@@ -204,6 +206,7 @@ const FinanceManagement: React.FC<Props> = ({
         );
       } else {
         setNsPaidBills(paidBills);
+        setNsPoStatus(data.po_status ?? null);
         setPayTarget(req.id);
       }
     } catch (err) {
@@ -224,6 +227,7 @@ const FinanceManagement: React.FC<Props> = ({
     const eligible: Request[] = [];
     const blocked: string[] = [];
     const allPaidBillsMap: Record<string, NSBill[]> = {};
+    const allPoStatusMap: Record<string, string> = {};
 
     try {
       for (const req of selectedRequests) {
@@ -238,6 +242,7 @@ const FinanceManagement: React.FC<Props> = ({
         } else {
           eligible.push(req);
           allPaidBillsMap[req.id] = paidBills;
+          if (data.po_status) allPoStatusMap[req.id] = data.po_status;
         }
       }
 
@@ -250,6 +255,7 @@ const FinanceManagement: React.FC<Props> = ({
         );
       } else {
         setNsPaidBillsMap(allPaidBillsMap);
+        setNsPoStatusMap(Object.keys(allPoStatusMap).length > 0 ? allPoStatusMap : null);
         // Filter selectedIds to only eligible, then open bulk payment modal
         setSelectedIds(eligible.map((r) => r.id));
         setIsBulkPaying(true);
@@ -423,8 +429,8 @@ const FinanceManagement: React.FC<Props> = ({
         <button
           onClick={() => setFilter("all")}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === "all"
-              ? "bg-[#00aa85] text-white"
-              : "bg-[#1e2d3d] text-gray-400 hover:text-white"
+            ? "bg-[#00aa85] text-white"
+            : "bg-[#1e2d3d] text-gray-400 hover:text-white"
             }`}
           style={{ fontFamily: "Alexandria, sans-serif" }}
         >
@@ -433,8 +439,8 @@ const FinanceManagement: React.FC<Props> = ({
         <button
           onClick={() => setFilter("pending")}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === "pending"
-              ? "bg-[#00aa85] text-white"
-              : "bg-[#1e2d3d] text-gray-400 hover:text-white"
+            ? "bg-[#00aa85] text-white"
+            : "bg-[#1e2d3d] text-gray-400 hover:text-white"
             }`}
           style={{ fontFamily: "Alexandria, sans-serif" }}
         >
@@ -443,8 +449,8 @@ const FinanceManagement: React.FC<Props> = ({
         <button
           onClick={() => setFilter("approved")}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === "approved"
-              ? "bg-[#00aa85] text-white"
-              : "bg-[#1e2d3d] text-gray-400 hover:text-white"
+            ? "bg-[#00aa85] text-white"
+            : "bg-[#1e2d3d] text-gray-400 hover:text-white"
             }`}
           style={{ fontFamily: "Alexandria, sans-serif" }}
         >
@@ -922,8 +928,9 @@ const FinanceManagement: React.FC<Props> = ({
           request={selected}
           lastExchangeRate={lastExchangeRate}
           nsPaidBills={nsPaidBills ?? undefined}
+          nsPoStatus={nsPoStatus ?? undefined}
           onConfirm={handleMarkPaid}
-          onCancel={() => { setPayTarget(null); setNsPaidBills(null); }}
+          onCancel={() => { setPayTarget(null); setNsPaidBills(null); setNsPoStatus(null); }}
         />
       )}
       {estimatedDateTarget && selected && (
@@ -962,9 +969,10 @@ const FinanceManagement: React.FC<Props> = ({
           requests={selectedRequests}
           lastExchangeRate={lastExchangeRate}
           nsPaidBillsMap={nsPaidBillsMap ?? undefined}
+          nsPoStatusMap={nsPoStatusMap ?? undefined}
           onConfirm={() => { }}
           onConfirmBulk={handleBulkMarkPaidConfirm}
-          onCancel={() => { setIsBulkPaying(false); setNsPaidBillsMap(null); }}
+          onCancel={() => { setIsBulkPaying(false); setNsPaidBillsMap(null); setNsPoStatusMap(null); }}
         />
       )}
     </div>
