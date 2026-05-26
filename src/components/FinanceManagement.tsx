@@ -55,6 +55,8 @@ const FinanceManagement: React.FC<Props> = ({
   const [nsPoStatus, setNsPoStatus] = useState<string | null>(null);
   const [nsProjectClient, setNsProjectClient] = useState<string | null>(null);
   const [nsInvoiceLink, setNsInvoiceLink] = useState<string | null>(null);
+  const [nsClientMap, setNsClientMap] = useState<Record<string, string> | null>(null);
+  const [nsInvoiceLinkMap, setNsInvoiceLinkMap] = useState<Record<string, string> | null>(null);
   // For bulk: track which requests were blocked
   const [nsBulkBlocked, setNsBulkBlocked] = useState<string[]>([]);
   const [nsPaidBillsMap, setNsPaidBillsMap] = useState<Record<string, NSBill[]> | null>(null);
@@ -244,12 +246,19 @@ const FinanceManagement: React.FC<Props> = ({
     const allPoStatusMap: Record<string, string> = {};
 
     try {
+      const allClientMap: Record<string, string> = {};
+      const allInvoiceLinkMap: Record<string, string> = {};
+
       for (const req of selectedRequests) {
         if (!req.nsOcInternalId) {
           blocked.push(req.id);
           continue;
         }
-        const data = await fetchBillsByOC(req.nsOcInternalId);
+        const [data, proj, invLink] = await Promise.all([
+          fetchBillsByOC(req.nsOcInternalId),
+          req.nsProjectId ? fetchProjectById(req.nsProjectId) : Promise.resolve(null),
+          req.poNumber ? fetchInvoiceLinkByOC(req.poNumber) : Promise.resolve(null),
+        ]);
         const paidBills = data.bills.filter((b) => b.is_paid);
         if (paidBills.length === 0) {
           blocked.push(req.id);
@@ -257,6 +266,8 @@ const FinanceManagement: React.FC<Props> = ({
           eligible.push(req);
           allPaidBillsMap[req.id] = paidBills;
           if (data.po_status) allPoStatusMap[req.id] = data.po_status;
+          if (proj?.customer?.name) allClientMap[req.id] = proj.customer.name;
+          if (invLink?.drive_folder_url) allInvoiceLinkMap[req.id] = invLink.drive_folder_url;
         }
       }
 
@@ -269,6 +280,8 @@ const FinanceManagement: React.FC<Props> = ({
         );
       } else {
         setNsPaidBillsMap(allPaidBillsMap);
+        setNsClientMap(allClientMap);
+        setNsInvoiceLinkMap(allInvoiceLinkMap);
         // Filter selectedIds to only eligible, then open bulk payment modal
         setSelectedIds(eligible.map((r) => r.id));
         setIsBulkPaying(true);
@@ -984,9 +997,11 @@ const FinanceManagement: React.FC<Props> = ({
           requests={selectedRequests}
           lastExchangeRate={lastExchangeRate}
           nsPaidBillsMap={nsPaidBillsMap ?? undefined}
+          nsClientMap={nsClientMap ?? undefined}
+          nsInvoiceLinkMap={nsInvoiceLinkMap ?? undefined}
           onConfirm={() => { }}
           onConfirmBulk={handleBulkMarkPaidConfirm}
-          onCancel={() => { setIsBulkPaying(false); setNsPaidBillsMap(null); }}
+          onCancel={() => { setIsBulkPaying(false); setNsPaidBillsMap(null); setNsClientMap(null); setNsInvoiceLinkMap(null); }}
         />
       )}
     </div>

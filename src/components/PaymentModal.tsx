@@ -11,6 +11,8 @@ interface Props {
   nsPoStatus?: string;
   nsProjectClient?: string;
   nsInvoiceLink?: string;
+  nsClientMap?: Record<string, string>;
+  nsInvoiceLinkMap?: Record<string, string>;
   onConfirm: (id: string, paymentData: PaymentData) => void;
   onConfirmBulk?: (data: { id: string; paymentData: PaymentData }[]) => void;
   onCancel: () => void;
@@ -74,6 +76,8 @@ const PaymentModal: React.FC<Props> = ({
   nsPoStatus,
   nsProjectClient,
   nsInvoiceLink,
+  nsClientMap,
+  nsInvoiceLinkMap,
   onConfirm,
   onConfirmBulk,
   onCancel,
@@ -146,6 +150,18 @@ const PaymentModal: React.FC<Props> = ({
       setIndividualInvoices((prev) => ({ ...prev, ...prefilledInvoices }));
     }
   }, [isBulk, nsPaidBillsMap, requests]);
+
+  useEffect(() => {
+    if (isBulk && nsClientMap) {
+      setIndividualClients((prev) => ({ ...prev, ...nsClientMap }));
+    }
+  }, [isBulk, nsClientMap]);
+
+  useEffect(() => {
+    if (isBulk && nsInvoiceLinkMap) {
+      setIndividualInvoiceLinks((prev) => ({ ...prev, ...nsInvoiceLinkMap }));
+    }
+  }, [isBulk, nsInvoiceLinkMap]);
 
 
 
