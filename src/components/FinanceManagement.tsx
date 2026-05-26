@@ -56,7 +56,6 @@ const FinanceManagement: React.FC<Props> = ({
   // For bulk: track which requests were blocked
   const [nsBulkBlocked, setNsBulkBlocked] = useState<string[]>([]);
   const [nsPaidBillsMap, setNsPaidBillsMap] = useState<Record<string, NSBill[]> | null>(null);
-  const [nsPoStatusMap, setNsPoStatusMap] = useState<Record<string, string> | null>(null);
 
   // Editable finance fields for the selected request
   const [finObs, setFinObs] = useState("");
@@ -255,7 +254,6 @@ const FinanceManagement: React.FC<Props> = ({
         );
       } else {
         setNsPaidBillsMap(allPaidBillsMap);
-        setNsPoStatusMap(Object.keys(allPoStatusMap).length > 0 ? allPoStatusMap : null);
         // Filter selectedIds to only eligible, then open bulk payment modal
         setSelectedIds(eligible.map((r) => r.id));
         setIsBulkPaying(true);
@@ -969,10 +967,9 @@ const FinanceManagement: React.FC<Props> = ({
           requests={selectedRequests}
           lastExchangeRate={lastExchangeRate}
           nsPaidBillsMap={nsPaidBillsMap ?? undefined}
-          nsPoStatusMap={nsPoStatusMap ?? undefined}
           onConfirm={() => { }}
           onConfirmBulk={handleBulkMarkPaidConfirm}
-          onCancel={() => { setIsBulkPaying(false); setNsPaidBillsMap(null); setNsPoStatusMap(null); }}
+          onCancel={() => { setIsBulkPaying(false); setNsPaidBillsMap(null); }}
         />
       )}
     </div>

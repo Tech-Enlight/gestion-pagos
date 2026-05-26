@@ -10,7 +10,6 @@ interface Props {
   nsPaidBills?: NSBill[];
   nsPaidBillsMap?: Record<string, NSBill[]>;
   nsPoStatus?: string;
-  nsPoStatusMap?: Record<string, string>;
   onConfirm: (id: string, paymentData: PaymentData) => void;
   onConfirmBulk?: (data: { id: string; paymentData: PaymentData }[]) => void;
   onCancel: () => void;
@@ -72,7 +71,6 @@ const PaymentModal: React.FC<Props> = ({
   nsPaidBills,
   nsPaidBillsMap,
   nsPoStatus,
-  nsPoStatusMap,
   onConfirm,
   onConfirmBulk,
   onCancel,
