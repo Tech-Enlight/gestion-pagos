@@ -15,7 +15,7 @@ import PaymentModal from "./PaymentModal";
 import { STATUS } from "../data/mockData";
 import type { Request, FinanceNote, ExchangeRate } from "../data/mockData";
 import type { PaymentData } from "./PaymentModal";
-import { fetchBillsByOC } from "../services/sheets";
+import { fetchBillsByOC, fetchProjectById, fetchInvoiceLinkByOC } from "../services/sheets";
 import type { NSBill } from "../services/sheets";
 
 interface Props {
@@ -53,6 +53,8 @@ const FinanceManagement: React.FC<Props> = ({
   const [nsBlockMessage, setNsBlockMessage] = useState<string | null>(null);
   const [nsPaidBills, setNsPaidBills] = useState<NSBill[] | null>(null);
   const [nsPoStatus, setNsPoStatus] = useState<string | null>(null);
+  const [nsProjectClient, setNsProjectClient] = useState<string | null>(null);
+  const [nsInvoiceLink, setNsInvoiceLink] = useState<string | null>(null);
   // For bulk: track which requests were blocked
   const [nsBulkBlocked, setNsBulkBlocked] = useState<string[]>([]);
   const [nsPaidBillsMap, setNsPaidBillsMap] = useState<Record<string, NSBill[]> | null>(null);
@@ -196,6 +198,9 @@ const FinanceManagement: React.FC<Props> = ({
     }
     setNsLoading(true);
     setNsBlockMessage(null);
+    setNsPoStatus(null);
+    setNsProjectClient(null);
+    setNsInvoiceLink(null);
     try {
       const data = await fetchBillsByOC(req.nsOcInternalId);
       const paidBills = data.bills.filter((b) => b.is_paid);
@@ -206,6 +211,16 @@ const FinanceManagement: React.FC<Props> = ({
       } else {
         setNsPaidBills(paidBills);
         setNsPoStatus(data.po_status ?? null);
+        if (req.nsProjectId) {
+          fetchProjectById(req.nsProjectId).then(proj => {
+            setNsProjectClient(proj?.customer?.name ?? null);
+          });
+        }
+        if (req.poNumber) {
+          fetchInvoiceLinkByOC(req.poNumber).then(result => {
+            setNsInvoiceLink(result?.drive_folder_url ?? null);
+          });
+        }
         setPayTarget(req.id);
       }
     } catch (err) {
@@ -927,8 +942,10 @@ const FinanceManagement: React.FC<Props> = ({
           lastExchangeRate={lastExchangeRate}
           nsPaidBills={nsPaidBills ?? undefined}
           nsPoStatus={nsPoStatus ?? undefined}
+          nsProjectClient={nsProjectClient ?? undefined}
+          nsInvoiceLink={nsInvoiceLink ?? undefined}
           onConfirm={handleMarkPaid}
-          onCancel={() => { setPayTarget(null); setNsPaidBills(null); setNsPoStatus(null); }}
+          onCancel={() => { setPayTarget(null); setNsPaidBills(null); setNsPoStatus(null); setNsProjectClient(null); setNsInvoiceLink(null); }}
         />
       )}
       {estimatedDateTarget && selected && (
