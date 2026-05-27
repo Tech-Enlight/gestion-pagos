@@ -7,7 +7,10 @@ import {
   Save,
   User,
   Clock,
-  Loader2
+  Loader2,
+  DollarSign,
+  AlertTriangle,
+  X
 } from "lucide-react";
 import StatusPill from "./StatusPill";
 import RejectModal from "./RejectModal";
@@ -440,7 +443,7 @@ const FinanceManagement: React.FC<Props> = ({
             className="px-3 py-1.5 rounded-lg border border-gray-700 text-xs text-gray-400 flex items-center gap-1.5"
             style={{ backgroundColor: "#1e2d3d" }}
           >
-            <span className="text-[#00aa85]">💵</span>
+            <DollarSign size={12} className="text-[#00aa85]" />
             <span>T/C Banxico:</span>
             <strong className="text-white">
               ${lastRate.rate.toFixed(4)}
@@ -496,7 +499,7 @@ const FinanceManagement: React.FC<Props> = ({
             </div>
             {isMixed && (
               <span className="text-yellow-400 text-[10px] font-medium">
-                ⚠ Selección mixta: Filtra por pestaña para ver acciones específicas (Aprobación/Pago).
+                <AlertTriangle size={11} className="inline mr-1" /> Selección mixta: Filtra por pestaña para ver acciones específicas (Aprobación/Pago).
               </span>
             )}
           </div>
@@ -671,9 +674,9 @@ const FinanceManagement: React.FC<Props> = ({
             </div>
             <button
               onClick={() => handleSelect(null)}
-              className="text-gray-400 hover:text-white text-lg leading-none"
+              className="btn-close" aria-label="Cerrar"
             >
-              ×
+              <X size={18} />
             </button>
           </div>
 
@@ -927,9 +930,9 @@ const FinanceManagement: React.FC<Props> = ({
           </div>
           <button
             onClick={() => { setNsBlockMessage(null); setNsBulkBlocked([]); }}
-            className="text-gray-500 hover:text-white text-lg leading-none"
+            className="btn-close" aria-label="Cerrar"
           >
-            ×
+            <X size={18} />
           </button>
         </div>
       )}

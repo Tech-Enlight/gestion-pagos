@@ -28,11 +28,7 @@ export const LoginScreen: React.FC = () => {
           boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
         }}
       >
-        <img
-          src="https://lh3.googleusercontent.com/d/1LHd3XOhmJEbfkTnEyPgeVhnGzw1Gol9g"
-          alt="Enlight logo"
-          style={{ width: 190, marginBottom: 24 }}
-        />
+        <img src="/enlight/logo-white.svg" alt="Enlight" style={{ height: 32, marginBottom: 28 }} />
         <h1
           style={{
             color: "#fff",
@@ -57,7 +53,7 @@ export const LoginScreen: React.FC = () => {
         <div style={{ display: "inline-flex", justifyContent: "center" }}>
           <GoogleLogin
             onSuccess={login}
-            onError={() => {}}
+            onError={() => { }}
             theme="filled_black"
             size="large"
             shape="pill"

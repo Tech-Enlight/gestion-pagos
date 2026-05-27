@@ -1,42 +1,27 @@
 import React, { useMemo } from "react";
 import {
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
-import { 
-  Wallet, 
-  FileText, 
-  CheckCircle2, 
-  Clock, 
-  XCircle, 
-  Activity 
+  Shield,
+  Wallet,
+  CheckCircle2,
+  AlertTriangle,
+  Clock,
+  TrendingUp,
 } from "lucide-react";
-import KPICard from "./KPICard";
-import ExchangeChart from "./ExchangeChart";
-import RecentRequestsTable from "./RecentRequestsTable";
 import { STATUS } from "../data/mockData";
 import type { Request, ExchangeRate } from "../data/mockData";
+import { useAuth } from "../context/AuthContext";
+import ExchangeChart from "../components/ExchangeChart";
+import DashboardHero from "../components/dashboard/DashboardHero";
+import HeroKPI from "../components/dashboard/HeroKPI";
+import PipelineFunnel, { STATUS_HEX } from "../components/dashboard/PipelineFunnel";
+import PriorityQueue from "../components/dashboard/PriorityQueue";
+import ActivityFeed from "../components/dashboard/ActivityFeed";
 
 interface DashboardProps {
   requests: Request[];
   lastExchangeRate: ExchangeRate;
+  onNavigate: (view: string) => void;
 }
-
-const PIE_COLORS: Record<string, string> = {
-  Draft: "#6b7280",
-  Autorización: "#eab308",
-  "Pending Fin": "#3b82f6",
-  Approved: "#22c55e",
-  Rejected: "#ef4444",
-  Paid: "#a855f7",
-};
 
 const fmtMXN = (n: number) =>
   `$${n.toLocaleString("es-MX", {
@@ -44,72 +29,76 @@ const fmtMXN = (n: number) =>
     maximumFractionDigits: 0,
   })}`;
 
-const Dashboard: React.FC<DashboardProps> = ({ requests, lastExchangeRate }) => {
-  const lastRate = lastExchangeRate.rate;
+const fmtDate = (iso: string) => {
+  const d = new Date(iso);
+  return d.toLocaleDateString("es-MX", { day: "2-digit", month: "short" });
+};
 
-  const toMXN = (r: Request) =>
-    r.currency === "USD" ? r.amount * lastRate : r.amount;
+/* --- Small compact KPI for the secondary strip ------------------ */
+interface SecondaryKPIProps {
+  label: string;
+  value: string;
+  icon: React.ReactNode;
+  color?: string;
+}
+const SecondaryKPI: React.FC<SecondaryKPIProps> = ({
+  label,
+  value,
+  icon,
+  color = "var(--enl-jade)",
+}) => (
+  <div
+    className="flex items-center gap-3.5 rounded-lg"
+    style={{
+      padding: "14px 16px",
+      background: "rgba(18,25,38,0.4)",
+      border: "1px solid var(--border-on-dark)",
+    }}
+  >
+    <div
+      className="flex items-center justify-center rounded-lg flex-shrink-0"
+      style={{
+        width: 36,
+        height: 36,
+        background: `color-mix(in oklab, ${color} 14%, transparent)`,
+        color,
+      }}
+    >
+      {icon}
+    </div>
+    <div className="min-w-0 flex-1">
+      <p
+        className="m-0 text-[10.5px] font-medium uppercase"
+        style={{
+          fontFamily: "var(--font-secondary)",
+          letterSpacing: "0.14em",
+          color: "rgba(255,255,255,0.5)",
+        }}
+      >
+        {label}
+      </p>
+      <p
+        className="m-0 mt-1 text-white font-semibold"
+        style={{
+          fontFamily: "var(--font-primary)",
+          fontSize: 18,
+          letterSpacing: "-0.01em",
+        }}
+      >
+        {value}
+      </p>
+    </div>
+  </div>
+);
 
-  const kpis = useMemo(() => {
-    const pending = requests.filter(
-      (r) => r.status === STATUS.PENDING_FIN || r.status === STATUS.APPROVED
-    );
-    const totalPending = pending.reduce((s, r) => s + toMXN(r), 0);
-
-    const active = requests.filter(
-      (r) => r.status !== STATUS.PAID && r.status !== STATUS.REJECTED
-    ).length;
-
-    const paid = requests.filter((r) => r.status === STATUS.PAID);
-    const totalPaid = paid.reduce((s, r) => s + (r.amountMXN ?? toMXN(r)), 0);
-
-    const pendingAuth = requests.filter(
-      (r) => r.status === STATUS.AUTORIZACION
-    ).length;
-
-    const total = requests.length;
-    const rejected = requests.filter(
-      (r) => r.status === STATUS.REJECTED
-    ).length;
-    const rejectRate = total > 0 ? ((rejected / total) * 100).toFixed(1) : "0";
-
-    let avgDays = 0;
-    const completed = requests.filter(
-      (r) =>
-        r.status === STATUS.PAID &&
-        r.statusHistory &&
-        r.statusHistory.length >= 2
-    );
-    if (completed.length > 0) {
-      const totalMs = completed.reduce((sum, r) => {
-        const first = new Date(r.statusHistory[0].timestamp).getTime();
-        const last = new Date(
-          r.statusHistory[r.statusHistory.length - 1].timestamp
-        ).getTime();
-        return sum + (last - first);
-      }, 0);
-      avgDays = totalMs / completed.length / (1000 * 60 * 60 * 24);
-    }
-
-    return {
-      totalPending,
-      active,
-      totalPaid,
-      pendingAuth,
-      rejectRate,
-      avgDays,
-    };
-  }, [requests]);
-
-  const statusData = useMemo(() => {
-    const map: Record<string, number> = {};
-    requests.forEach((r) => {
-      map[r.status] = (map[r.status] || 0) + 1;
-    });
-    return Object.entries(map).map(([name, value]) => ({ name, value }));
-  }, [requests]);
-
-  const deptData = useMemo(() => {
+/* --- Department breakdown -------------------------------------- */
+interface DeptBreakdownProps {
+  requests: Request[];
+  rate: number;
+}
+const DeptBreakdown: React.FC<DeptBreakdownProps> = ({ requests, rate }) => {
+  const toMXN = (r: Request) => (r.currency === "USD" ? r.amount * rate : r.amount);
+  const data = useMemo(() => {
     const map: Record<string, number> = {};
     requests.forEach((r) => {
       map[r.department] = (map[r.department] || 0) + toMXN(r);
@@ -117,236 +106,311 @@ const Dashboard: React.FC<DashboardProps> = ({ requests, lastExchangeRate }) => 
     return Object.entries(map)
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requests, rate]);
+  const max = Math.max(...data.map((d) => d.value), 1);
+
+  return (
+    <div
+      className="rounded-xl"
+      style={{
+        background: "var(--bg-card-dark, #1e2d3d)",
+        border: "1px solid var(--border-on-dark)",
+      }}
+    >
+      <div style={{ padding: "16px 20px 8px" }}>
+        <h3
+          className="m-0 text-white font-semibold"
+          style={{ fontFamily: "var(--font-primary)", fontSize: 16 }}
+        >
+          Top departamentos
+        </h3>
+        <p
+          className="m-0 mt-0.5 text-xs"
+          style={{ color: "rgba(255,255,255,0.5)" }}
+        >
+          Gasto acumulado en MXN equivalente
+        </p>
+      </div>
+      <div style={{ padding: "16px 20px 20px" }}>
+        {data.map((d, i) => {
+          const pct = (d.value / max) * 100;
+          const isLast = i === data.length - 1;
+          return (
+            <div key={d.name} style={{ marginBottom: isLast ? 0 : 16 }}>
+              <div className="flex justify-between mb-1.5">
+                <span className="text-white text-[13.5px] font-medium">
+                  {d.name}
+                </span>
+                <span
+                  className="text-[13px] tabular-nums"
+                  style={{ color: "rgba(255,255,255,0.65)" }}
+                >
+                  {fmtMXN(d.value)}
+                </span>
+              </div>
+              <div
+                className="overflow-hidden"
+                style={{
+                  height: 4,
+                  background: "rgba(255,255,255,0.05)",
+                  borderRadius: 999,
+                }}
+              >
+                <div
+                  style={{
+                    height: "100%",
+                    width: `${pct}%`,
+                    background:
+                      i === 0
+                        ? "var(--enl-jade)"
+                        : i === 1
+                          ? "var(--enl-cerceta)"
+                          : "rgba(255,255,255,0.25)",
+                    borderRadius: 999,
+                    transition: "width 600ms cubic-bezier(.4,0,.2,1)",
+                  }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+/* --- Dashboard ------------------------------------------------- */
+const Dashboard: React.FC<DashboardProps> = ({
+  requests,
+  lastExchangeRate,
+  onNavigate,
+}) => {
+  const { user } = useAuth();
+  const firstName = user?.name?.split(" ")[0] || "";
+  const rate = lastExchangeRate.rate;
+  const toMXN = (r: Request) => (r.currency === "USD" ? r.amount * rate : r.amount);
+
+  const m = useMemo(() => {
+    const pending = requests.filter(
+      (r) => r.status === STATUS.PENDING_FIN || r.status === STATUS.APPROVED
+    );
+    const totalPending = pending.reduce((s, r) => s + toMXN(r), 0);
+
+    const paid = requests.filter((r) => r.status === STATUS.PAID);
+    const totalPaid = paid.reduce(
+      (s, r) => s + (r.amountMXN ?? toMXN(r)),
+      0
+    );
+
+    const pendingAuth = requests.filter(
+      (r) => r.status === STATUS.AUTORIZACION
+    ).length;
+    const pendingFin = requests.filter(
+      (r) => r.status === STATUS.PENDING_FIN
+    ).length;
+    const approved = requests.filter((r) => r.status === STATUS.APPROVED).length;
+    const total = requests.length;
+    const rejected = requests.filter((r) => r.status === STATUS.REJECTED).length;
+    const rejectRate =
+      total > 0 ? ((rejected / total) * 100).toFixed(1) : "0";
+
+    return {
+      totalPending,
+      totalPaid,
+      pendingAuth,
+      pendingFin,
+      approved,
+      rejectRate,
+      total,
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requests, rate]);
+
+  // Tiny mock sparkline series. Replace with real time-series when available.
+  const queueTrend = useMemo(() => {
+    // Conteo de pendientes en cada uno de los últimos 12 días.
+    const days = Array.from({ length: 12 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (11 - i));
+      return d.toISOString().slice(0, 10);
+    });
+    return days.map((day) =>
+      requests.filter(
+        (r) =>
+          r.date <= day &&
+          (r.status === STATUS.PENDING_FIN || r.status === STATUS.AUTORIZACION)
+      ).length
+    );
   }, [requests]);
 
-  const recent = useMemo(
-    () =>
-      [...requests].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5),
-    [requests]
-  );
+  // Mock pagados: monto acumulado en MXN por mes durante los últimos 12 meses.
+  const paidTrend = useMemo(() => {
+    const months = Array.from({ length: 12 }, (_, i) => {
+      const d = new Date();
+      d.setMonth(d.getMonth() - (11 - i));
+      return d.toISOString().slice(0, 7); // "YYYY-MM"
+    });
+    return months.map((month) =>
+      requests
+        .filter(
+          (r) =>
+            r.status === STATUS.PAID &&
+            r.date.startsWith(month)
+        )
+        .reduce((s, r) => s + (r.amountMXN ?? toMXN(r)), 0)
+    );
+  }, [requests, rate]);
 
-  const font = "Alexandria, sans-serif";
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2
-          className="text-white text-2xl font-bold mb-1"
-          style={{ fontFamily: font }}
-        >
-          Dashboard
-        </h2>
-        <p className="text-gray-400 text-sm">
-          Resumen ejecutivo · {requests.length} solicitudes totales
-        </p>
+      <DashboardHero
+        userFirstName={firstName || "Juan"}
+        pendingAuth={m.pendingAuth}
+        pendingFin={m.pendingFin}
+        approved={m.approved}
+        onGoToApprovals={() => onNavigate("aprobaciones")}
+        onNewRequest={() => onNavigate("nueva-solicitud")}
+      />
+
+      {/* Hero KPIs */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <HeroKPI
+          label="Por procesar"
+          value={fmtMXN(m.totalPending)}
+          sub={`${m.pendingFin + m.approved} solicitudes · al T/C actual`}
+          accent="var(--enl-jade)"
+          sparkData={queueTrend}
+          trend={
+            <>
+              <TrendingUp size={12} color="var(--enl-jade)" />
+              <span>
+                <strong className="text-white">+12%</strong> vs. semana anterior
+              </span>
+            </>
+          }
+        />
+        <HeroKPI
+          label="Pagado este mes"
+          value={fmtMXN(m.totalPaid)}
+          sub="Acumulado a la fecha · MXN"
+          accent="#a855f7"
+          sparkData={paidTrend}
+          trend={
+            <>
+              <TrendingUp size={12} color="#a855f7" />
+              <span>
+                <strong className="text-white">+22%</strong> vs. mes anterior
+              </span>
+            </>
+          }
+        />
+        <HeroKPI
+          label="T/C Banxico"
+          value={`$${rate.toFixed(4)}`}
+          sub={`Cierre ${fmtDate(lastExchangeRate.date)} · 1 USD → MXN`}
+          accent="var(--enl-cerceta)"
+          trend={
+            <>
+              <Clock size={12} color="var(--enl-cerceta)" />
+              <span>Último cierre disponible</span>
+            </>
+          }
+        />
       </div>
 
-      {/* KPI Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <KPICard
-          label="Total Pendiente"
-          value={`${fmtMXN(kpis.totalPending)}`}
-          icon={<Wallet size={20} />}
-          color="#00aa85"
+      {/* Secondary KPI strip */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <SecondaryKPI
+          label="En autorización"
+          value={String(m.pendingAuth)}
+          icon={<Shield size={16} />}
+          color={STATUS_HEX["Autorización"]}
         />
-        <KPICard
-          label="Solicitudes Activas"
-          value={String(kpis.active)}
-          icon={<FileText size={20} />}
-          color="#3d7d80"
+        <SecondaryKPI
+          label="Revisión finanzas"
+          value={String(m.pendingFin)}
+          icon={<Wallet size={16} />}
+          color={STATUS_HEX["Pending Fin"]}
         />
-        <KPICard
-          label="Monto Pagado"
-          value={`${fmtMXN(kpis.totalPaid)}`}
-          icon={<CheckCircle2 size={20} />}
-          color="#a855f7"
+        <SecondaryKPI
+          label="Listas para pagar"
+          value={String(m.approved)}
+          icon={<CheckCircle2 size={16} />}
+          color={STATUS_HEX.Approved}
         />
-        <KPICard
-          label="Pend. Autorización"
-          value={String(kpis.pendingAuth)}
-          icon={<Clock size={20} />}
-          color="#eab308"
-        />
-        <KPICard
-          label="Tasa de Rechazo"
-          value={`${kpis.rejectRate}%`}
-          icon={<XCircle size={20} />}
-          color="#ef4444"
-        />
-        <KPICard
-          label="Ciclo Promedio"
-          value={kpis.avgDays > 0 ? `${kpis.avgDays.toFixed(1)} días` : "—"}
-          icon={<Activity size={20} />}
-          color="#3b82f6"
+        <SecondaryKPI
+          label="Tasa de rechazo"
+          value={`${m.rejectRate}%`}
+          icon={<AlertTriangle size={16} />}
+          color={STATUS_HEX.Rejected}
         />
       </div>
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Status donut */}
+      {/* Priority queue + Funnel */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-4">
+        <PriorityQueue requests={requests} onView={onNavigate} />
         <div
-          className="rounded-xl p-6 shadow-2xl border border-gray-700/50 flex flex-col"
+          className="rounded-xl"
           style={{
-            backgroundColor: "#1e2d3d",
-            background: "linear-gradient(145deg, #1e2d3d 0%, #16222c 100%)",
+            background: "var(--bg-card-dark, #1e2d3d)",
+            border: "1px solid var(--border-on-dark)",
           }}
         >
-          <div className="mb-4">
-            <h3
-              className="text-white text-lg font-bold"
-              style={{ fontFamily: font }}
-            >
-              Distribución por Estado
-            </h3>
-            <p className="text-gray-500 text-xs mt-0.5">
-              Estado actual de la cola de pagos
-            </p>
-          </div>
-
-          <div className="flex-1 flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="relative w-full max-w-[220px] aspect-square flex items-center justify-center">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={statusData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={68}
-                    outerRadius={88}
-                    paddingAngle={6}
-                    cornerRadius={8}
-                    dataKey="value"
-                    stroke="none"
-                    animationBegin={0}
-                    animationDuration={1500}
-                  >
-                    {statusData.map((entry) => (
-                      <Cell
-                        key={entry.name}
-                        fill={PIE_COLORS[entry.name] || "#6b7280"}
-                        className="outline-none"
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#1e2d3d",
-                      border: "1px solid #3d7d80",
-                      borderRadius: 12,
-                      boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.5)",
-                    }}
-                    itemStyle={{ fontSize: "12px", fontFamily: font }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-              {/* Center KPI */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span className="text-gray-500 text-[10px] uppercase tracking-widest font-semibold">
-                  Total
-                </span>
-                <span
-                  className="text-white text-2xl font-bold"
-                  style={{ fontFamily: font }}
-                >
-                  {requests.length}
-                </span>
-              </div>
-            </div>
-
-            {/* Premium Legend */}
-            <div className="flex-1 w-full grid grid-cols-2 gap-x-6 gap-y-3">
-              {statusData.map((s) => {
-                const percentage = ((s.value / requests.length) * 100).toFixed(0);
-                return (
-                  <div
-                    key={s.name}
-                    className="flex items-center justify-between group transition-all"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div
-                        className="w-1.5 h-4 rounded-full"
-                        style={{
-                          backgroundColor: PIE_COLORS[s.name] || "#6b7280",
-                        }}
-                      />
-                      <div className="flex flex-col">
-                        <span className="text-gray-300 text-xs font-medium group-hover:text-white transition-colors">
-                          {s.name}
-                        </span>
-                        <span className="text-gray-500 text-[10px]">
-                          {s.value} unidad{s.value !== 1 ? "es" : ""}
-                        </span>
-                      </div>
-                    </div>
-                    <span className="text-gray-400 text-xs font-semibold bg-gray-800/50 px-1.5 py-0.5 rounded">
-                      {percentage}%
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* Department bar chart */}
-        <div
-          className="rounded-xl p-5 shadow-lg border border-gray-700"
-          style={{ backgroundColor: "#1e2d3d" }}
-        >
-          <h3
-            className="text-white text-lg font-semibold mb-4"
-            style={{ fontFamily: font }}
+          <div
+            className="flex items-start justify-between"
+            style={{ padding: "16px 20px 8px" }}
           >
-            Monto por Departamento (MXN)
-          </h3>
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart
-              data={deptData}
-              layout="vertical"
-              margin={{ top: 0, right: 20, left: 10, bottom: 0 }}
+            <div>
+              <h3
+                className="m-0 text-white font-semibold"
+                style={{ fontFamily: "var(--font-primary)", fontSize: 16 }}
+              >
+                Pipeline
+              </h3>
+              <p
+                className="m-0 mt-0.5 text-xs"
+                style={{ color: "rgba(255,255,255,0.5)" }}
+              >
+                Cómo avanzan las solicitudes
+              </p>
+            </div>
+            <div
+              className="text-[10.5px] font-semibold uppercase"
+              style={{
+                fontFamily: "var(--font-secondary)",
+                letterSpacing: "0.14em",
+                color: "rgba(255,255,255,0.5)",
+              }}
             >
-              <XAxis
-                type="number"
-                tick={{ fill: "#9ca3af", fontSize: 11 }}
-                tickFormatter={(v: number) => fmtMXN(v)}
-                tickLine={false}
-              />
-              <YAxis
-                type="category"
-                dataKey="name"
-                tick={{ fill: "#9ca3af", fontSize: 11 }}
-                tickLine={false}
-                width={90}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "#293C47",
-                  border: "1px solid #3d7d80",
-                  borderRadius: 8,
-                  color: "#fff",
-                  fontFamily: font,
-                  fontSize: 12,
-                }}
-                formatter={(value: number) => [fmtMXN(value), "Monto"]}
-              />
-              <Bar dataKey="value" fill="#00aa85" radius={[0, 4, 4, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+              {m.total} totales
+            </div>
+          </div>
+          <div style={{ padding: "12px 20px 20px" }}>
+            <PipelineFunnel
+              requests={requests}
+              onStageClick={(status) => {
+                if (status === STATUS.AUTORIZACION) onNavigate("aprobaciones");
+                else if (
+                  status === STATUS.PENDING_FIN ||
+                  status === STATUS.APPROVED
+                )
+                  onNavigate("finanzas");
+                else onNavigate("explorador");
+              }}
+            />
+          </div>
         </div>
       </div>
 
-      {/* Exchange Chart */}
+      {/* Exchange chart */}
       <ExchangeChart />
 
-      {/* Recent Requests */}
-      <div>
-        <h3
-          className="text-white text-lg font-semibold mb-3"
-          style={{ fontFamily: font }}
-        >
-          Solicitudes Recientes
-        </h3>
-        <RecentRequestsTable requests={recent} />
+      {/* Activity + Departments */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <ActivityFeed requests={requests} />
+        <DeptBreakdown requests={requests} rate={rate} />
       </div>
     </div>
   );

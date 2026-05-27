@@ -83,7 +83,11 @@ function AppContent() {
       <main style={{ flex: 1, overflow: "auto", padding: "2rem" }}>
         <RoleGate allowedRoles={["admin", "superadmin"]}>
           {currentView === "dashboard" && (
-            <Dashboard requests={requests} lastExchangeRate={lastExchangeRate} />
+            <Dashboard
+              requests={requests}
+              lastExchangeRate={lastExchangeRate}
+              onNavigate={setCurrentView}
+            />
           )}
         </RoleGate>
 

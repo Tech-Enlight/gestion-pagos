@@ -3,6 +3,7 @@ import StatusPill from "./StatusPill";
 import WorkflowTracker from "./WorkflowTracker";
 import { STATUS } from "../data/mockData";
 import type { Request } from "../data/mockData";
+import { Banknote } from "lucide-react";
 
 interface Props {
   requests: Request[];
@@ -146,11 +147,10 @@ const RequestExplorer: React.FC<Props> = ({ requests, onUpdateRequest }) => {
                   <tr
                     key={r.id}
                     onClick={() => handleSelect(r)}
-                    className={`border-t border-gray-700 cursor-pointer transition-colors ${
-                      selected?.id === r.id
+                    className={`border-t border-gray-700 cursor-pointer transition-colors ${selected?.id === r.id
                         ? "bg-[#243545]"
                         : "hover:bg-[#243545]"
-                    }`}
+                      }`}
                   >
                     <td className="px-4 py-3 text-[#00aa85] font-medium">
                       <span className="flex items-center gap-2">
@@ -308,127 +308,127 @@ const RequestExplorer: React.FC<Props> = ({ requests, onUpdateRequest }) => {
               selected.estimatedPaymentDate ||
               selected.status === "Paid" ||
               selected.status === "Approved") && (
-              <div
-                className="rounded-xl border border-gray-700 p-4 space-y-3"
-                style={{ backgroundColor: "#1e2d3d" }}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-purple-400 text-sm">💰</span>
-                  <h4
-                    className="text-purple-400 font-semibold text-sm"
-                    style={{ fontFamily: "Alexandria, sans-serif" }}
-                  >
-                    {selected.status === "Paid"
-                      ? "Datos de Pago"
-                      : "Información Financiera"}
-                  </h4>
-                </div>
+                <div
+                  className="rounded-xl border border-gray-700 p-4 space-y-3"
+                  style={{ backgroundColor: "#1e2d3d" }}
+                >
+                  <div className="flex items-center gap-2">
+                    <Banknote size={14} className="text-purple-400" />
+                    <h4
+                      className="text-purple-400 font-semibold text-sm"
+                      style={{ fontFamily: "Alexandria, sans-serif" }}
+                    >
+                      {selected.status === "Paid"
+                        ? "Datos de Pago"
+                        : "Información Financiera"}
+                    </h4>
+                  </div>
 
-                <div className="space-y-2">
-                  {selected.estimatedPaymentDate && (
-                    <DetailRow
-                      label="Fecha Est. Pago"
-                      value={selected.estimatedPaymentDate}
-                    />
-                  )}
-                  {selected.amountPaid != null && (
-                    <DetailRow
-                      label="Monto Pagado"
-                      value={`$${selected.amountPaid.toLocaleString("es-MX", {
-                        minimumFractionDigits: 2,
-                      })} ${selected.currency}`}
-                    />
-                  )}
-                  {selected.exchangeRateUsed != null && (
-                    <DetailRow
-                      label="T/C Usado"
-                      value={selected.exchangeRateUsed.toFixed(4)}
-                    />
-                  )}
-                  {selected.amountMXN != null && (
-                    <DetailRow
-                      label="Monto en MXN"
-                      value={`$${selected.amountMXN.toLocaleString("es-MX", {
-                        minimumFractionDigits: 2,
-                      })}`}
-                      highlight
-                    />
-                  )}
-                  {selected.bankName && (
-                    <DetailRow label="Banco" value={selected.bankName} />
-                  )}
-                  {selected.operationRef && (
-                    <DetailRow
-                      label="Ref. Operación"
-                      value={selected.operationRef}
-                    />
-                  )}
-                  {selected.paymentMode && (
-                    <DetailRow
-                      label="Modo de Pago"
-                      value={selected.paymentMode}
-                    />
-                  )}
-                  {selected.invoiceNumber && (
-                    <DetailRow
-                      label="N° Factura"
-                      value={selected.invoiceNumber}
-                    />
-                  )}
-                  {selected.operationType && (
-                    <DetailRow
-                      label="Tipo Operación"
-                      value={selected.operationType}
-                    />
-                  )}
-                  {selected.expenseType && (
-                    <DetailRow
-                      label="Tipo Gasto"
-                      value={selected.expenseType}
-                    />
-                  )}
-                  {selected.ocStatus && (
-                    <DetailRow label="Estatus OC" value={selected.ocStatus} />
-                  )}
-                  {selected.client && (
-                    <DetailRow label="Cliente" value={selected.client} />
-                  )}
-                  {selected.serviceDelivery && (
-                    <DetailRow
-                      label="Prestación"
-                      value={selected.serviceDelivery}
-                    />
-                  )}
-                  {selected.proposal && (
-                    <DetailRow label="Propuesta" value={selected.proposal} />
-                  )}
-                  {selected.invoiceLink && (
-                    <DetailRow
-                      label="Link Factura"
-                      value={selected.invoiceLink}
-                      isLink
-                    />
-                  )}
-                  {selected.paymentProof && (
-                    <DetailRow
-                      label="Comprobante"
-                      value={selected.paymentProof}
-                      isLink
-                    />
-                  )}
-                  {selected.financeObservations && (
-                    <div className="pt-2 border-t border-gray-700">
-                      <p className="text-gray-500 text-[10px] uppercase tracking-wider mb-1 font-semibold">
-                        Observaciones de Finanzas
-                      </p>
-                      <p className="text-gray-300 text-xs leading-relaxed">
-                        {selected.financeObservations}
-                      </p>
-                    </div>
-                  )}
+                  <div className="space-y-2">
+                    {selected.estimatedPaymentDate && (
+                      <DetailRow
+                        label="Fecha Est. Pago"
+                        value={selected.estimatedPaymentDate}
+                      />
+                    )}
+                    {selected.amountPaid != null && (
+                      <DetailRow
+                        label="Monto Pagado"
+                        value={`$${selected.amountPaid.toLocaleString("es-MX", {
+                          minimumFractionDigits: 2,
+                        })} ${selected.currency}`}
+                      />
+                    )}
+                    {selected.exchangeRateUsed != null && (
+                      <DetailRow
+                        label="T/C Usado"
+                        value={selected.exchangeRateUsed.toFixed(4)}
+                      />
+                    )}
+                    {selected.amountMXN != null && (
+                      <DetailRow
+                        label="Monto en MXN"
+                        value={`$${selected.amountMXN.toLocaleString("es-MX", {
+                          minimumFractionDigits: 2,
+                        })}`}
+                        highlight
+                      />
+                    )}
+                    {selected.bankName && (
+                      <DetailRow label="Banco" value={selected.bankName} />
+                    )}
+                    {selected.operationRef && (
+                      <DetailRow
+                        label="Ref. Operación"
+                        value={selected.operationRef}
+                      />
+                    )}
+                    {selected.paymentMode && (
+                      <DetailRow
+                        label="Modo de Pago"
+                        value={selected.paymentMode}
+                      />
+                    )}
+                    {selected.invoiceNumber && (
+                      <DetailRow
+                        label="N° Factura"
+                        value={selected.invoiceNumber}
+                      />
+                    )}
+                    {selected.operationType && (
+                      <DetailRow
+                        label="Tipo Operación"
+                        value={selected.operationType}
+                      />
+                    )}
+                    {selected.expenseType && (
+                      <DetailRow
+                        label="Tipo Gasto"
+                        value={selected.expenseType}
+                      />
+                    )}
+                    {selected.ocStatus && (
+                      <DetailRow label="Estatus OC" value={selected.ocStatus} />
+                    )}
+                    {selected.client && (
+                      <DetailRow label="Cliente" value={selected.client} />
+                    )}
+                    {selected.serviceDelivery && (
+                      <DetailRow
+                        label="Prestación"
+                        value={selected.serviceDelivery}
+                      />
+                    )}
+                    {selected.proposal && (
+                      <DetailRow label="Propuesta" value={selected.proposal} />
+                    )}
+                    {selected.invoiceLink && (
+                      <DetailRow
+                        label="Link Factura"
+                        value={selected.invoiceLink}
+                        isLink
+                      />
+                    )}
+                    {selected.paymentProof && (
+                      <DetailRow
+                        label="Comprobante"
+                        value={selected.paymentProof}
+                        isLink
+                      />
+                    )}
+                    {selected.financeObservations && (
+                      <div className="pt-2 border-t border-gray-700">
+                        <p className="text-gray-500 text-[10px] uppercase tracking-wider mb-1 font-semibold">
+                          Observaciones de Finanzas
+                        </p>
+                        <p className="text-gray-300 text-xs leading-relaxed">
+                          {selected.financeObservations}
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
             {/* Rejection info (read-only) */}
             {selected.status === "Rejected" && selected.rejectReason && (

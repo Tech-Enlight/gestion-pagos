@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { 
-  CheckCircle2, 
-  HelpCircle, 
+import {
+  CheckCircle2,
+  HelpCircle,
   XCircle,
-  Loader2
+  Loader2,
+  X
 } from "lucide-react";
 import StatusPill from "./StatusPill";
 import RejectModal from "./RejectModal";
@@ -247,9 +248,8 @@ const ApprovalManagement: React.FC<Props> = ({ requests, onUpdateRequest }) => {
             {pendingRequests.map((r) => (
               <tr
                 key={r.id}
-                className={`border-t border-gray-700 transition-colors cursor-pointer ${
-                  selectedId === r.id ? "bg-[#243545]" : "hover:bg-[#243545]"
-                }`}
+                className={`border-t border-gray-700 transition-colors cursor-pointer ${selectedId === r.id ? "bg-[#243545]" : "hover:bg-[#243545]"
+                  }`}
                 onClick={() => setSelectedId(selectedId === r.id ? null : r.id)}
               >
                 <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
@@ -310,9 +310,9 @@ const ApprovalManagement: React.FC<Props> = ({ requests, onUpdateRequest }) => {
             </div>
             <button
               onClick={() => setSelectedId(null)}
-              className="text-gray-400 hover:text-white text-lg leading-none"
+              className="btn-close" aria-label="Cerrar"
             >
-              ×
+              <X size={18} />
             </button>
           </div>
 
@@ -440,9 +440,8 @@ const Field: React.FC<{
   <div className="flex flex-col gap-0.5">
     <span className="text-gray-500 text-xs">{label}</span>
     <span
-      className={`text-sm font-medium ${
-        highlight ? "text-[#00aa85]" : "text-gray-200"
-      }`}
+      className={`text-sm font-medium ${highlight ? "text-[#00aa85]" : "text-gray-200"
+        }`}
       style={{ fontFamily: "Alexandria, sans-serif" }}
     >
       {value}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { statusColors } from '../data/mockData';
+import { statusColors, STATUS_LABEL } from '../data/mockData';
 
 import {
   FileEdit,
@@ -35,7 +35,7 @@ const StatusPill: React.FC<Props> = ({ status }) => {
       style={{ fontFamily: "Alexandria, sans-serif" }}
     >
       {getStatusIcon(status)}
-      {status}
+      {STATUS_LABEL[status] || status}
     </span>
   );
 };

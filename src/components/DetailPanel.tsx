@@ -1,6 +1,7 @@
 import React from "react";
 import StatusPill from "./StatusPill";
 import type { Request } from "../data/mockData";
+import { X } from "lucide-react";
 
 interface Props {
   request: Request;
@@ -37,9 +38,9 @@ const DetailPanel: React.FC<Props> = ({
         </h3>
         <button
           onClick={onClose}
-          className="text-gray-400 hover:text-white text-lg leading-none"
+          className="btn-close" aria-label="Cerrar"
         >
-          ×
+          <X size={18} />
         </button>
       </div>
 
@@ -54,9 +55,8 @@ const DetailPanel: React.FC<Props> = ({
         <DetailRow label="Beneficiario" value={request.beneficiary} />
         <DetailRow
           label="Monto"
-          value={`${request.amount.toLocaleString("es-MX")} ${
-            request.currency
-          }`}
+          value={`${request.amount.toLocaleString("es-MX")} ${request.currency
+            }`}
           highlight
         />
         <DetailRow label="Solicitante" value={request.submittedBy} />
@@ -109,9 +109,8 @@ const DetailRow: React.FC<{
   <div className="flex flex-col gap-0.5">
     <span className="text-gray-500 text-xs">{label}</span>
     <span
-      className={`text-sm font-medium ${
-        highlight ? "text-[#00aa85]" : "text-gray-200"
-      }`}
+      className={`text-sm font-medium ${highlight ? "text-[#00aa85]" : "text-gray-200"
+        }`}
       style={{ fontFamily: "Alexandria, sans-serif" }}
     >
       {value}

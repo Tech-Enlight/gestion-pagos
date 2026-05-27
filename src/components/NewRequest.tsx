@@ -3,6 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import { fetchProjects, fetchOCsByProject, fetchVendorName } from "../services/sheets";
 import type { Request } from "../data/mockData";
 import { Combobox } from "./Combobox";
+import { CheckCircle2 } from "lucide-react";
 
 /* ------------------------------------------------------------------ */
 /*  Types for NS endpoint responses                                    */
@@ -261,7 +262,9 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate }) => {
           className="rounded-xl p-8 text-center border border-[#00aa85] shadow-xl max-w-md w-full"
           style={{ backgroundColor: "#1e2d3d" }}
         >
-          <div className="text-5xl mb-4">✅</div>
+          <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-[#00aa85]/20 text-[#00aa85] flex items-center justify-center">
+            <CheckCircle2 size={32} />
+          </div>
           <h2 className="text-white text-2xl font-bold mb-2" style={{ fontFamily: "Alexandria, sans-serif" }}>
             ¡Solicitud Enviada!
           </h2>
@@ -398,8 +401,8 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate }) => {
                     setErrors((prev) => { const n = { ...prev }; delete n.subtotal; return n; });
                   }}
                   className={`px-4 py-2 rounded-lg text-xs font-medium transition-colors border ${paymentType === t
-                      ? "text-white border-[#00aa85]"
-                      : "text-gray-400 border-gray-700 hover:border-gray-500"
+                    ? "text-white border-[#00aa85]"
+                    : "text-gray-400 border-gray-700 hover:border-gray-500"
                     }`}
                   style={{
                     backgroundColor: paymentType === t ? "rgba(0,170,133,0.15)" : "#293C47",
