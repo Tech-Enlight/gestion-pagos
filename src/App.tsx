@@ -123,7 +123,7 @@ function AppContent() {
           )}
         </RoleGate>
 
-        <RoleGate allowedRoles={["admin", "superadmin"]}>
+        <RoleGate allowedRoles={["admin", "superadmin", "analista_contable"]}>
           {currentView === "finanzas" && (
             <FinanceManagement
               requests={requests}

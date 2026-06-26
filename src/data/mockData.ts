@@ -286,6 +286,7 @@ export const STATUS = {
   AUTORIZACION: "Autorizaci\u00f3n",
   PENDING_FIN: "Pending Fin",
   APPROVED: "Approved",
+  PAYMENT_APPROVED: "Payment Approved",
   REJECTED: "Rejected",
   PAID: "Paid",
 } as const;
@@ -295,6 +296,7 @@ export const STATUS_LABEL: Record<string, string> = {
   "Autorización": "En autorización",
   "Pending Fin": "Revisión Finanzas",
   Approved: "Aprobada",
+  "Payment Approved": "Pago Aprobado",
   Paid: "Pagada",
   Rejected: "Rechazada",
 };
@@ -304,6 +306,7 @@ export const STATUS_DESC: Record<string, string> = {
   "Autorización": "Tu jefe directo está revisando",
   "Pending Fin": "El equipo de Finanzas la está revisando",
   Approved: "Lista para programar el pago",
+  "Payment Approved": "Pago aprobado, pendiente de procesar por Contabilidad",
   Paid: "Pago procesado correctamente",
   Rejected: "Revisa el motivo y corrige si aplica",
 };
@@ -314,6 +317,7 @@ export const STATUS_HEX: Record<string, string> = {
   "Autorización": "#eab308",
   "Pending Fin": "#3D7D80",
   Approved: "#00AA85",
+  "Payment Approved": "#2563eb",
   Paid: "#a855f7",
   Rejected: "#ef4444",
 };

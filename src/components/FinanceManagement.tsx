@@ -17,6 +17,7 @@ import RejectModal from "./RejectModal";
 import PaymentModal from "./PaymentModal";
 import { STATUS } from "../data/mockData";
 import type { Request, FinanceNote, ExchangeRate } from "../data/mockData";
+import { useAuth } from "../context/AuthContext";
 import type { PaymentData } from "./PaymentModal";
 import { fetchBillsByOC, fetchProjectById, fetchInvoiceLinkByOC } from "../services/sheets";
 import type { NSBill } from "../services/sheets";
@@ -36,6 +37,8 @@ const FinanceManagement: React.FC<Props> = ({
   onUpdateRequest,
   onUpdateFinanceFields,
 }) => {
+  const { user } = useAuth();
+  const isAnalista = user?.role === "analista_contable";
   const [filter, setFilter] = useState<Filter>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [rejectTarget, setRejectTarget] = useState<string | null>(null);
@@ -71,12 +74,15 @@ const FinanceManagement: React.FC<Props> = ({
 
   // Filter logic
   const financeRequests = useMemo(() => {
+    if (isAnalista) {
+      return requests.filter((r) => r.status === STATUS.PAYMENT_APPROVED);
+    }
     return requests.filter((r) => {
       if (filter === "pending") return r.status === STATUS.PENDING_FIN;
       if (filter === "approved") return r.status === STATUS.APPROVED;
       return r.status === STATUS.PENDING_FIN || r.status === STATUS.APPROVED;
     });
-  }, [requests, filter]);
+  }, [requests, filter, isAnalista]);
 
   const selected = financeRequests.find((r) => r.id === selectedId) ?? null;
 
@@ -86,13 +92,10 @@ const FinanceManagement: React.FC<Props> = ({
   }, [filter]);
 
   const counts = useMemo(() => {
-    const pending = requests.filter(
-      (r) => r.status === STATUS.PENDING_FIN
-    ).length;
-    const approved = requests.filter(
-      (r) => r.status === STATUS.APPROVED
-    ).length;
-    return { pending, approved, all: pending + approved };
+    const pending = requests.filter((r) => r.status === STATUS.PENDING_FIN).length;
+    const approved = requests.filter((r) => r.status === STATUS.APPROVED).length;
+    const paymentApproved = requests.filter((r) => r.status === STATUS.PAYMENT_APPROVED).length;
+    return { pending, approved, paymentApproved, all: pending + approved };
   }, [requests]);
 
   const [isSaving, setIsSaving] = useState(false);
@@ -105,7 +108,8 @@ const FinanceManagement: React.FC<Props> = ({
 
   const allPending = selectedRequests.length > 0 && selectedRequests.every(r => r.status === STATUS.PENDING_FIN);
   const allApproved = selectedRequests.length > 0 && selectedRequests.every(r => r.status === STATUS.APPROVED);
-  const isMixed = selectedRequests.length > 0 && !allPending && !allApproved;
+  const allPaymentApproved = selectedRequests.length > 0 && selectedRequests.every(r => r.status === STATUS.PAYMENT_APPROVED);
+  const isMixed = selectedRequests.length > 0 && !allPending && !allApproved && !allPaymentApproved;
 
   // When selecting a row, load its current finObs
   const handleSelect = (id: string | null) => {
@@ -127,6 +131,15 @@ const FinanceManagement: React.FC<Props> = ({
       });
     }
     onUpdateRequest(selected.id, STATUS.APPROVED);
+    setSelectedId(null);
+  };
+
+  const handleApprovePayment = () => {
+    if (!selected) return;
+    if (finObs.trim()) {
+      onUpdateFinanceFields(selected.id, { financeObservations: finObs.trim() });
+    }
+    onUpdateRequest(selected.id, STATUS.PAYMENT_APPROVED);
     setSelectedId(null);
   };
 
@@ -335,6 +348,26 @@ const FinanceManagement: React.FC<Props> = ({
     }
   };
 
+  const handleBulkApprovePayment = async () => {
+    if (selectedIds.length === 0) return;
+    if (!window.confirm(`¿Aprobar el pago de las ${selectedIds.length} solicitudes seleccionadas?`)) return;
+    setIsBulkOperating(true);
+    try {
+      for (const id of selectedIds) {
+        if (finObs.trim()) {
+          await onUpdateFinanceFields(id, { financeObservations: finObs.trim() });
+        }
+        await onUpdateRequest(id, STATUS.PAYMENT_APPROVED);
+      }
+      setSelectedIds([]);
+      setSelectedId(null);
+    } catch (error) {
+      console.error("Error bulk approving payment:", error);
+    } finally {
+      setIsBulkOperating(false);
+    }
+  };
+
   const handleBulkClarificationConfirm = async (_labelId: string, comment: string) => {
     if (!bulkClarifyTarget) return;
     setIsBulkOperating(true);
@@ -455,36 +488,47 @@ const FinanceManagement: React.FC<Props> = ({
 
       {/* Tabs / Filters */}
       <div className="flex gap-2">
-        <button
-          onClick={() => setFilter("all")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === "all"
-            ? "bg-[#00aa85] text-white"
-            : "bg-[#1e2d3d] text-gray-400 hover:text-white"
-            }`}
-          style={{ fontFamily: "Alexandria, sans-serif" }}
-        >
-          Todas ({counts.all})
-        </button>
-        <button
-          onClick={() => setFilter("pending")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === "pending"
-            ? "bg-[#00aa85] text-white"
-            : "bg-[#1e2d3d] text-gray-400 hover:text-white"
-            }`}
-          style={{ fontFamily: "Alexandria, sans-serif" }}
-        >
-          Pendientes Finanzas ({counts.pending})
-        </button>
-        <button
-          onClick={() => setFilter("approved")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === "approved"
-            ? "bg-[#00aa85] text-white"
-            : "bg-[#1e2d3d] text-gray-400 hover:text-white"
-            }`}
-          style={{ fontFamily: "Alexandria, sans-serif" }}
-        >
-          Aprobadas ({counts.approved})
-        </button>
+        {isAnalista ? (
+          <button
+            className="px-4 py-2 rounded-lg text-sm font-medium bg-[#00aa85] text-white"
+            style={{ fontFamily: "Alexandria, sans-serif" }}
+          >
+            Pago Aprobado ({counts.paymentApproved})
+          </button>
+        ) : (
+          <>
+            <button
+              onClick={() => setFilter("all")}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === "all"
+                ? "bg-[#00aa85] text-white"
+                : "bg-[#1e2d3d] text-gray-400 hover:text-white"
+                }`}
+              style={{ fontFamily: "Alexandria, sans-serif" }}
+            >
+              Todas ({counts.all})
+            </button>
+            <button
+              onClick={() => setFilter("pending")}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === "pending"
+                ? "bg-[#00aa85] text-white"
+                : "bg-[#1e2d3d] text-gray-400 hover:text-white"
+                }`}
+              style={{ fontFamily: "Alexandria, sans-serif" }}
+            >
+              Pendientes Finanzas ({counts.pending})
+            </button>
+            <button
+              onClick={() => setFilter("approved")}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === "approved"
+                ? "bg-[#00aa85] text-white"
+                : "bg-[#1e2d3d] text-gray-400 hover:text-white"
+                }`}
+              style={{ fontFamily: "Alexandria, sans-serif" }}
+            >
+              Aprobadas ({counts.approved})
+            </button>
+          </>
+        )}
       </div>
 
       {/* Bulk Actions Bar */}
@@ -504,7 +548,7 @@ const FinanceManagement: React.FC<Props> = ({
             )}
           </div>
           <div className="flex items-center gap-2">
-            {allPending && (
+            {allPending && !isAnalista && (
               <button
                 onClick={handleBulkApprove}
                 disabled={isBulkOperating}
@@ -515,15 +559,15 @@ const FinanceManagement: React.FC<Props> = ({
               </button>
             )}
 
-            {allApproved && (
+            {allApproved && !isAnalista && (
               <>
                 <button
-                  onClick={handleBulkMarkPaidGate}
-                  disabled={isBulkOperating || nsLoading}
-                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-white text-xs font-semibold bg-purple-600 hover:bg-purple-700 disabled:opacity-50 transition-colors shadow shadow-purple-950/20"
+                  onClick={handleBulkApprovePayment}
+                  disabled={isBulkOperating}
+                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-white text-xs font-semibold bg-blue-600 hover:bg-blue-700 disabled:opacity-50 transition-colors shadow shadow-blue-950/20"
                 >
-                  {nsLoading ? <Loader2 size={14} className="animate-spin" /> : <Banknote size={14} />}
-                  {nsLoading ? "Consultando NS..." : "Marcar Pagadas"}
+                  <CheckCircle2 size={14} />
+                  Aprobar Pago
                 </button>
                 <button
                   onClick={() => setBulkEstimatedDateTarget(selectedIds)}
@@ -534,6 +578,17 @@ const FinanceManagement: React.FC<Props> = ({
                   Fecha Estimada
                 </button>
               </>
+            )}
+
+            {allPaymentApproved && isAnalista && (
+              <button
+                onClick={handleBulkMarkPaidGate}
+                disabled={isBulkOperating || nsLoading}
+                className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-white text-xs font-semibold bg-purple-600 hover:bg-purple-700 disabled:opacity-50 transition-colors shadow shadow-purple-950/20"
+              >
+                {nsLoading ? <Loader2 size={14} className="animate-spin" /> : <Banknote size={14} />}
+                {nsLoading ? "Consultando NS..." : "Marcar Pagadas"}
+              </button>
             )}
 
             <button
@@ -867,7 +922,7 @@ const FinanceManagement: React.FC<Props> = ({
 
           {/* Actions */}
           <div className="flex items-center gap-3 px-5 py-4 border-t border-gray-700 flex-wrap">
-            {selected.status === STATUS.PENDING_FIN && (
+            {selected.status === STATUS.PENDING_FIN && !isAnalista && (
               <button
                 onClick={handleApprove}
                 className="flex items-center gap-2 px-5 py-2 rounded-lg text-white text-sm font-semibold bg-green-600 hover:bg-green-700 transition-colors shadow-lg shadow-green-900/20"
@@ -876,15 +931,14 @@ const FinanceManagement: React.FC<Props> = ({
                 Aprobar
               </button>
             )}
-            {selected.status === STATUS.APPROVED && (
+            {selected.status === STATUS.APPROVED && !isAnalista && (
               <>
                 <button
-                  onClick={() => handleMarkPaidGate(selected)}
-                  disabled={nsLoading}
-                  className="flex items-center gap-2 px-5 py-2 rounded-lg text-white text-sm font-semibold bg-purple-600 hover:bg-purple-700 disabled:opacity-50 transition-colors shadow-lg shadow-purple-900/20"
+                  onClick={handleApprovePayment}
+                  className="flex items-center gap-2 px-5 py-2 rounded-lg text-white text-sm font-semibold bg-blue-600 hover:bg-blue-700 transition-colors shadow-lg shadow-blue-900/20"
                 >
-                  {nsLoading ? <Loader2 size={16} className="animate-spin" /> : <Banknote size={16} />}
-                  {nsLoading ? "Consultando NS..." : "Marcar Pagado"}
+                  <CheckCircle2 size={16} />
+                  Aprobar Pago
                 </button>
                 <button
                   onClick={() => setEstimatedDateTarget(selected.id)}
@@ -894,6 +948,16 @@ const FinanceManagement: React.FC<Props> = ({
                   Fecha Estimada
                 </button>
               </>
+            )}
+            {selected.status === STATUS.PAYMENT_APPROVED && isAnalista && (
+              <button
+                onClick={() => handleMarkPaidGate(selected)}
+                disabled={nsLoading}
+                className="flex items-center gap-2 px-5 py-2 rounded-lg text-white text-sm font-semibold bg-purple-600 hover:bg-purple-700 disabled:opacity-50 transition-colors shadow-lg shadow-purple-900/20"
+              >
+                {nsLoading ? <Loader2 size={16} className="animate-spin" /> : <Banknote size={16} />}
+                {nsLoading ? "Consultando NS..." : "Marcar Pagado"}
+              </button>
             )}
             <button
               onClick={() => setClarifyTarget(selected.id)}

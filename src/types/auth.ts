@@ -5,7 +5,8 @@ export type Role =
   | "ingenieria"
   | "servicios"
   | "admin"
-  | "superadmin";
+  | "superadmin"
+  | "analista_contable";
 
 export interface User {
   email: string;
