@@ -3,6 +3,12 @@ import type { Request } from "../data/mockData";
 
 const BASE = import.meta.env.VITE_N8N_WEBHOOK_BASE;
 
+async function safeJson(res: Response): Promise<any> {
+  const text = await res.text();
+  if (!text || !text.trim()) return null;
+  return JSON.parse(text);
+}
+
 /**
  * Ensures the payload only contains primitive values.
  * n8n / Google Sheets struggles with nested objects/arrays in a single row.
@@ -31,7 +37,8 @@ export async function getRoleByEmail(email: string): Promise<Role> {
 export async function fetchRequests(): Promise<Request[]> {
   const res = await fetch(`${BASE}/solicitudes`);
   if (!res.ok) throw new Error("Error al cargar solicitudes");
-  return res.json();
+  const data = await safeJson(res);
+  return data ?? [];
 }
 
 export async function createRequest(data: Partial<Request>): Promise<Request> {
@@ -86,14 +93,15 @@ export async function fetchExchangeRates(): Promise<
 > {
   const res = await fetch(`${BASE}/tipo-cambio`);
   if (!res.ok) throw new Error("Error al cargar tipo de cambio");
-  return res.json();
+  const data = await safeJson(res);
+  return data ?? [];
 }
 
 export async function fetchProjects(): Promise<any[]> {
   const res = await fetch(`${BASE}/lista-proyectos-completos`);
   if (!res.ok) throw new Error("Error al cargar proyectos");
-  const data = await res.json();
-  return data.proj_list || [];
+  const data = await safeJson(res);
+  return data?.proj_list ?? [];
 }
 
 export async function fetchOCsByProject(projectId: string): Promise<any> {
