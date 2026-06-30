@@ -426,7 +426,7 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate }) => {
             {paymentType === "Completo" ? (
               <ReadonlyField
                 label="Subtotal"
-                value={`$ ${ocTotal.toLocaleString("es-MX", { minimumFractionDigits: 2 })}`}
+                value={`$ ${subtotalNum.toLocaleString("es-MX", { minimumFractionDigits: 2 })}`}
               />
             ) : (
               <div>
