@@ -25,6 +25,7 @@ import {
   TrendingUp,
   Settings,
   LogOut,
+  ClipboardCheck,
 } from "lucide-react";
 
 interface NavItem {
@@ -42,6 +43,7 @@ const navItems: NavItem[] = [
   { id: "mis-solicitudes", label: "Mis solicitudes", roles: "all", icon: <ListTodo size={17} />, group: "principal" },
   { id: "aprobaciones", label: "Aprobaciones", roles: ["mac", "operaciones", "ingenieria", "servicios", "admin", "superadmin"], icon: <ShieldCheck size={17} />, group: "gestion" },
   { id: "finanzas", label: "Finanzas", roles: ["admin", "superadmin", "analista_contable"], icon: <CreditCard size={17} />, group: "gestion" },
+  { id: "decision-pagos", label: "Decisión de Pagos", roles: ["admin", "superadmin", "analista_contable"], icon: <ClipboardCheck size={17} />, group: "gestion" },
   { id: "explorador", label: "Explorador", roles: ["admin", "superadmin"], icon: <Search size={17} />, group: "gestion" },
   { id: "tipo-de-cambio", label: "Tipo de cambio", roles: ["admin", "superadmin"], icon: <TrendingUp size={17} />, group: "datos" },
   { id: "configuracion", label: "Configuración", roles: ["superadmin"], icon: <Settings size={17} />, group: "datos" },

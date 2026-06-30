@@ -10,6 +10,7 @@ import ApprovalManagement from "./components/ApprovalManagement";
 import RequestExplorer from "./components/RequestExplorer";
 import ExchangeChart from "./components/ExchangeChart";
 import FinanceManagement from "./components/FinanceManagement";
+import DecisionPagos from "./components/DecisionPagos";
 import type { Request, ExchangeRate } from "./data/mockData";
 import {
   fetchRequests,
@@ -139,6 +140,7 @@ function AppContent() {
             />
           )}
           {currentView === "tipo-de-cambio" && <ExchangeChart />}
+          {currentView === "decision-pagos" && <DecisionPagos />}
         </RoleGate>
 
         <RoleGate allowedRoles={["superadmin"]}>
