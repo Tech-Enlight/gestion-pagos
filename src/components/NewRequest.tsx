@@ -98,10 +98,16 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate }) => {
   const ocTotal = selectedOC?.monto_total ?? 0;
   const exchangeRate = selectedOC?.tipo_cambio ?? 0;
 
+  // ocTotal viene de NetSuite como t.total, que YA incluye el 16% de IVA.
   const subtotalNum =
-    paymentType === "Completo" ? ocTotal : Number(partialSubtotal) || 0;
-  const iva = +(subtotalNum * 0.16).toFixed(2);
-  const total = +(subtotalNum + iva).toFixed(2);
+    paymentType === "Completo"
+      ? +(ocTotal / 1.16).toFixed(2)
+      : Number(partialSubtotal) || 0;
+  const iva =
+    paymentType === "Completo"
+      ? +(ocTotal - subtotalNum).toFixed(2)
+      : +(subtotalNum * 0.16).toFixed(2);
+  const total = paymentType === "Completo" ? ocTotal : +(subtotalNum + iva).toFixed(2);
 
   // ================================================================
   //  1. Fetch projects on mount
