@@ -222,6 +222,7 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate }) => {
       department: department.trim(),
       status: "Autorización",
       submittedBy: user?.name || "Usuario Actual",
+      submittedByEmail: user?.email,
       date: new Date().toISOString().slice(0, 10),
       statusHistory: [
         { status: "Draft", timestamp: new Date().toISOString(), changedBy: user?.name || "" },

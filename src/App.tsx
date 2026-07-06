@@ -101,7 +101,11 @@ function AppContent() {
 
         {currentView === "mis-solicitudes" && (
           <RequestExplorer
-            requests={requests}
+            requests={requests.filter((r) =>
+              r.submittedByEmail
+                ? r.submittedByEmail === user?.email
+                : r.submittedBy === user?.name
+            )}
             onUpdateRequest={handleUpdateRequest}
           />
         )}

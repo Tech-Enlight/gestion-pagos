@@ -32,6 +32,7 @@ export interface Request {
   department: string;
   status: string;
   submittedBy: string;
+  submittedByEmail?: string;
   date: string;
   comment?: string;
   rejectReason?: string;
