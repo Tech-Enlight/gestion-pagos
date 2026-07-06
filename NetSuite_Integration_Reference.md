@@ -341,6 +341,22 @@ No reutilizar la firma del SuiteQL endpoint.
 |----------|--------|---------|
 | `/webhook/role?email={email}` | `GET` | `getRoleByEmail(email)` — devuelve rol del usuario |
 
+### 4.8 Roster por Rol + Notificaciones por Email
+
+| Endpoint | Método | Función |
+|----------|--------|---------|
+| `/webhook/roster?roles={role1,role2}` | `GET` | Lee la hoja `Roles Portal Pagos` y devuelve `{ roles, emails }` con los correos de los roles solicitados (roster inverso de `/webhook/role`). Workflow: `public/n8n/workflow-roster.json`. |
+
+Este roster lo consumen internamente (vía HTTP Request node) los workflows de estado para enviar notificaciones por email con Gmail (credencial "Tecnología"), sin cambios en el frontend:
+
+| Workflow | Trigger | Emails enviados |
+|----------|---------|------------------|
+| `workflow-postSolicitudes.json` | `POST /solicitudes` (nueva solicitud) | Confirmación al solicitante + notificación a `analista_contable` (Finanzas). **Pendiente:** enrutar también a los aprobadores — el criterio depende del tipo de proyecto y aún no está definido (ver sticky note "TODO aprobadores" en el workflow). |
+| `workflow-patchStatus.json` | `PATCH /solicitudes/status` con `status = Approved` o `Rejected` | Confirmación al solicitante siempre; notificación adicional a `analista_contable` solo si `Approved`. |
+| `workflow-patchFinanzas.json` | `PATCH /solicitudes/finanzas` con `status = Paid` | Confirmación al solicitante únicamente. |
+
+El patrón de email (nodo "Build email HTML" + par de nodos Gmail Confirmación→Notificación) sigue el estilo de referencia en `public/n8n/partialworkflow-stylemailreference.json`.
+
 ---
 
 ## 5. Queries SuiteQL — Catálogo Completo
@@ -683,7 +699,9 @@ Del CSV exportado de NS (729 line items, 115 POs únicas, 7 estatus):
 | Tipo de cambio desde NS (`currencyrate`) | Reemplazar mock de Banxico | 🔮 Futuro |
 | Line items de una OC | Detalle de artículos en el portal | 🔮 Futuro (query 5.7 confirmada) |
 | Escritura a NS (crear PO, actualizar status) | Bidireccionalidad | 🔮 Futuro — cambia scope radicalmente |
-| Role resolution via n8n | Reemplazar mock email mapping | 🔮 Siguiente fase |
+| Role resolution via n8n | Reemplazar mock email mapping | ✅ Implementado (§4.7) |
+| Enrutamiento de aprobadores por tipo de proyecto | Notificar al aprobador correcto al enviar una solicitud (hoy solo se notifica a Finanzas) | 🔮 Pendiente de definir criterio — ver §4.8 |
+| Notificaciones in-app (campana) | Alternativa/complemento a las notificaciones por email (§4.8) | 🔮 Futuro |
 
 ---
 
