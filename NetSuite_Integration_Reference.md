@@ -345,17 +345,17 @@ No reutilizar la firma del SuiteQL endpoint.
 
 | Endpoint | Método | Función |
 |----------|--------|---------|
-| `/webhook/roster?roles={role1,role2}` | `GET` | Lee la hoja `Roles Portal Pagos` y devuelve `{ roles, emails }` con los correos de los roles solicitados (roster inverso de `/webhook/role`). Workflow: `public/n8n/workflow-roster.json`. |
+| `/webhook/roster?roles={role1,role2}` | `GET` | Lee la hoja `Roles Portal Pagos` y devuelve `{ roles, emails }` con los correos de los roles solicitados (roster inverso de `/webhook/role`). Workflow `roster` en n8n cloud. |
 
 Este roster lo consumen internamente (vía HTTP Request node) los workflows de estado para enviar notificaciones por email con Gmail (credencial "Tecnología"), sin cambios en el frontend:
 
 | Workflow | Trigger | Emails enviados |
 |----------|---------|------------------|
-| `workflow-postSolicitudes.json` | `POST /solicitudes` (nueva solicitud) | Confirmación al solicitante + notificación a `analista_contable` (Finanzas). **Pendiente:** enrutar también a los aprobadores — el criterio depende del tipo de proyecto y aún no está definido (ver sticky note "TODO aprobadores" en el workflow). |
-| `workflow-patchStatus.json` | `PATCH /solicitudes/status` con `status = Approved` o `Rejected` | Confirmación al solicitante siempre; notificación adicional a `analista_contable` solo si `Approved`. |
-| `workflow-patchFinanzas.json` | `PATCH /solicitudes/finanzas` con `status = Paid` | Confirmación al solicitante únicamente. |
+| `postSolicitudes` | `POST /solicitudes` (nueva solicitud) | Confirmación al solicitante + notificación a `analista_contable` (Finanzas). **Pendiente:** enrutar también a los aprobadores — el criterio depende del tipo de proyecto y aún no está definido (ver sticky note "TODO aprobadores" en el workflow). |
+| `patchStatus` | `PATCH /solicitudes/status` con `status = Approved` o `Rejected` | Confirmación al solicitante siempre; notificación adicional a `analista_contable` solo si `Approved`. |
+| `patchFinanzas` | `PATCH /solicitudes/finanzas` con `status = Paid` | Confirmación al solicitante únicamente. |
 
-El patrón de email (nodo "Build email HTML" + par de nodos Gmail Confirmación→Notificación) sigue el estilo de referencia en `public/n8n/partialworkflow-stylemailreference.json`.
+El patrón de email (nodo "Build email HTML" + par de nodos Gmail Confirmación→Notificación) sigue el estilo de referencia en `public/n8n/partialworkflow-stylemailreference.json` (copia local). Los exports JSON en `public/n8n/` quedaron fuera de git (`.gitignore`, 2026-07-14); la fuente de verdad es la instancia n8n cloud.
 
 ---
 

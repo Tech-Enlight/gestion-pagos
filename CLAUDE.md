@@ -68,10 +68,10 @@ graph LR
 
 ## Email Notifications (n8n-side, no frontend changes)
 Status transitions trigger Gmail emails from inside the existing n8n workflows (no polling/sockets/new frontend deps) — see `NetSuite_Integration_Reference.md` §4.8 for full detail.
-- `public/n8n/workflow-roster.json` (new) — `GET /webhook/roster?roles=a,b` returns emails for given role(s) from the `Roles Portal Pagos` sheet (reverse of the existing `/webhook/role` email→role lookup).
-- `public/n8n/workflow-postSolicitudes.json`, `workflow-patchStatus.json`, `workflow-patchFinanzas.json` — each extended with a confirmation email to the requester + (where applicable) a notification email to Finanzas (`analista_contable`), following the style pattern in `public/n8n/partialworkflow-stylemailreference.json`.
-- **Open item:** submission-time notification only reaches Finanzas today — approver routing by project type is unresolved (see Known Issues #4). A sticky note in `workflow-postSolicitudes.json` marks where to wire it in once defined.
-- These are JSON exports kept in the repo for reference/version history — the live workflows must still be updated/imported in the n8n cloud instance (egenlight.app.n8n.cloud) for changes to take effect.
+- `GET /webhook/roster?roles=a,b` returns emails for given role(s) from the `Roles Portal Pagos` sheet (reverse of the existing `/webhook/role` email→role lookup).
+- `postSolicitudes`, `patchStatus`, `patchFinanzas` workflows — each extended with a confirmation email to the requester + (where applicable) a notification email to Finanzas (`analista_contable`).
+- **Open item:** submission-time notification only reaches Finanzas today — approver routing by project type is unresolved (see Known Issues #4). A sticky note in the `postSolicitudes` workflow marks where to wire it in once defined.
+- JSON exports live locally under `public/n8n/` for reference, but the folder is gitignored as of 2026-07-14 — not on GitHub and not part of the Vercel deploy. The live workflows in n8n cloud (egenlight.app.n8n.cloud) are the source of truth; changes must be imported there to take effect.
 
 ## Resolved
 - 2026-07-06: Removed stray `gestioon-pagos/` nested git clone (leftover duplicate of this same repo, not part of the Vercel deploy which builds from repo root). Its only tracked content, `decision_pagos.html`, was moved to `public/uploads/decision_pagos.html`; the outdated duplicate `netsuite_integration.md` was dropped in favor of the more complete root-level `NetSuite_Integration_Reference.md`. Real `.env` values (previously only present untracked inside the nested clone) were copied into the root `.env` (gitignored, never committed in either location — the prior "exposed credentials" note was inaccurate).

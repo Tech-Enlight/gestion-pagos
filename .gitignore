@@ -1,4 +1,4 @@
-# Logs
+ # Logs
 logs
 *.log
 npm-debug.log*
@@ -16,6 +16,9 @@ dist-ssr
 .env
 .env.*
 !.env.example
+
+# n8n workflow exports — kept locally for reference, not tracked (n8n cloud is source of truth)
+public/n8n/
 
 # Editor directories and files
 .vscode/*
