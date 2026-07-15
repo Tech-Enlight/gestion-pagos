@@ -29,7 +29,7 @@ interface Props {
   onUpdateFinanceFields: (id: string, fields: Partial<Request>) => void;
 }
 
-type Filter = "all" | "pending" | "approved";
+type Filter = "all" | "pending" | "approved" | "paymentApproved";
 
 const FinanceManagement: React.FC<Props> = ({
   requests,
@@ -72,7 +72,8 @@ const FinanceManagement: React.FC<Props> = ({
 
   const lastRate = lastExchangeRate;
 
-  // Filter logic
+  // Filter logic — el analista solo trabaja la bandeja de pagos aprobados;
+  // superadmin conserva las pestañas de seguimiento (incl. Pago Aprobado).
   const financeRequests = useMemo(() => {
     if (isAnalista) {
       return requests.filter((r) => r.status === STATUS.PAYMENT_APPROVED);
@@ -80,7 +81,12 @@ const FinanceManagement: React.FC<Props> = ({
     return requests.filter((r) => {
       if (filter === "pending") return r.status === STATUS.PENDING_FIN;
       if (filter === "approved") return r.status === STATUS.APPROVED;
-      return r.status === STATUS.PENDING_FIN || r.status === STATUS.APPROVED;
+      if (filter === "paymentApproved") return r.status === STATUS.PAYMENT_APPROVED;
+      return (
+        r.status === STATUS.PENDING_FIN ||
+        r.status === STATUS.APPROVED ||
+        r.status === STATUS.PAYMENT_APPROVED
+      );
     });
   }, [requests, filter, isAnalista]);
 
@@ -95,7 +101,7 @@ const FinanceManagement: React.FC<Props> = ({
     const pending = requests.filter((r) => r.status === STATUS.PENDING_FIN).length;
     const approved = requests.filter((r) => r.status === STATUS.APPROVED).length;
     const paymentApproved = requests.filter((r) => r.status === STATUS.PAYMENT_APPROVED).length;
-    return { pending, approved, paymentApproved, all: pending + approved };
+    return { pending, approved, paymentApproved, all: pending + approved + paymentApproved };
   }, [requests]);
 
   const [isSaving, setIsSaving] = useState(false);
@@ -432,8 +438,8 @@ const FinanceManagement: React.FC<Props> = ({
           className="rounded-xl border border-[#00aa85]/30 px-4 py-3 text-sm text-gray-300"
           style={{ backgroundColor: "#1e2d3d", fontFamily: "Albert Sans, sans-serif" }}
         >
-          Las aprobaciones y rechazos se realizan ahora en <strong className="text-[#00aa85]">Decisión de Pagos</strong>.
-          Esta vista queda para seguimiento y campos de Finanzas (fecha estimada, notas).
+          Las aprobaciones del admin se realizan en <strong className="text-[#00aa85]">Decisión de Pagos</strong>.
+          Esta vista es para la operación de Finanzas: programar pago, marcar pagado, aclaraciones y notas.
         </div>
       )}
 
@@ -478,6 +484,16 @@ const FinanceManagement: React.FC<Props> = ({
             >
               Aprobadas ({counts.approved})
             </button>
+            <button
+              onClick={() => setFilter("paymentApproved")}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === "paymentApproved"
+                ? "bg-[#00aa85] text-white"
+                : "bg-[#1e2d3d] text-gray-400 hover:text-white"
+                }`}
+              style={{ fontFamily: "Alexandria, sans-serif" }}
+            >
+              Pago Aprobado ({counts.paymentApproved})
+            </button>
           </>
         )}
       </div>
@@ -499,18 +515,20 @@ const FinanceManagement: React.FC<Props> = ({
             )}
           </div>
           <div className="flex items-center gap-2">
-            {allApproved && !isAnalista && (
+            {/* Programar Pago: la fecha estimada aplica a Pago Aprobado (flujo actual)
+                y a Approved (legacy). El solicitante recibe la fecha por correo. */}
+            {(allApproved || allPaymentApproved) && (
               <button
                 onClick={() => setBulkEstimatedDateTarget(selectedIds)}
                 disabled={isBulkOperating}
                 className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-white text-xs font-semibold bg-blue-600 hover:bg-blue-700 disabled:opacity-50 transition-colors shadow shadow-blue-950/20"
               >
                 <Clock size={14} />
-                Fecha Estimada
+                Programar Pago
               </button>
             )}
 
-            {allPaymentApproved && isAnalista && (
+            {allPaymentApproved && (
               <button
                 onClick={handleBulkMarkPaidGate}
                 disabled={isBulkOperating || nsLoading}
@@ -529,16 +547,14 @@ const FinanceManagement: React.FC<Props> = ({
               <HelpCircle size={14} />
               Aclaración
             </button>
-            {isAnalista && (
-              <button
-                onClick={() => setBulkRejectTarget(selectedIds)}
-                disabled={isBulkOperating}
-                className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-white text-xs font-semibold bg-red-600 hover:bg-red-700 disabled:opacity-50 transition-colors shadow shadow-red-950/20"
-              >
-                <XCircle size={14} />
-                Rechazar
-              </button>
-            )}
+            <button
+              onClick={() => setBulkRejectTarget(selectedIds)}
+              disabled={isBulkOperating}
+              className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-white text-xs font-semibold bg-red-600 hover:bg-red-700 disabled:opacity-50 transition-colors shadow shadow-red-950/20"
+            >
+              <XCircle size={14} />
+              Rechazar
+            </button>
             <div className="w-[1px] h-6 bg-gray-700 mx-1"></div>
             <button
               onClick={() => setSelectedIds([])}
@@ -854,16 +870,17 @@ const FinanceManagement: React.FC<Props> = ({
 
           {/* Actions */}
           <div className="flex items-center gap-3 px-5 py-4 border-t border-gray-700 flex-wrap">
-            {selected.status === STATUS.APPROVED && !isAnalista && (
+            {(selected.status === STATUS.APPROVED ||
+              selected.status === STATUS.PAYMENT_APPROVED) && (
               <button
                 onClick={() => setEstimatedDateTarget(selected.id)}
                 className="flex items-center gap-2 px-5 py-2 rounded-lg text-white text-sm font-semibold bg-blue-600 hover:bg-blue-700 transition-colors shadow-lg shadow-blue-900/20"
               >
                 <Clock size={16} />
-                Fecha Estimada
+                Programar Pago
               </button>
             )}
-            {selected.status === STATUS.PAYMENT_APPROVED && isAnalista && (
+            {selected.status === STATUS.PAYMENT_APPROVED && (
               <button
                 onClick={() => handleMarkPaidGate(selected)}
                 disabled={nsLoading}
@@ -880,15 +897,13 @@ const FinanceManagement: React.FC<Props> = ({
               <HelpCircle size={16} />
               Aclaración
             </button>
-            {isAnalista && (
-              <button
-                onClick={() => setRejectTarget(selected.id)}
-                className="flex items-center gap-2 px-5 py-2 rounded-lg text-white text-sm font-semibold bg-red-600 hover:bg-red-700 transition-colors shadow-lg shadow-red-900/20"
-              >
-                <XCircle size={16} />
-                Rechazar
-              </button>
-            )}
+            <button
+              onClick={() => setRejectTarget(selected.id)}
+              className="flex items-center gap-2 px-5 py-2 rounded-lg text-white text-sm font-semibold bg-red-600 hover:bg-red-700 transition-colors shadow-lg shadow-red-900/20"
+            >
+              <XCircle size={16} />
+              Rechazar
+            </button>
           </div>
         </div>
       )}
@@ -1109,10 +1124,11 @@ const EstimatedDateModal: React.FC<{
           className="text-white text-lg font-bold mb-2"
           style={{ fontFamily: "Alexandria, sans-serif" }}
         >
-          Fecha Estimada de Pago — {requestId}
+          Programar Pago — {requestId}
         </h3>
         <p className="text-gray-400 text-sm mb-4">
-          Selecciona la fecha estimada en la que se realizará el pago de esta solicitud o lote.
+          Selecciona la fecha en la que se realizará el pago. El solicitante
+          recibirá la fecha programada por correo.
         </p>
         <input
           type="date"
@@ -1139,7 +1155,7 @@ const EstimatedDateModal: React.FC<{
             onClick={handleConfirm}
             className="px-5 py-2 rounded-lg text-white text-sm font-semibold bg-blue-600 hover:bg-blue-700 transition-colors"
           >
-            Guardar Fecha
+            Programar Pago
           </button>
         </div>
       </div>

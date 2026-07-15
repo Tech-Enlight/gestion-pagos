@@ -37,16 +37,20 @@ interface NavItem {
   badge?: number;
 }
 
+// Matriz de visibilidad por rol (confirmada 2026-07-15):
+//   Panel general → dirección + admin/superadmin · Aprobaciones → dirección + superadmin
+//   Finanzas → analista + superadmin · Decisión/Explorador → admin + analista + superadmin
+//   Nueva/Mis solicitudes, Tipo de cambio y Configuración → todos
 const navItems: NavItem[] = [
-  { id: "dashboard", label: "Panel general", roles: ["admin", "superadmin"], icon: <LayoutDashboard size={17} />, group: "principal" },
+  { id: "dashboard", label: "Panel general", roles: ["mac", "operaciones", "ingenieria", "servicios", "admin", "superadmin"], icon: <LayoutDashboard size={17} />, group: "principal" },
   { id: "nueva-solicitud", label: "Nueva solicitud", roles: "all", icon: <FilePlus2 size={17} />, group: "principal" },
   { id: "mis-solicitudes", label: "Mis solicitudes", roles: "all", icon: <ListTodo size={17} />, group: "principal" },
-  { id: "aprobaciones", label: "Aprobaciones", roles: ["mac", "operaciones", "ingenieria", "servicios", "admin", "superadmin"], icon: <ShieldCheck size={17} />, group: "gestion" },
-  { id: "finanzas", label: "Finanzas", roles: ["admin", "superadmin", "analista_contable"], icon: <CreditCard size={17} />, group: "gestion" },
+  { id: "aprobaciones", label: "Aprobaciones", roles: ["mac", "operaciones", "ingenieria", "servicios", "superadmin"], icon: <ShieldCheck size={17} />, group: "gestion" },
+  { id: "finanzas", label: "Finanzas", roles: ["analista_contable", "superadmin"], icon: <CreditCard size={17} />, group: "gestion" },
   { id: "decision-pagos", label: "Decisión de Pagos", roles: ["admin", "superadmin", "analista_contable"], icon: <ClipboardCheck size={17} />, group: "gestion" },
-  { id: "explorador", label: "Explorador", roles: ["admin", "superadmin"], icon: <Search size={17} />, group: "gestion" },
-  { id: "tipo-de-cambio", label: "Tipo de cambio", roles: ["admin", "superadmin"], icon: <TrendingUp size={17} />, group: "datos" },
-  { id: "configuracion", label: "Configuración", roles: ["superadmin"], icon: <Settings size={17} />, group: "datos" },
+  { id: "explorador", label: "Explorador", roles: ["admin", "superadmin", "analista_contable"], icon: <Search size={17} />, group: "gestion" },
+  { id: "tipo-de-cambio", label: "Tipo de cambio", roles: "all", icon: <TrendingUp size={17} />, group: "datos" },
+  { id: "configuracion", label: "Configuración", roles: "all", icon: <Settings size={17} />, group: "datos" },
 ];
 
 interface Props {

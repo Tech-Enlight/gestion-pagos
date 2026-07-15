@@ -21,6 +21,7 @@ const getStatusIcon = (status: string) => {
     case "Autorización": return <AlertCircle size={size} />;
     case "Pending Fin": return <Clock size={size} />;
     case "Approved": return <CheckCircle2 size={size} />;
+    case "Payment Approved": return <CheckCircle2 size={size} />;
     case "Rejected": return <XCircle size={size} />;
     case "Paid": return <CreditCard size={size} />;
     default: return null;

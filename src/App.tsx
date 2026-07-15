@@ -82,7 +82,17 @@ function AppContent() {
     <div style={{ display: "flex", height: "100vh", background: "#121926" }}>
       <Sidebar currentView={currentView} setCurrentView={setCurrentView} />
       <main style={{ flex: 1, overflow: "auto", padding: "2rem" }}>
-        <RoleGate allowedRoles={["admin", "superadmin"]}>
+        {/* Los gates replican la matriz de visibilidad del Sidebar (2026-07-15) */}
+        <RoleGate
+          allowedRoles={[
+            "mac",
+            "operaciones",
+            "ingenieria",
+            "servicios",
+            "admin",
+            "superadmin",
+          ]}
+        >
           {currentView === "dashboard" && (
             <Dashboard
               requests={requests}
@@ -101,6 +111,7 @@ function AppContent() {
 
         {currentView === "mis-solicitudes" && (
           <RequestExplorer
+            mode="mine"
             requests={requests.filter((r) =>
               r.submittedByEmail
                 ? r.submittedByEmail === user?.email
@@ -116,7 +127,6 @@ function AppContent() {
             "operaciones",
             "ingenieria",
             "servicios",
-            "admin",
             "superadmin",
           ]}
         >
@@ -128,7 +138,7 @@ function AppContent() {
           )}
         </RoleGate>
 
-        <RoleGate allowedRoles={["admin", "superadmin", "analista_contable"]}>
+        <RoleGate allowedRoles={["analista_contable", "superadmin"]}>
           {currentView === "finanzas" && (
             <FinanceManagement
               requests={requests}
@@ -137,30 +147,32 @@ function AppContent() {
               onUpdateFinanceFields={handleUpdateFinanceFields}
             />
           )}
+        </RoleGate>
+
+        <RoleGate allowedRoles={["admin", "superadmin", "analista_contable"]}>
           {currentView === "explorador" && (
             <RequestExplorer
               requests={requests}
               onUpdateRequest={handleUpdateRequest}
             />
           )}
-          {currentView === "tipo-de-cambio" && <ExchangeChart />}
           {currentView === "decision-pagos" && (
             <DecisionPagos onUpdateRequest={handleUpdateRequest} />
           )}
         </RoleGate>
 
-        <RoleGate allowedRoles={["superadmin"]}>
-          {currentView === "configuracion" && (
-            <div
-              style={{ color: "#fff", fontFamily: "Alexandria, sans-serif" }}
-            >
-              <h2 style={{ fontSize: 20, marginBottom: 16 }}>Configuración</h2>
-              <p style={{ color: "#94a3b8" }}>
-                Sección de configuración — próximamente.
-              </p>
-            </div>
-          )}
-        </RoleGate>
+        {currentView === "tipo-de-cambio" && <ExchangeChart />}
+
+        {currentView === "configuracion" && (
+          <div
+            style={{ color: "#fff", fontFamily: "Alexandria, sans-serif" }}
+          >
+            <h2 style={{ fontSize: 20, marginBottom: 16 }}>Configuración</h2>
+            <p style={{ color: "#94a3b8" }}>
+              Sección de configuración — próximamente.
+            </p>
+          </div>
+        )}
       </main>
     </div>
   );

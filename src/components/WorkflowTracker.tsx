@@ -23,20 +23,28 @@ const stages = [
   {
     key: "Autorización",
     label: "Autorización",
-    desc: "En revisión por el equipo autorizador",
+    desc: "En revisión por Dirección",
   },
   {
     key: "Pending Fin",
-    label: "Revisión Finanzas",
-    desc: "En revisión por Finanzas",
+    label: "Decisión de Pagos",
+    desc: "En revisión por Administración",
   },
-  { key: "Approved", label: "Aprobado", desc: "Aprobado por todas las partes" },
+  {
+    key: "Payment Approved",
+    label: "Pago Aprobado",
+    desc: "Contabilidad programa y procesa el pago",
+  },
   { key: "Paid", label: "Pagado", desc: "Pago procesado" },
 ];
 
+// "Approved" (legacy) equivale a la etapa de pago aprobado en el flujo actual
+const normalizeStatus = (status: string): string =>
+  status === "Approved" ? "Payment Approved" : status;
+
 const getStageIndex = (status: string): number => {
   if (status === "Rejected") return -1;
-  const idx = stages.findIndex((s) => s.key === status);
+  const idx = stages.findIndex((s) => s.key === normalizeStatus(status));
   return idx >= 0 ? idx : 0;
 };
 
@@ -49,7 +57,7 @@ const WorkflowTracker: React.FC<Props> = ({ request, onClose }) => {
     ? request.statusHistory?.filter(h => h.status !== "Rejected").slice(-1)[0]?.status 
     : request.status;
   
-  const lastValidIdx = lastValidStatus ? stages.findIndex(s => s.key === lastValidStatus) : 0;
+  const lastValidIdx = lastValidStatus ? stages.findIndex(s => s.key === normalizeStatus(lastValidStatus)) : 0;
 
   return (
     <div
@@ -86,6 +94,13 @@ const WorkflowTracker: React.FC<Props> = ({ request, onClose }) => {
             <span>Enviado:</span>
             <span className="text-gray-200">{request.date}</span>
           </div>
+          {request.estimatedPaymentDate && request.status !== "Paid" && (
+            <div className="flex items-center gap-1.5 text-gray-400 text-[10px] uppercase tracking-wider font-medium">
+              <Clock size={12} className="text-[#00aa85]" />
+              <span>Pago programado:</span>
+              <span className="text-[#00aa85] font-bold">{request.estimatedPaymentDate}</span>
+            </div>
+          )}
         </div>
 
         <div className="space-y-1">
@@ -95,7 +110,7 @@ const WorkflowTracker: React.FC<Props> = ({ request, onClose }) => {
             const isPending = isRejected ? i >= lastValidIdx : i > currentIdx;
             
             const historyEvent = request.statusHistory?.find(
-              (e) => e.status === stage.key
+              (e) => normalizeStatus(e.status) === stage.key
             );
 
             return (

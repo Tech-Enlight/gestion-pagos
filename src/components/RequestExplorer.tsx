@@ -1,13 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import StatusPill from "./StatusPill";
 import WorkflowTracker from "./WorkflowTracker";
-import { STATUS } from "../data/mockData";
+import { STATUS, STATUS_LABEL, STATUS_DESC } from "../data/mockData";
 import type { Request } from "../data/mockData";
-import { Banknote } from "lucide-react";
+import { Banknote, CalendarClock, Info } from "lucide-react";
 
 interface Props {
   requests: Request[];
   onUpdateRequest: (id: string, status: string, extra?: any) => void;
+  /** "mine" = vista personal del solicitante (Mis Solicitudes); default = Explorador */
+  mode?: "explorer" | "mine";
 }
 
 const statuses = [
@@ -16,18 +18,34 @@ const statuses = [
   "Autorización",
   "Pending Fin",
   "Approved",
+  "Payment Approved",
   "Paid",
   "Rejected",
 ];
 
+// Estados "vivos" — la solicitud sigue avanzando en el flujo
+const IN_PROGRESS = ["Autorización", "Pending Fin", "Approved", "Payment Approved"];
+
 const isClarification = (r: Request): boolean =>
   r.status === "Draft" && !!r.clarificationRequest;
 
-const RequestExplorer: React.FC<Props> = ({ requests, onUpdateRequest }) => {
+const RequestExplorer: React.FC<Props> = ({ requests, onUpdateRequest, mode = "explorer" }) => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("Todos");
   const [selected, setSelected] = useState<Request | null>(null);
   const [clarificationNote, setClarificationNote] = useState("");
+  const isMine = mode === "mine";
+
+  const summary = useMemo(() => {
+    const needsAction = requests.filter(isClarification).length;
+    const inProgress = requests.filter((r) => IN_PROGRESS.includes(r.status)).length;
+    const scheduled = requests.filter(
+      (r) => r.estimatedPaymentDate && r.status !== "Paid" && r.status !== "Rejected"
+    ).length;
+    const paid = requests.filter((r) => r.status === "Paid").length;
+    const rejected = requests.filter((r) => r.status === "Rejected").length;
+    return { needsAction, inProgress, scheduled, paid, rejected };
+  }, [requests]);
 
   const filtered = requests.filter((r) => {
     const q = search.toLowerCase();
@@ -60,12 +78,31 @@ const RequestExplorer: React.FC<Props> = ({ requests, onUpdateRequest }) => {
           className="text-white text-2xl font-bold mb-1"
           style={{ fontFamily: "Alexandria, sans-serif" }}
         >
-          Explorador de Solicitudes
+          {isMine ? "Mis Solicitudes" : "Explorador de Solicitudes"}
         </h2>
         <p className="text-gray-400 text-sm">
-          Busca y filtra el historial completo de solicitudes de pago.
+          {isMine
+            ? "Da seguimiento a tus solicitudes de pago: en qué paso van, quién las tiene y cuándo se pagan."
+            : "Busca y filtra el historial completo de solicitudes de pago."}
         </p>
       </div>
+
+      {/* Resumen personal (solo en Mis Solicitudes) */}
+      {isMine && (
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+          <SummaryCard
+            label="Requieren tu acción"
+            value={summary.needsAction}
+            color="#eab308"
+            hint="Aclaraciones pendientes"
+            active={summary.needsAction > 0}
+          />
+          <SummaryCard label="En proceso" value={summary.inProgress} color="#3D7D80" hint="Autorización y decisión" />
+          <SummaryCard label="Pago programado" value={summary.scheduled} color="#2563eb" hint="Con fecha de pago" />
+          <SummaryCard label="Pagadas" value={summary.paid} color="#a855f7" hint="Pago procesado" />
+          <SummaryCard label="Rechazadas" value={summary.rejected} color="#ef4444" hint="Revisa el motivo" />
+        </div>
+      )}
 
       {/* Filter Bar */}
       <div className="flex flex-col sm:flex-row gap-3">
@@ -91,7 +128,7 @@ const RequestExplorer: React.FC<Props> = ({ requests, onUpdateRequest }) => {
         >
           {statuses.map((s) => (
             <option key={s} value={s}>
-              {s}
+              {s === "Todos" ? "Todos" : STATUS_LABEL[s] || s}
             </option>
           ))}
         </select>
@@ -118,15 +155,26 @@ const RequestExplorer: React.FC<Props> = ({ requests, onUpdateRequest }) => {
                   <th className="text-left px-4 py-3 text-gray-300 font-semibold">
                     Beneficiario
                   </th>
-                  <th className="text-left px-4 py-3 text-gray-300 font-semibold">
-                    Proyecto
-                  </th>
+                  {isMine ? (
+                    <th className="text-left px-4 py-3 text-gray-300 font-semibold">
+                      Concepto
+                    </th>
+                  ) : (
+                    <th className="text-left px-4 py-3 text-gray-300 font-semibold">
+                      Proyecto
+                    </th>
+                  )}
                   <th className="text-right px-4 py-3 text-gray-300 font-semibold">
                     Monto
                   </th>
                   <th className="text-center px-4 py-3 text-gray-300 font-semibold">
                     Estado
                   </th>
+                  {isMine && (
+                    <th className="text-left px-4 py-3 text-gray-300 font-semibold">
+                      Pago programado
+                    </th>
+                  )}
                   <th className="text-left px-4 py-3 text-gray-300 font-semibold">
                     Fecha
                   </th>
@@ -136,10 +184,12 @@ const RequestExplorer: React.FC<Props> = ({ requests, onUpdateRequest }) => {
                 {filtered.length === 0 && (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={isMine ? 7 : 6}
                       className="px-4 py-8 text-center text-gray-500"
                     >
-                      No se encontraron solicitudes
+                      {isMine
+                        ? "Aún no tienes solicitudes. Crea una desde Nueva solicitud."
+                        : "No se encontraron solicitudes"}
                     </td>
                   </tr>
                 )}
@@ -183,8 +233,8 @@ const RequestExplorer: React.FC<Props> = ({ requests, onUpdateRequest }) => {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-gray-300">{r.beneficiary}</td>
-                    <td className="px-4 py-3 text-gray-400">
-                      {r.projectNumber}
+                    <td className="px-4 py-3 text-gray-400 max-w-[220px] truncate" title={isMine ? r.concept : r.projectNumber}>
+                      {isMine ? r.concept : r.projectNumber}
                     </td>
                     <td className="px-4 py-3 text-gray-200 text-right">
                       {r.amount.toLocaleString("es-MX")} {r.currency}
@@ -192,6 +242,18 @@ const RequestExplorer: React.FC<Props> = ({ requests, onUpdateRequest }) => {
                     <td className="px-4 py-3 text-center">
                       <StatusPill status={r.status} />
                     </td>
+                    {isMine && (
+                      <td className="px-4 py-3">
+                        {r.estimatedPaymentDate && r.status !== "Paid" && r.status !== "Rejected" ? (
+                          <span className="inline-flex items-center gap-1.5 text-[#60a5fa] text-xs font-semibold">
+                            <CalendarClock size={13} />
+                            {r.estimatedPaymentDate}
+                          </span>
+                        ) : (
+                          <span className="text-gray-600 text-xs">—</span>
+                        )}
+                      </td>
+                    )}
                     <td className="px-4 py-3 text-gray-400">{r.date}</td>
                   </tr>
                 ))}
@@ -203,6 +265,35 @@ const RequestExplorer: React.FC<Props> = ({ requests, onUpdateRequest }) => {
         {/* Side Panel */}
         {selected && (
           <div className="w-80 shrink-0 space-y-3">
+            {/* Estado actual en lenguaje claro (solo Mis Solicitudes) */}
+            {isMine && (
+              <div
+                className="rounded-xl border border-gray-700 p-4 flex gap-3"
+                style={{ backgroundColor: "#1e2d3d" }}
+              >
+                <Info size={16} className="text-[#00aa85] shrink-0 mt-0.5" />
+                <div>
+                  <p
+                    className="text-white text-sm font-semibold mb-0.5"
+                    style={{ fontFamily: "Alexandria, sans-serif" }}
+                  >
+                    {STATUS_LABEL[selected.status] || selected.status}
+                  </p>
+                  <p className="text-gray-400 text-xs leading-relaxed">
+                    {STATUS_DESC[selected.status] || ""}
+                  </p>
+                  {selected.estimatedPaymentDate &&
+                    selected.status !== "Paid" &&
+                    selected.status !== "Rejected" && (
+                      <p className="text-[#60a5fa] text-xs font-semibold mt-2 inline-flex items-center gap-1.5">
+                        <CalendarClock size={13} />
+                        Pago programado para el {selected.estimatedPaymentDate}
+                      </p>
+                    )}
+                </div>
+              </div>
+            )}
+
             {/* Workflow Tracker (always shown) */}
             <WorkflowTracker
               request={selected}
@@ -477,6 +568,35 @@ const RequestExplorer: React.FC<Props> = ({ requests, onUpdateRequest }) => {
     </div>
   );
 };
+
+/* Tarjeta de resumen para Mis Solicitudes */
+const SummaryCard: React.FC<{
+  label: string;
+  value: number;
+  color: string;
+  hint: string;
+  active?: boolean;
+}> = ({ label, value, color, hint, active }) => (
+  <div
+    className="rounded-xl border p-3"
+    style={{
+      backgroundColor: "#1e2d3d",
+      borderColor: active ? color : "rgba(255,255,255,0.08)",
+      boxShadow: active ? `0 0 12px ${color}33` : undefined,
+    }}
+  >
+    <p
+      className="text-2xl font-bold leading-none mb-1"
+      style={{ color, fontFamily: "Alexandria, sans-serif" }}
+    >
+      {value}
+    </p>
+    <p className="text-gray-200 text-xs font-semibold" style={{ fontFamily: "Alexandria, sans-serif" }}>
+      {label}
+    </p>
+    <p className="text-gray-500 text-[10px] mt-0.5">{hint}</p>
+  </div>
+);
 
 const DetailRow: React.FC<{
   label: string;

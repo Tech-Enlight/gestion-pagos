@@ -277,6 +277,7 @@ export const statusColors: Record<string, string> = {
   Autorización: "bg-yellow-500",
   "Pending Fin": "bg-blue-500",
   Approved: "bg-green-500",
+  "Payment Approved": "bg-blue-600",
   Rejected: "bg-red-500",
   Paid: "bg-purple-500",
 };
