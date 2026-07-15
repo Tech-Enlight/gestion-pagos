@@ -17,7 +17,9 @@ dist-ssr
 .env.*
 !.env.example
 
-# n8n workflow exports — kept locally for reference, not tracked (n8n cloud is source of truth)
+# n8n workflow exports — kept locally for reference, not tracked (n8n cloud is source of truth).
+# Outside public/ so builds/deploys can never ship them (they may embed API tokens).
+n8n-exports/
 public/n8n/
 
 # Claude Code personal settings (session permission grants, may embed local secrets)
