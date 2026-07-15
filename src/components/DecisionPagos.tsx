@@ -22,7 +22,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { RefreshCw, Download, Copy, X, ChevronDown, ChevronUp } from "lucide-react";
+import { RefreshCw, Download, Copy, X, ChevronDown, ChevronUp, CheckCircle2, XCircle, HelpCircle, Loader2 } from "lucide-react";
 import {
   loadDecisionData,
   type DecisionData,
@@ -33,6 +33,9 @@ import {
   type DecisionColor,
   type VencBucket,
 } from "../services/decision";
+import { useAuth } from "../context/AuthContext";
+import { STATUS } from "../data/mockData";
+import RejectModal from "./RejectModal";
 
 // ─── Theme tokens ────────────────────────────────────────────
 const T = {
@@ -162,6 +165,12 @@ function evalDecision(
   if (oc_ok && avance_ok) return { color: "verde", label: "Procede", reasons, oc_ok, avance_ok };
   return { color: "rojo", label: "Bloquear", reasons, oc_ok, avance_ok };
 }
+
+// ─── Elegibilidad de acciones (decisión del admin) ───────────
+// Flujo confirmado: MAC autoriza (→ Pending Fin), el admin decide aquí en un solo
+// paso (→ Payment Approved, directo al analista) o rechaza / pide aclaración.
+// "Approved" quedó fuera del flujo pero se acepta para destrabar filas legacy.
+const canDecideOn = (p: PagoFlat) => p.estatus === STATUS.PENDING_FIN || p.estatus === STATUS.APPROVED;
 
 // ─── Filter state ────────────────────────────────────────────
 interface Filters {
@@ -344,10 +353,16 @@ interface CardProps {
   fcData: Record<string, ForecastRecord>;
   onToggleSelect: (id: string) => void;
   onToggleExpand: (id: string) => void;
+  canDecide?: boolean;
+  actionBusy?: boolean;
+  onApprove?: (p: PagoFlat) => void;
+  onClarify?: (p: PagoFlat) => void;
+  onReject?: (p: PagoFlat) => void;
 }
 
 const PaymentCard: React.FC<CardProps> = ({
   p, decision, selected, expanded, ocData, fcData, onToggleSelect, onToggleExpand,
+  canDecide, actionBusy, onApprove, onClarify, onReject,
 }) => {
   const urg = urgLabel(p);
   const dc = DECISION_COLORS[decision.color];
@@ -462,7 +477,13 @@ const PaymentCard: React.FC<CardProps> = ({
       </div>
 
       {/* Expanded panel */}
-      {expanded && <ExpandedPanel p={p} decision={decision} ocData={ocData} fcData={fcData} />}
+      {expanded && (
+        <ExpandedPanel
+          p={p} decision={decision} ocData={ocData} fcData={fcData}
+          canDecide={canDecide} actionBusy={actionBusy}
+          onApprove={onApprove} onClarify={onClarify} onReject={onReject}
+        />
+      )}
     </div>
   );
 };
@@ -473,7 +494,12 @@ const ExpandedPanel: React.FC<{
   decision: Decision;
   ocData: Record<string, OcRecord>;
   fcData: Record<string, ForecastRecord>;
-}> = ({ p, decision, ocData, fcData }) => {
+  canDecide?: boolean;
+  actionBusy?: boolean;
+  onApprove?: (p: PagoFlat) => void;
+  onClarify?: (p: PagoFlat) => void;
+  onReject?: (p: PagoFlat) => void;
+}> = ({ p, decision, ocData, fcData, canDecide, actionBusy, onApprove, onClarify, onReject }) => {
   const dc = DECISION_COLORS[decision.color];
   const ocKey = p.oc ? String(p.oc).replace(/\s+/g, "").toUpperCase() : null;
   const oc = ocKey ? ocData[ocKey] : null;
@@ -497,6 +523,18 @@ const ExpandedPanel: React.FC<{
         {decision.reasons.map((r, i) => (
           <div key={i} style={{ fontSize: 12, color: T.textSub, fontFamily: T.fontAlt, lineHeight: 1.5 }}>{r}</div>
         ))}
+
+        {/* Acciones del admin: la decisión se toma aquí, no en Finanzas */}
+        {canDecide && canDecideOn(p) && (
+          <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }} onClick={(e) => e.stopPropagation()}>
+            <ActionBtn label="Aprobar" color={T.jade} disabled={actionBusy} icon={<CheckCircle2 size={14} />} onClick={() => onApprove?.(p)} />
+            <ActionBtn label="Aclaración" color={T.amber} disabled={actionBusy} icon={<HelpCircle size={14} />} onClick={() => onClarify?.(p)} />
+            <ActionBtn label="Rechazar" color={T.red} disabled={actionBusy} icon={<XCircle size={14} />} onClick={() => onReject?.(p)} />
+            <span style={{ fontSize: 11, color: T.textMuted, fontFamily: T.fontAlt, alignSelf: "center" }}>
+              Estatus actual: {p.estatus || "—"}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Detail grid */}
@@ -539,6 +577,52 @@ const ExpandedPanel: React.FC<{
           <strong style={{ color: T.text }}>Obs. finanzas: </strong>{p.obs}
         </div>
       )}
+    </div>
+  );
+};
+
+const ActionBtn: React.FC<{ label: string; color: string; onClick: () => void; disabled?: boolean; icon?: React.ReactNode }> = ({ label, color, onClick, disabled, icon }) => (
+  <button onClick={onClick} disabled={disabled} style={{
+    display: "flex", alignItems: "center", gap: 6, padding: "6px 14px",
+    background: color + "20", color, border: `1px solid ${color}60`, borderRadius: 6,
+    fontSize: 12, fontFamily: T.font, fontWeight: 700, cursor: disabled ? "wait" : "pointer",
+    opacity: disabled ? 0.5 : 1, transition: "opacity 0.15s",
+  }}>
+    {icon}{label}
+  </button>
+);
+
+// Modal de aclaración: regresa la solicitud a Borrador con el comentario del admin
+const ClarifyModal: React.FC<{ label: string; onConfirm: (comment: string) => void; onCancel: () => void }> = ({ label, onConfirm, onCancel }) => {
+  const [comment, setComment] = useState("");
+  const [err, setErr] = useState("");
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+      <div style={{ background: "#1e2d3d", borderRadius: 12, border: `1px solid ${T.amber}70`, boxShadow: "0 16px 60px rgba(0,0,0,0.5)", padding: 24, width: "min(440px, 100%)" }}>
+        <div style={{ fontSize: 16, fontWeight: 700, color: T.text, fontFamily: T.font, marginBottom: 6 }}>Solicitar aclaración — {label}</div>
+        <p style={{ fontSize: 13, color: T.textSub, fontFamily: T.fontAlt, margin: "0 0 14px" }}>
+          La solicitud regresa a Borrador y el solicitante recibe tu comentario.
+        </p>
+        <textarea
+          value={comment}
+          onChange={(e) => { setComment(e.target.value); setErr(""); }}
+          placeholder="Describe qué información falta o debe corregirse…"
+          rows={4}
+          style={{
+            width: "100%", boxSizing: "border-box", padding: "8px 12px", borderRadius: 8,
+            background: "#293C47", color: T.text, fontSize: 13, fontFamily: T.font,
+            border: `1px solid ${T.cardBorder}`, outline: "none", resize: "none",
+          }}
+        />
+        {err && <p style={{ color: T.red, fontSize: 12, fontFamily: T.fontAlt, margin: "6px 0 0" }}>{err}</p>}
+        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 16 }}>
+          <BarBtn label="Cancelar" onClick={onCancel} />
+          <ActionBtn label="Enviar aclaración" color={T.amber} icon={<HelpCircle size={14} />} onClick={() => {
+            if (!comment.trim()) { setErr("Escribe el comentario de aclaración."); return; }
+            onConfirm(comment.trim());
+          }} />
+        </div>
+      </div>
     </div>
   );
 };
@@ -1046,11 +1130,22 @@ interface SelBarProps {
   onViewSelected: () => void;
   onExportCSV: () => void;
   onCopyClipboard: () => void;
+  canDecide?: boolean;
+  actionBusy?: boolean;
+  onApproveIds?: (ids: string[]) => void;
+  onClarifyIds?: (ids: string[]) => void;
+  onRejectIds?: (ids: string[]) => void;
 }
 
-const SelectionBar: React.FC<SelBarProps> = ({ selected, pagos, onClear, onViewSelected, onExportCSV, onCopyClipboard }) => {
+const SelectionBar: React.FC<SelBarProps> = ({
+  selected, pagos, onClear, onViewSelected, onExportCSV, onCopyClipboard,
+  canDecide, actionBusy, onApproveIds, onClarifyIds, onRejectIds,
+}) => {
   const sel = pagos.filter((p) => selected.has(p.id));
   if (sel.length === 0) return null;
+
+  // Las acciones masivas aplican solo a los elegibles por estatus dentro de la selección
+  const decidibles = sel.filter(canDecideOn).map((p) => p.id);
 
   const total = sel.reduce((s, p) => s + p.total_mxn, 0);
   const propTotal = sel.filter((p) => p.propuesta === "Propuesta").reduce((s, p) => s + p.total_mxn, 0);
@@ -1072,7 +1167,15 @@ const SelectionBar: React.FC<SelBarProps> = ({ selected, pagos, onClear, onViewS
         <StatItem label="Propuesta" value={fmtMXN(propTotal)} mono color={T.jade} sub={`${nProp} pagos`} />
         <StatItem label="Aplazado" value={fmtMXN(aplazTotal)} mono color={T.steel} sub={`${nAplaz} pagos`} />
       </div>
-      <div style={{ display: "flex", gap: 8, marginLeft: "auto" }}>
+      <div style={{ display: "flex", gap: 8, marginLeft: "auto", flexWrap: "wrap", justifyContent: "flex-end" }}>
+        {canDecide && decidibles.length > 0 && (
+          <>
+            <ActionBtn label={`Aprobar (${decidibles.length})`} color={T.jade} disabled={actionBusy} icon={<CheckCircle2 size={13} />} onClick={() => onApproveIds?.(decidibles)} />
+            <ActionBtn label={`Aclaración (${decidibles.length})`} color={T.amber} disabled={actionBusy} icon={<HelpCircle size={13} />} onClick={() => onClarifyIds?.(decidibles)} />
+            <ActionBtn label={`Rechazar (${decidibles.length})`} color={T.red} disabled={actionBusy} icon={<XCircle size={13} />} onClick={() => onRejectIds?.(decidibles)} />
+            <div style={{ width: 1, alignSelf: "stretch", background: T.cardBorder }} />
+          </>
+        )}
         <BarBtn label="Ver selección" onClick={onViewSelected} />
         <BarBtn label="Exportar CSV" onClick={onExportCSV} primary icon={<Download size={13} />} />
         <BarBtn label="Copiar" onClick={onCopyClipboard} icon={<Copy size={13} />} />
@@ -1239,11 +1342,20 @@ const PillBtn: React.FC<{ label: string; active: boolean; onClick: () => void; c
 type Tab = "lista" | "resumen" | "proveedores" | "clientes" | "vencimientos";
 
 // ─── Main component ──────────────────────────────────────────
-const DecisionPagos: React.FC = () => {
+interface DecisionPagosProps {
+  onUpdateRequest?: (id: string, status: string, extra?: any) => Promise<void>;
+}
+
+const DecisionPagos: React.FC<DecisionPagosProps> = ({ onUpdateRequest }) => {
+  const { user } = useAuth();
+  // Aquí decide el admin; el analista contable solo consulta (su flujo vive en Finanzas)
+  const canDecide = !!onUpdateRequest && (user?.role === "admin" || user?.role === "superadmin");
+
   const [data, setData] = useState<DecisionData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [cruceLoading, setCruceLoading] = useState(false);
 
   const [activeTab, setActiveTab] = useState<Tab>("lista");
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -1252,21 +1364,72 @@ const DecisionPagos: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [copyFeedback, setCopyFeedback] = useState(false);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const [actionBusy, setActionBusy] = useState(false);
+  const [actionMsg, setActionMsg] = useState<string | null>(null);
+  const [rejectIds, setRejectIds] = useState<string[] | null>(null);
+  const [clarifyIds, setClarifyIds] = useState<string[] | null>(null);
+
+  const load = useCallback(async (opts?: { silent?: boolean }) => {
+    const silent = opts?.silent === true;
+    if (!silent) { setLoading(true); setError(null); }
     try {
-      const d = await loadDecisionData();
+      // En carga visible los pagos se pintan apenas llegan; el cruce OC/pronóstico
+      // (NetSuite, lento) completa después. En refresco silencioso no se usa el
+      // parcial para no degradar momentáneamente las decisiones ya calculadas.
+      const d = await loadDecisionData(silent ? undefined : (partial) => {
+        setData(partial);
+        setCruceLoading(true);
+        setLoading(false);
+      });
       setData(d);
       setLastUpdated(new Date());
+      setError(null);
     } catch (e: any) {
       setError(e.message || "Error al cargar datos");
     } finally {
       setLoading(false);
+      setCruceLoading(false);
     }
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  // Refresco silencioso periódico para que la vista nunca se quede con datos viejos
+  useEffect(() => {
+    const t = setInterval(() => load({ silent: true }), 5 * 60 * 1000);
+    return () => clearInterval(t);
+  }, [load]);
+
+  // ── Decisiones (aprobar / rechazar) ────────────────────────
+  const applyStatus = useCallback(async (ids: string[], status: string, extra?: any) => {
+    if (!onUpdateRequest || ids.length === 0) return;
+    setActionBusy(true);
+    try {
+      // Secuencial: el backend hace appendOrUpdate sobre la misma hoja
+      for (const id of ids) await onUpdateRequest(id, status, extra);
+      setActionMsg(`✓ ${ids.length} solicitud${ids.length !== 1 ? "es" : ""} → ${status}`);
+      setTimeout(() => setActionMsg(null), 3000);
+      setSelected((prev) => { const n = new Set(prev); ids.forEach((i) => n.delete(i)); return n; });
+      await load({ silent: true });
+    } catch (e: any) {
+      setError(e.message || "Error al actualizar el estatus");
+    } finally {
+      setActionBusy(false);
+    }
+  }, [onUpdateRequest, load]);
+
+  // Un solo paso de decisión: directo a Payment Approved (bandeja del analista)
+  const handleApproveIds = (ids: string[]) => applyStatus(ids, STATUS.PAYMENT_APPROVED);
+  const handleRejectConfirm = (comment: string) => {
+    const ids = rejectIds || [];
+    setRejectIds(null);
+    applyStatus(ids, STATUS.REJECTED, { rejectReason: comment });
+  };
+  const handleClarifyConfirm = (comment: string) => {
+    const ids = clarifyIds || [];
+    setClarifyIds(null);
+    applyStatus(ids, STATUS.DRAFT, { clarificationRequest: comment });
+  };
 
   // Memoized decision map
   const decisionMap = useMemo(() => {
@@ -1390,10 +1553,10 @@ const DecisionPagos: React.FC = () => {
     </div>
   );
 
-  if (error) return (
+  if (error && !data) return (
     <div style={{ padding: "40px 20px", textAlign: "center" }}>
       <div style={{ color: T.red, fontSize: 14, fontFamily: T.fontAlt, marginBottom: 16 }}>{error}</div>
-      <button onClick={load} style={{ padding: "8px 20px", background: T.jade, color: "#000", border: "none", borderRadius: 6, cursor: "pointer", fontFamily: T.font, fontWeight: 600, fontSize: 13 }}>Reintentar</button>
+      <button onClick={() => load()} style={{ padding: "8px 20px", background: T.jade, color: "#000", border: "none", borderRadius: 6, cursor: "pointer", fontFamily: T.font, fontWeight: 600, fontSize: 13 }}>Reintentar</button>
     </div>
   );
 
@@ -1402,6 +1565,7 @@ const DecisionPagos: React.FC = () => {
 
   return (
     <div style={{ fontFamily: T.font, color: T.text, paddingBottom: 80 }}>
+      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
       {/* Page header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
         <div>
@@ -1412,14 +1576,34 @@ const DecisionPagos: React.FC = () => {
             {lastUpdated && <> · Actualizado {lastUpdated.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}</>}
           </div>
         </div>
-        <button onClick={load} style={{
-          display: "flex", alignItems: "center", gap: 6, padding: "7px 14px",
-          background: T.cardBg, border: `1px solid ${T.cardBorder}`, borderRadius: 6,
-          color: T.textSub, fontSize: 12, fontFamily: T.font, cursor: "pointer",
-        }}>
-          <RefreshCw size={13} /> Actualizar
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {cruceLoading && (
+            <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: T.amber, fontFamily: T.fontAlt }}>
+              <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} />
+              Cruzando OC / pronóstico…
+            </span>
+          )}
+          <button onClick={() => load()} disabled={loading || actionBusy} style={{
+            display: "flex", alignItems: "center", gap: 6, padding: "7px 14px",
+            background: T.cardBg, border: `1px solid ${T.cardBorder}`, borderRadius: 6,
+            color: T.textSub, fontSize: 12, fontFamily: T.font, cursor: "pointer",
+          }}>
+            <RefreshCw size={13} /> Actualizar
+          </button>
+        </div>
       </div>
+
+      {/* Error no bloqueante (los datos ya cargados se conservan) */}
+      {error && (
+        <div style={{
+          display: "flex", alignItems: "center", gap: 8, marginBottom: 14, padding: "8px 14px",
+          background: T.redFaint, border: `1px solid ${T.red}40`, borderRadius: 6,
+          fontSize: 12, color: T.red, fontFamily: T.fontAlt,
+        }}>
+          {error}
+          <button onClick={() => setError(null)} style={{ marginLeft: "auto", background: "none", border: "none", color: T.red, cursor: "pointer", padding: 2 }}><X size={13} /></button>
+        </div>
+      )}
 
       {/* KPI strip */}
       <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
@@ -1557,6 +1741,11 @@ const DecisionPagos: React.FC = () => {
                 fcData={data.forecast_data}
                 onToggleSelect={toggleSelect}
                 onToggleExpand={(id) => setExpandedId((prev) => (prev === id ? null : id))}
+                canDecide={canDecide}
+                actionBusy={actionBusy}
+                onApprove={(pg) => handleApproveIds([pg.id])}
+                onClarify={(pg) => setClarifyIds([pg.id])}
+                onReject={(pg) => setRejectIds([pg.id])}
               />
             ))
           )}
@@ -1576,6 +1765,11 @@ const DecisionPagos: React.FC = () => {
         onViewSelected={() => setShowModal(true)}
         onExportCSV={handleExportCSV}
         onCopyClipboard={handleCopy}
+        canDecide={canDecide}
+        actionBusy={actionBusy}
+        onApproveIds={handleApproveIds}
+        onClarifyIds={(ids) => setClarifyIds(ids)}
+        onRejectIds={(ids) => setRejectIds(ids)}
       />
 
       {/* Copy feedback toast */}
@@ -1586,6 +1780,34 @@ const DecisionPagos: React.FC = () => {
         }}>
           ✓ Copiado al portapapeles
         </div>
+      )}
+
+      {/* Action feedback toast */}
+      {actionMsg && (
+        <div style={{
+          position: "fixed", top: 20, right: 20, background: T.jade, color: "#000",
+          padding: "8px 16px", borderRadius: 6, fontFamily: T.font, fontSize: 12, fontWeight: 600, zIndex: 400,
+        }}>
+          {actionMsg}
+        </div>
+      )}
+
+      {/* Reject modal (individual o masivo) */}
+      {rejectIds && (
+        <RejectModal
+          requestId={rejectIds.length === 1 ? rejectIds[0] : `${rejectIds.length} solicitudes`}
+          onConfirm={(_id, comment) => handleRejectConfirm(comment)}
+          onCancel={() => setRejectIds(null)}
+        />
+      )}
+
+      {/* Clarify modal (individual o masivo) */}
+      {clarifyIds && (
+        <ClarifyModal
+          label={clarifyIds.length === 1 ? clarifyIds[0] : `${clarifyIds.length} solicitudes`}
+          onConfirm={handleClarifyConfirm}
+          onCancel={() => setClarifyIds(null)}
+        />
       )}
 
       {/* Selection modal */}

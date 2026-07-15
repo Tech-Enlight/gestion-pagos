@@ -144,7 +144,9 @@ function AppContent() {
             />
           )}
           {currentView === "tipo-de-cambio" && <ExchangeChart />}
-          {currentView === "decision-pagos" && <DecisionPagos />}
+          {currentView === "decision-pagos" && (
+            <DecisionPagos onUpdateRequest={handleUpdateRequest} />
+          )}
         </RoleGate>
 
         <RoleGate allowedRoles={["superadmin"]}>

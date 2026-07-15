@@ -136,16 +136,7 @@ async function safeFetch(url: string): Promise<any> {
   return res.json();
 }
 
-export async function loadDecisionData(): Promise<DecisionData> {
-  const [pagoRes, ocRes, forecastRes, tcRes] = await Promise.all([
-    safeFetch(`${BASE}/pagos-data`),
-    safeFetch(`${BASE}/oc-data`),
-    safeFetch(`${BASE}/forecast-data`),
-    safeFetch(`${BASE}/tipo-cambio`),
-  ]);
-
-  // Normalize OC dates
-  const ocData: Record<string, OcRecord> = ocRes;
+function normalizeOcDates(ocData: Record<string, OcRecord>) {
   for (const oc of Object.values(ocData)) {
     if (oc.fecha_sol) {
       const m = oc.fecha_sol.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
@@ -159,7 +150,36 @@ export async function loadDecisionData(): Promise<DecisionData> {
       }
     }
   }
+}
 
+// `onPartial` recibe los pagos apenas llegan de Sheets; el cruce OC/pronóstico
+// (oc-data pega a NetSuite y es el endpoint lento) se completa después sin
+// bloquear la primera pintura de la vista.
+export async function loadDecisionData(onPartial?: (d: DecisionData) => void): Promise<DecisionData> {
+  const ocPromise = safeFetch(`${BASE}/oc-data`);
+  const fcPromise = safeFetch(`${BASE}/forecast-data`);
+  // Si pagos-data falla primero, estas promesas quedarían sin handler
+  ocPromise.catch(() => {});
+  fcPromise.catch(() => {});
+
+  const [pagoRes, tcRes] = await Promise.all([
+    safeFetch(`${BASE}/pagos-data`),
+    safeFetch(`${BASE}/tipo-cambio`),
+  ]);
+  if (onPartial) onPartial(assembleData(pagoRes, tcRes, {}, {}));
+
+  const [ocRes, forecastRes] = await Promise.all([ocPromise, fcPromise]);
+  const ocData: Record<string, OcRecord> = ocRes;
+  normalizeOcDates(ocData);
+  return assembleData(pagoRes, tcRes, ocData, forecastRes as Record<string, ForecastRecord>);
+}
+
+function assembleData(
+  pagoRes: any,
+  tcRes: any,
+  ocData: Record<string, OcRecord>,
+  forecastData: Record<string, ForecastRecord>
+): DecisionData {
   const hoy = new Date();
   const TC_HOY: number = (Array.isArray(tcRes) && tcRes.length > 0 ? tcRes[tcRes.length - 1]?.rate : null) ?? 17.5;
   const pagosFlat: PagoFlat[] = [];
@@ -267,7 +287,7 @@ export async function loadDecisionData(): Promise<DecisionData> {
     por_venc,
     monto_venc,
     oc_data: ocData,
-    forecast_data: forecastRes as Record<string, ForecastRecord>,
+    forecast_data: forecastData,
     meta: {
       fecha_hoy: hoy.toISOString().split("T")[0],
       fecha_corte: (pagoRes as any)._meta?.generado?.split("T")[0] || "",

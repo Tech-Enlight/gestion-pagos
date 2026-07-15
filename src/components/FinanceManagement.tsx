@@ -121,28 +121,8 @@ const FinanceManagement: React.FC<Props> = ({
     }
   };
 
-  // Actions
-  const handleApprove = () => {
-    if (!selected) return;
-    // Save observations if any
-    if (finObs.trim()) {
-      onUpdateFinanceFields(selected.id, {
-        financeObservations: finObs.trim(),
-      });
-    }
-    onUpdateRequest(selected.id, STATUS.APPROVED);
-    setSelectedId(null);
-  };
-
-  const handleApprovePayment = () => {
-    if (!selected) return;
-    if (finObs.trim()) {
-      onUpdateFinanceFields(selected.id, { financeObservations: finObs.trim() });
-    }
-    onUpdateRequest(selected.id, STATUS.PAYMENT_APPROVED);
-    setSelectedId(null);
-  };
-
+  // Actions — aprobar/rechazar del admin viven ahora en Decisión de Pagos;
+  // aquí queda el flujo operativo de Finanzas (analista) y campos financieros.
   const handleMarkPaid = (id: string, paymentData: PaymentData) => {
     onUpdateFinanceFields(id, {
       amountPaid: paymentData.amountPaid,
@@ -328,46 +308,6 @@ const FinanceManagement: React.FC<Props> = ({
     );
   };
 
-  const handleBulkApprove = async () => {
-    if (selectedIds.length === 0) return;
-    if (!window.confirm(`¿Aprobar las ${selectedIds.length} solicitudes de finanzas seleccionadas?`)) return;
-    setIsBulkOperating(true);
-    try {
-      for (const id of selectedIds) {
-        if (finObs.trim()) {
-          await onUpdateFinanceFields(id, { financeObservations: finObs.trim() });
-        }
-        await onUpdateRequest(id, STATUS.APPROVED);
-      }
-      setSelectedIds([]);
-      setSelectedId(null);
-    } catch (error) {
-      console.error("Error bulk approving:", error);
-    } finally {
-      setIsBulkOperating(false);
-    }
-  };
-
-  const handleBulkApprovePayment = async () => {
-    if (selectedIds.length === 0) return;
-    if (!window.confirm(`¿Aprobar el pago de las ${selectedIds.length} solicitudes seleccionadas?`)) return;
-    setIsBulkOperating(true);
-    try {
-      for (const id of selectedIds) {
-        if (finObs.trim()) {
-          await onUpdateFinanceFields(id, { financeObservations: finObs.trim() });
-        }
-        await onUpdateRequest(id, STATUS.PAYMENT_APPROVED);
-      }
-      setSelectedIds([]);
-      setSelectedId(null);
-    } catch (error) {
-      console.error("Error bulk approving payment:", error);
-    } finally {
-      setIsBulkOperating(false);
-    }
-  };
-
   const handleBulkClarificationConfirm = async (_labelId: string, comment: string) => {
     if (!bulkClarifyTarget) return;
     setIsBulkOperating(true);
@@ -486,6 +426,17 @@ const FinanceManagement: React.FC<Props> = ({
         </div>
       </div>
 
+      {/* Aviso: la decisión del admin se toma en Decisión de Pagos */}
+      {!isAnalista && (
+        <div
+          className="rounded-xl border border-[#00aa85]/30 px-4 py-3 text-sm text-gray-300"
+          style={{ backgroundColor: "#1e2d3d", fontFamily: "Albert Sans, sans-serif" }}
+        >
+          Las aprobaciones y rechazos se realizan ahora en <strong className="text-[#00aa85]">Decisión de Pagos</strong>.
+          Esta vista queda para seguimiento y campos de Finanzas (fecha estimada, notas).
+        </div>
+      )}
+
       {/* Tabs / Filters */}
       <div className="flex gap-2">
         {isAnalista ? (
@@ -548,36 +499,15 @@ const FinanceManagement: React.FC<Props> = ({
             )}
           </div>
           <div className="flex items-center gap-2">
-            {allPending && !isAnalista && (
-              <button
-                onClick={handleBulkApprove}
-                disabled={isBulkOperating}
-                className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-white text-xs font-semibold bg-green-600 hover:bg-green-700 disabled:opacity-50 transition-colors shadow shadow-green-950/20"
-              >
-                <CheckCircle2 size={14} />
-                Aprobar Finanzas
-              </button>
-            )}
-
             {allApproved && !isAnalista && (
-              <>
-                <button
-                  onClick={handleBulkApprovePayment}
-                  disabled={isBulkOperating}
-                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-white text-xs font-semibold bg-blue-600 hover:bg-blue-700 disabled:opacity-50 transition-colors shadow shadow-blue-950/20"
-                >
-                  <CheckCircle2 size={14} />
-                  Aprobar Pago
-                </button>
-                <button
-                  onClick={() => setBulkEstimatedDateTarget(selectedIds)}
-                  disabled={isBulkOperating}
-                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-white text-xs font-semibold bg-blue-600 hover:bg-blue-700 disabled:opacity-50 transition-colors shadow shadow-blue-950/20"
-                >
-                  <Clock size={14} />
-                  Fecha Estimada
-                </button>
-              </>
+              <button
+                onClick={() => setBulkEstimatedDateTarget(selectedIds)}
+                disabled={isBulkOperating}
+                className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-white text-xs font-semibold bg-blue-600 hover:bg-blue-700 disabled:opacity-50 transition-colors shadow shadow-blue-950/20"
+              >
+                <Clock size={14} />
+                Fecha Estimada
+              </button>
             )}
 
             {allPaymentApproved && isAnalista && (
@@ -599,14 +529,16 @@ const FinanceManagement: React.FC<Props> = ({
               <HelpCircle size={14} />
               Aclaración
             </button>
-            <button
-              onClick={() => setBulkRejectTarget(selectedIds)}
-              disabled={isBulkOperating}
-              className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-white text-xs font-semibold bg-red-600 hover:bg-red-700 disabled:opacity-50 transition-colors shadow shadow-red-950/20"
-            >
-              <XCircle size={14} />
-              Rechazar
-            </button>
+            {isAnalista && (
+              <button
+                onClick={() => setBulkRejectTarget(selectedIds)}
+                disabled={isBulkOperating}
+                className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-white text-xs font-semibold bg-red-600 hover:bg-red-700 disabled:opacity-50 transition-colors shadow shadow-red-950/20"
+              >
+                <XCircle size={14} />
+                Rechazar
+              </button>
+            )}
             <div className="w-[1px] h-6 bg-gray-700 mx-1"></div>
             <button
               onClick={() => setSelectedIds([])}
@@ -922,32 +854,14 @@ const FinanceManagement: React.FC<Props> = ({
 
           {/* Actions */}
           <div className="flex items-center gap-3 px-5 py-4 border-t border-gray-700 flex-wrap">
-            {selected.status === STATUS.PENDING_FIN && !isAnalista && (
-              <button
-                onClick={handleApprove}
-                className="flex items-center gap-2 px-5 py-2 rounded-lg text-white text-sm font-semibold bg-green-600 hover:bg-green-700 transition-colors shadow-lg shadow-green-900/20"
-              >
-                <CheckCircle2 size={16} />
-                Aprobar
-              </button>
-            )}
             {selected.status === STATUS.APPROVED && !isAnalista && (
-              <>
-                <button
-                  onClick={handleApprovePayment}
-                  className="flex items-center gap-2 px-5 py-2 rounded-lg text-white text-sm font-semibold bg-blue-600 hover:bg-blue-700 transition-colors shadow-lg shadow-blue-900/20"
-                >
-                  <CheckCircle2 size={16} />
-                  Aprobar Pago
-                </button>
-                <button
-                  onClick={() => setEstimatedDateTarget(selected.id)}
-                  className="flex items-center gap-2 px-5 py-2 rounded-lg text-white text-sm font-semibold bg-blue-600 hover:bg-blue-700 transition-colors shadow-lg shadow-blue-900/20"
-                >
-                  <Clock size={16} />
-                  Fecha Estimada
-                </button>
-              </>
+              <button
+                onClick={() => setEstimatedDateTarget(selected.id)}
+                className="flex items-center gap-2 px-5 py-2 rounded-lg text-white text-sm font-semibold bg-blue-600 hover:bg-blue-700 transition-colors shadow-lg shadow-blue-900/20"
+              >
+                <Clock size={16} />
+                Fecha Estimada
+              </button>
             )}
             {selected.status === STATUS.PAYMENT_APPROVED && isAnalista && (
               <button
@@ -966,13 +880,15 @@ const FinanceManagement: React.FC<Props> = ({
               <HelpCircle size={16} />
               Aclaración
             </button>
-            <button
-              onClick={() => setRejectTarget(selected.id)}
-              className="flex items-center gap-2 px-5 py-2 rounded-lg text-white text-sm font-semibold bg-red-600 hover:bg-red-700 transition-colors shadow-lg shadow-red-900/20"
-            >
-              <XCircle size={16} />
-              Rechazar
-            </button>
+            {isAnalista && (
+              <button
+                onClick={() => setRejectTarget(selected.id)}
+                className="flex items-center gap-2 px-5 py-2 rounded-lg text-white text-sm font-semibold bg-red-600 hover:bg-red-700 transition-colors shadow-lg shadow-red-900/20"
+              >
+                <XCircle size={16} />
+                Rechazar
+              </button>
+            )}
           </div>
         </div>
       )}
