@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portal de Pagos · Guía del Proceso · Enlight</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@200;300;400;600;700&family=Albert+Sans:wght@200;400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════════════════════════
+   Tokens — Enlight Design System (colors_and_type.css)
+   ══════════════════════════════════════════════════════════════════ */
+:root{
+  --enl-acero:#293C47; --enl-jade:#00AA85; --enl-cerceta:#3D7D80;
+  --enl-marino:#121926; --enl-gris:#828080;
+  --enl-jade-20:rgba(0,170,133,.20); --enl-jade-40:rgba(0,170,133,.40);
+  --enl-cerceta-20:rgba(61,125,128,.20); --enl-cerceta-40:rgba(61,125,128,.40);
+  --enl-gris-20:rgba(130,128,128,.20);
+  --enl-white:#FFFFFF; --enl-bone:#F5F6F7; --enl-mist:#E6EAEC; --enl-fog:#C5CCD0;
+  --font-primary:"Alexandria","Inter",system-ui,sans-serif;
+  --font-secondary:"Albert Sans","Inter",system-ui,sans-serif;
+  --tracking-eyebrow:.14em;
+  --radius-md:8px; --radius-lg:16px; --radius-pill:999px;
+  --shadow-2:0 4px 12px rgba(18,25,38,.08),0 2px 4px rgba(18,25,38,.04);
+  --grad-jade-to-acero:linear-gradient(90deg,var(--enl-jade) 0%,var(--enl-acero) 100%);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-font-smoothing:antialiased}
+body{
+  font-family:var(--font-primary);font-weight:300;font-size:15px;
+  line-height:1.55;color:var(--enl-acero);background:var(--enl-bone);
+}
+.page{max-width:1080px;margin:0 auto;padding:0 24px 64px}
+
+/* ── Type presets ── */
+.eyebrow{
+  font-family:var(--font-secondary);font-weight:500;font-size:12px;
+  letter-spacing:var(--tracking-eyebrow);text-transform:uppercase;color:var(--enl-gris);
+}
+.h1{font-size:clamp(32px,4vw,46px);font-weight:600;line-height:1.1;letter-spacing:-.01em}
+.h2{font-size:clamp(22px,2.6vw,28px);font-weight:600;line-height:1.2;letter-spacing:-.01em}
+.grad-text{
+  background:var(--grad-jade-to-acero);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.small{font-family:var(--font-secondary);font-size:13px;color:var(--enl-gris)}
+
+/* ── Header ── */
+header.topbar{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:24px 0;border-bottom:1px solid var(--enl-mist);margin-bottom:48px;
+}
+header.topbar svg{height:32px;width:auto}
+
+/* ── Hero ── */
+.hero{margin-bottom:56px}
+.hero p.lead{
+  font-weight:300;font-size:18px;max-width:640px;margin-top:16px;color:var(--enl-acero);
+}
+.folio-pill{
+  display:inline-flex;align-items:center;gap:8px;margin-top:20px;
+  font-family:var(--font-secondary);font-weight:500;font-size:13px;
+  background:var(--enl-jade-20);color:var(--enl-acero);
+  border:1px solid var(--enl-jade-40);border-radius:var(--radius-pill);padding:8px 18px;
+}
+.folio-pill b{font-weight:700;color:var(--enl-cerceta)}
+
+/* ── Sections ── */
+section{margin-bottom:56px}
+.section-head{display:flex;align-items:baseline;gap:16px;margin-bottom:24px}
+.section-num{
+  font-family:var(--font-secondary);font-weight:700;font-size:13px;color:var(--enl-jade);
+  border:1.5px solid var(--enl-jade);border-radius:var(--radius-pill);
+  width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;flex:none;
+  align-self:center;
+}
+
+/* ── Step cards (formulario) ── */
+.steps{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.step{
+  background:var(--enl-white);border:1px solid var(--enl-mist);
+  border-radius:var(--radius-lg);padding:20px 16px;position:relative;
+  box-shadow:var(--shadow-2);
+}
+.step .n{
+  font-family:var(--font-secondary);font-weight:700;font-size:22px;
+  color:var(--enl-jade);display:block;margin-bottom:8px;
+}
+.step h3{font-size:15px;font-weight:600;line-height:1.25;margin-bottom:8px}
+.step p{font-family:var(--font-secondary);font-size:12.5px;font-weight:400;color:var(--enl-gris);line-height:1.5}
+.step:not(:last-child)::after{
+  content:"";position:absolute;right:-9px;top:50%;width:6px;height:6px;
+  border-top:1.5px solid var(--enl-fog);border-right:1.5px solid var(--enl-fog);
+  transform:translateY(-50%) rotate(45deg);z-index:2;
+}
+
+/* ── Flujo de aprobación ── */
+.flow-card{
+  background:var(--enl-white);border:1px solid var(--enl-mist);
+  border-radius:var(--radius-lg);padding:32px;box-shadow:var(--shadow-2);
+}
+.decision{
+  text-align:center;margin-bottom:8px;
+}
+.decision .q{
+  display:inline-block;background:var(--enl-marino);color:var(--enl-white);
+  font-weight:400;font-size:15px;border-radius:var(--radius-md);padding:14px 26px;
+}
+.routes{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:24px}
+.route{
+  border:1px solid var(--enl-mist);border-radius:var(--radius-lg);padding:24px 20px;
+  background:var(--enl-bone);
+}
+.route.alerta{background:var(--enl-cerceta-20);border-color:var(--enl-cerceta-40)}
+.route-tag{
+  font-family:var(--font-secondary);font-weight:700;font-size:11px;
+  letter-spacing:var(--tracking-eyebrow);text-transform:uppercase;
+  display:inline-block;margin-bottom:4px;
+}
+.route.alerta .route-tag{color:var(--enl-cerceta)}
+.route.directa .route-tag{color:var(--enl-jade)}
+.route h3{font-size:16px;font-weight:600;margin-bottom:16px}
+.approver{
+  display:flex;gap:14px;align-items:flex-start;background:var(--enl-white);
+  border:1px solid var(--enl-mist);border-radius:var(--radius-md);
+  padding:14px 16px;
+}
+.approver + .connector{margin:0}
+.connector{
+  display:flex;justify-content:center;padding:2px 0;
+}
+.connector span{
+  width:1.5px;height:18px;background:var(--enl-fog);position:relative;display:block;
+}
+.connector span::after{
+  content:"";position:absolute;bottom:0;left:50%;width:5px;height:5px;
+  border-bottom:1.5px solid var(--enl-fog);border-right:1.5px solid var(--enl-fog);
+  transform:translateX(-50%) rotate(45deg);
+}
+.badge-nivel{
+  flex:none;width:30px;height:30px;border-radius:var(--radius-pill);
+  background:var(--enl-acero);color:var(--enl-white);
+  font-family:var(--font-secondary);font-weight:700;font-size:13px;
+  display:flex;align-items:center;justify-content:center;margin-top:2px;
+}
+.approver.excepcional .badge-nivel{background:var(--enl-cerceta)}
+.approver.final .badge-nivel{background:var(--enl-jade)}
+.approver b{font-weight:600;font-size:14px;display:block}
+.approver .who{font-family:var(--font-secondary);font-size:12px;font-weight:500;color:var(--enl-cerceta);display:block;margin:1px 0 3px}
+.approver .what{font-family:var(--font-secondary);font-size:12px;font-weight:400;color:var(--enl-gris);line-height:1.45}
+
+/* ── Resultado final ── */
+.outcome{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:24px}
+.outcome-card{border-radius:var(--radius-lg);padding:22px 24px}
+.outcome-card.ok{background:var(--enl-jade-20);border:1px solid var(--enl-jade-40)}
+.outcome-card.no{background:var(--enl-gris-20);border:1px solid var(--enl-fog)}
+.outcome-card h4{font-size:15px;font-weight:700;margin-bottom:6px}
+.outcome-card.ok h4{color:var(--enl-cerceta)}
+.outcome-card.no h4{color:var(--enl-gris)}
+.outcome-card p{font-family:var(--font-secondary);font-size:13px;font-weight:400;line-height:1.5}
+.teams{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+.team-chip{
+  font-family:var(--font-secondary);font-weight:500;font-size:12px;
+  background:var(--enl-white);border:1px solid var(--enl-jade-40);
+  border-radius:var(--radius-pill);padding:6px 14px;
+}
+.team-chip b{font-weight:700;color:var(--enl-cerceta)}
+
+/* ── Estados ── */
+.states{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.state{
+  background:var(--enl-white);border:1px solid var(--enl-mist);
+  border-radius:var(--radius-md);padding:16px 18px;
+}
+.state .dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:8px;flex:none}
+.state h4{font-family:var(--font-secondary);font-size:13px;font-weight:700;display:flex;align-items:center;margin-bottom:6px}
+.state p{font-family:var(--font-secondary);font-size:12.5px;font-weight:400;color:var(--enl-gris);line-height:1.5}
+.d-proc{background:var(--enl-fog)} .d-pend{background:var(--enl-cerceta)}
+.d-ok{background:var(--enl-jade)} .d-no{background:var(--enl-gris)}
+/* Dots con los colores reales de estado que muestra el portal */
+.d-borr{background:#828080} .d-auth{background:#eab308} .d-rev{background:#3D7D80}
+.d-pagoapr{background:#2563eb} .d-pagada{background:#a855f7} .d-rech{background:#ef4444}
+
+/* ── Docs + tips ── */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.panel{
+  background:var(--enl-white);border:1px solid var(--enl-mist);
+  border-radius:var(--radius-lg);padding:26px 28px;box-shadow:var(--shadow-2);
+}
+.panel h3{font-size:16px;font-weight:600;margin-bottom:16px}
+.doclist{list-style:none}
+.doclist li{
+  font-family:var(--font-secondary);font-size:13.5px;font-weight:400;
+  padding:9px 0 9px 30px;position:relative;border-bottom:1px solid var(--enl-mist);
+}
+.doclist li:last-child{border-bottom:none}
+.doclist li::before{
+  content:"";position:absolute;left:2px;top:14px;width:11px;height:6px;
+  border-left:2px solid var(--enl-jade);border-bottom:2px solid var(--enl-jade);
+  transform:rotate(-45deg);
+}
+.doclist li.opt::before{border-color:var(--enl-fog)}
+.doclist li .fmt{color:var(--enl-gris);font-size:12px}
+.doclist li .actor{font-weight:700;color:var(--enl-cerceta);display:block}
+.tips{list-style:none}
+.tips li{
+  font-family:var(--font-secondary);font-size:13px;font-weight:400;color:var(--enl-acero);
+  padding:10px 0 10px 22px;position:relative;border-bottom:1px solid var(--enl-mist);line-height:1.5;
+}
+.tips li:last-child{border-bottom:none}
+.tips li::before{
+  content:"";position:absolute;left:2px;top:16px;width:7px;height:7px;
+  border-radius:50%;background:var(--enl-cerceta);
+}
+.tips b{font-weight:700}
+
+/* ── Footer ── */
+footer{
+  border-top:1px solid var(--enl-mist);padding-top:24px;
+  display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;
+}
+
+/* ── Responsive ── */
+@media(max-width:860px){
+  .steps{grid-template-columns:1fr 1fr}
+  .step:not(:last-child)::after{display:none}
+  .routes,.outcome,.two-col{grid-template-columns:1fr}
+  .states{grid-template-columns:1fr 1fr}
+}
+@media(max-width:520px){
+  .steps,.states{grid-template-columns:1fr}
+}
+
+/* ── Print: cabe en tamaño carta ── */
+@media print{
+  body{background:var(--enl-white)}
+  .page{max-width:100%;padding:0}
+  .step,.flow-card,.panel,.state{box-shadow:none}
+  section{margin-bottom:28px;break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ═══════════ HEADER ═══════════ -->
+  <header class="topbar">
+    <!-- Logo Enlight (versión Acero, fondo claro) — inline, no re-dibujar -->
+    <svg xmlns="http://www.w3.org/2000/svg" width="113.266" height="35" viewBox="0 0 113.266 35" role="img" aria-label="Enlight">
+      <defs><clipPath id="clip-path"><rect width="113.266" height="35" fill="none"/></clipPath></defs>
+      <g clip-path="url(#clip-path)">
+        <path d="M479.86,0a1.288,1.288,0,0,0-1.287,1.287V26.146a1.287,1.287,0,0,0,2.574,0V1.287A1.288,1.288,0,0,0,479.86,0" transform="translate(-431.581)" fill="#293C47"/>
+        <path d="M542.184,10.978a1.729,1.729,0,1,0,1.729,1.729,1.731,1.731,0,0,0-1.729-1.729" transform="translate(-487.387 -9.9)" fill="#00aa85"/>
+        <path d="M247.955,72.127h0a10.263,10.263,0,0,0-9.933,10.289v8.619a1.287,1.287,0,1,0,2.574,0V82.4a7.677,7.677,0,0,1,7.373-7.7,7.563,7.563,0,0,1,7.736,7.552v8.782a1.287,1.287,0,1,0,2.574,0V82.254a10.14,10.14,0,0,0-10.324-10.127" transform="translate(-214.65 -65.043)" fill="#293C47"/>
+        <path d="M857.8,7.081a10.111,10.111,0,0,0-7.562,3.4V1.286a1.287,1.287,0,0,0-2.574,0V17.244l.008.2v8.548a1.287,1.287,0,0,0,2.574,0l.008-8.757a7.551,7.551,0,1,1,15.1-.025v8.782a1.287,1.287,0,0,0,2.574,0l.008-8.757A10.154,10.154,0,0,0,857.8,7.081" transform="translate(-764.428 0.001)" fill="#293C47"/>
+        <path d="M1092.283,24.84a3.72,3.72,0,0,1-3.036-3.741V9.681h2.692a1.287,1.287,0,0,0,0-2.574h-2.692V1.287a1.287,1.287,0,0,0-2.574,0V21.1a6.23,6.23,0,0,0,4.952,6.222,1.288,1.288,0,0,0,.33.043,1.284,1.284,0,0,0,.328-2.525" transform="translate(-979.97)" fill="#293C47"/>
+        <path d="M10.275,73.953a10.354,10.354,0,0,0-7.266,3.108A9.513,9.513,0,0,0,0,83.545a1.289,1.289,0,0,0,1.287,1.286l18,.006a1.287,1.287,0,0,0,1.281-1.417,10.532,10.532,0,0,0-10.3-9.467m7.37,8.241a.162.162,0,0,1-.134.068l-14.535,0a.166.166,0,0,1-.136-.069.145.145,0,0,1-.023-.131,7.9,7.9,0,0,1,2-3.163,7.8,7.8,0,0,1,5.458-2.366,7.916,7.916,0,0,1,7.394,5.523.156.156,0,0,1-.024.143" transform="translate(0 -66.691)" fill="#293C47"/>
+        <path d="M23.559,196.977a1.3,1.3,0,0,0-1.208.846,7.984,7.984,0,0,1-7.282,5.218,7.713,7.713,0,0,1-7.3-5.186,1.292,1.292,0,0,0-1.219-.877,1.289,1.289,0,0,0-1.218,1.709,10.283,10.283,0,0,0,9.739,6.929,10.476,10.476,0,0,0,9.693-6.89,1.3,1.3,0,0,0-.149-1.2,1.267,1.267,0,0,0-1.054-.551" transform="translate(-4.742 -177.636)" fill="#293C47"/>
+        <path d="M545.651,71.554a1.324,1.324,0,0,0-1.287,1.354V90.674c0,.021.005.04.006.061s0,.014,0,.021a1.282,1.282,0,0,0,.849,1.125,1.236,1.236,0,0,0,.136.042l.057.013a1.181,1.181,0,0,0,.472,0l.057-.013a1.245,1.245,0,0,0,.136-.042,1.282,1.282,0,0,0,.849-1.125l0-.021c0-.021.006-.04.006-.061V72.908a1.324,1.324,0,0,0-1.287-1.354" transform="translate(-490.912 -64.528)" fill="#293C47"/>
+        <path d="M626.7,72.248a1.287,1.287,0,0,0-2.574,0v2.178l-.089-.1c-.1-.111-.2-.223-.311-.329l-.022-.022a10.159,10.159,0,0,0-17.3,6.382,10.076,10.076,0,0,0,2.657,7.7,10.525,10.525,0,0,0,7.39,3.3,9.721,9.721,0,0,0,7.19-2.968c.157-.157.312-.322.463-.494a11.214,11.214,0,0,1-1.449,5.152,7.922,7.922,0,0,1-6.305,3.377,7.77,7.77,0,0,1-5.631-2.425,1.32,1.32,0,0,0-1.733-.2,1.3,1.3,0,0,0-.526.923,1.276,1.276,0,0,0,.334.989,10.347,10.347,0,0,0,7.557,3.287c5.835,0,8.914-4.806,9.533-6.49.053-.143.281-.829.417-1.4a14.187,14.187,0,0,0,.367-2.989c.044-2.063.037-2.138.034-2.169Zm-3.167,1.9h0Zm.562,7.717a7.592,7.592,0,1,1-8.253-8.252q.343-.03.683-.03a7.6,7.6,0,0,1,7.57,8.283" transform="translate(-546.829 -63.993)" fill="#293C47"/>
+      </g>
+    </svg>
+    <span class="eyebrow">Gestión interna · TECH</span>
+  </header>
+
+  <!-- ═══════════ HERO ═══════════ -->
+  <div class="hero">
+    <span class="eyebrow">Guía del proceso</span>
+    <h1 class="h1" style="margin-top:10px">Portal de <span class="grad-text">Pagos</span></h1>
+    <p class="lead">Solicita pagos a proveedores sobre las Órdenes de Compra de tus proyectos. Eliges proyecto y OC, los datos se llenan solos desde NetSuite, y el portal gestiona la autorización, la decisión de Administración y la programación del pago — con correos automáticos en cada paso.</p>
+    <span class="folio-pill">Tu ID de seguimiento&nbsp;→&nbsp;<b>PAY-NNN</b>&nbsp;· síguelo en «Mis Solicitudes»</span>
+  </div>
+
+  <!-- ═══════════ 1 · FORMULARIO ═══════════ -->
+  <section>
+    <div class="section-head">
+      <span class="section-num">1</span>
+      <h2 class="h2">Nueva solicitud: 5 pasos</h2>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <span class="n">01</span>
+        <h3>Proyecto</h3>
+        <p>Selecciona el proyecto en el buscador. La lista viene directo de NetSuite.</p>
+      </div>
+      <div class="step">
+        <span class="n">02</span>
+        <h3>Orden de Compra</h3>
+        <p>Elige la OC abierta del proyecto. Verás número, monto total y moneda de cada una.</p>
+      </div>
+      <div class="step">
+        <span class="n">03</span>
+        <h3>Datos automáticos</h3>
+        <p>Beneficiario, RFC, moneda, tipo de cambio, monto y estatus de la OC se cargan solos desde NetSuite. Solo verifica.</p>
+      </div>
+      <div class="step">
+        <span class="n">04</span>
+        <h3>Detalles del pago</h3>
+        <p>Pago Completo o Parcial. En capturas parciales el subtotal (sin exceder el total de la OC); el IVA 16% se calcula solo.</p>
+      </div>
+      <div class="step">
+        <span class="n">05</span>
+        <h3>Concepto y envío</h3>
+        <p>Describe el concepto, indica tu departamento y envía. Recibes tu ID en pantalla y la solicitud entra a autorización.</p>
+      </div>
+    </div>
+    <p class="small" style="margin-top:14px">Acceso con tu cuenta Google. Al enviar, la solicitud queda en <b style="font-weight:700">Autorización</b> y Dirección (MAC, Operaciones, Ingeniería y Servicios) recibe un correo automáticamente.</p>
+  </section>
+
+  <!-- ═══════════ 2 · APROBACIÓN ═══════════ -->
+  <section>
+    <div class="section-head">
+      <span class="section-num">2</span>
+      <h2 class="h2">Cadena de aprobación</h2>
+    </div>
+    <div class="flow-card">
+      <div class="decision">
+        <span class="eyebrow" style="display:block;margin-bottom:12px">Toda solicitud sigue la misma cadena — Administración define la ruta</span>
+        <span class="q">En «Decisión de Pagos»: ¿aprobar, pedir aclaración o rechazar?</span>
+      </div>
+      <div class="routes">
+        <div class="route directa">
+          <span class="route-tag">Ruta estándar · Aprobación</span>
+          <h3>3 niveles — de la autorización al pago</h3>
+          <div class="approver">
+            <span class="badge-nivel">1</span>
+            <div>
+              <b>Dirección</b>
+              <span class="who">MAC · Operaciones · Ingeniería · Servicios</span>
+              <span class="what">Autoriza tu solicitud en la vista «Aprobaciones». Al autorizar, pasa a revisión de Administración, que recibe correo de aviso.</span>
+            </div>
+          </div>
+          <div class="connector"><span></span></div>
+          <div class="approver">
+            <span class="badge-nivel">2</span>
+            <div>
+              <b>Administración</b>
+              <span class="who">Admin / Superadmin</span>
+              <span class="what">Decide en «Decisión de Pagos» cruzando OC y pronóstico. Si aprueba → Pago Aprobado: recibes confirmación y el analista contable recibe aviso.</span>
+            </div>
+          </div>
+          <div class="connector"><span></span></div>
+          <div class="approver final">
+            <span class="badge-nivel">3</span>
+            <div>
+              <b>Analista contable</b>
+              <span class="who">Vista «Finanzas»</span>
+              <span class="what">Programa el pago (recibes correo con la fecha) y lo marca como pagado — validado contra NetSuite: el pago debe existir ahí.</span>
+            </div>
+          </div>
+        </div>
+        <div class="route alerta">
+          <span class="route-tag">Ciclo de aclaración · La solicitud vuelve a ti</span>
+          <h3>No es un rechazo — se corrige y se reenvía</h3>
+          <div class="approver excepcional">
+            <span class="badge-nivel">1</span>
+            <div>
+              <b>Administración pide aclaración</b>
+              <span class="who">Con comentario</span>
+              <span class="what">Tu solicitud regresa a Borrador y recibes el correo amarillo «Tu solicitud requiere aclaración» con el comentario e instrucciones.</span>
+            </div>
+          </div>
+          <div class="connector"><span></span></div>
+          <div class="approver excepcional">
+            <span class="badge-nivel">2</span>
+            <div>
+              <b>Tú respondes</b>
+              <span class="who">Desde «Mis Solicitudes»</span>
+              <span class="what">Escribes tu respuesta a la aclaración y reenvías la misma solicitud — no necesitas crear una nueva.</span>
+            </div>
+          </div>
+          <div class="connector"><span></span></div>
+          <div class="approver excepcional">
+            <span class="badge-nivel">3</span>
+            <div>
+              <b>Dirección re-autoriza</b>
+              <span class="who">MAC · Operaciones · Ingeniería · Servicios</span>
+              <span class="what">Recibe el correo «re-enviada tras aclaración» con tu respuesta, vuelve a autorizar y la solicitud regresa a «Decisión de Pagos».</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="outcome">
+        <div class="outcome-card ok">
+          <h4>✓ Pagada</h4>
+          <p>Recibes dos correos: <b style="font-weight:700">«Tu pago fue programado»</b> con la fecha estimada, y <b style="font-weight:700">«Tu pago fue realizado»</b> cuando el analista lo confirma contra NetSuite. La fecha programada también aparece en «Mis Solicitudes».</p>
+        </div>
+        <div class="outcome-card no">
+          <h4>✕ Rechazada</h4>
+          <p>Administración o Finanzas pueden rechazar en cualquier punto. Recibes un correo con el motivo del rechazo; si aplica, corrige y crea una nueva solicitud.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ 3 · ESTADOS ═══════════ -->
+  <section>
+    <div class="section-head">
+      <span class="section-num">3</span>
+      <h2 class="h2">Estados de tu solicitud</h2>
+    </div>
+    <div class="states">
+      <div class="state">
+        <h4><span class="dot d-borr"></span>Borrador / Aclaración</h4>
+        <p>Está en tu cancha: responde el comentario de aclaración desde «Mis Solicitudes» y reenvía.</p>
+      </div>
+      <div class="state">
+        <h4><span class="dot d-auth"></span>En autorización</h4>
+        <p>Esperando la autorización de Dirección (MAC, Operaciones, Ingeniería o Servicios).</p>
+      </div>
+      <div class="state">
+        <h4><span class="dot d-rev"></span>En revisión</h4>
+        <p>Autorizada por Dirección; pendiente de decisión de Administración en «Decisión de Pagos».</p>
+      </div>
+      <div class="state">
+        <h4><span class="dot d-pagoapr"></span>Pago Aprobado</h4>
+        <p>En la cola del analista contable. Cuando agende el pago, verás la fecha en «Pago programado».</p>
+      </div>
+      <div class="state">
+        <h4><span class="dot d-pagada"></span>Pagada</h4>
+        <p>El pago se realizó y quedó validado contra NetSuite. Revisa tu correo de confirmación.</p>
+      </div>
+      <div class="state">
+        <h4><span class="dot d-rech"></span>Rechazada</h4>
+        <p>Revisa el motivo en tu correo; si aplica, corrige y crea una nueva solicitud.</p>
+      </div>
+    </div>
+    <p class="small" style="margin-top:14px">En <b style="font-weight:700">«Mis Solicitudes»</b> ves cada estado explicado en lenguaje claro, la fecha de pago programada y el historial paso a paso de tu solicitud.</p>
+  </section>
+
+  <!-- ═══════════ 4 · VISTAS + TIPS ═══════════ -->
+  <section>
+    <div class="section-head">
+      <span class="section-num">4</span>
+      <h2 class="h2">Quién actúa dónde</h2>
+    </div>
+    <div class="two-col">
+      <div class="panel">
+        <h3>Tu vista según tu rol</h3>
+        <ul class="doclist">
+          <li><span class="actor">Solicitante (todos)</span>Crea en «Nueva solicitud» y da seguimiento en «Mis Solicitudes» <span class="fmt">· ahí también respondes aclaraciones</span></li>
+          <li><span class="actor">Dirección · MAC / Operaciones / Ingeniería / Servicios</span>Autoriza (o re-autoriza tras aclaración) en «Aprobaciones»</li>
+          <li><span class="actor">Administración · Admin / Superadmin</span>Aprueba, pide aclaración o rechaza en «Decisión de Pagos» <span class="fmt">· acciones por tarjeta y en lote</span></li>
+          <li><span class="actor">Analista contable</span>Programa el pago y lo marca pagado en «Finanzas» <span class="fmt">· en «Decisión de Pagos» solo consulta</span></li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h3>Tips clave</h3>
+        <ul class="tips">
+          <li><b>Todo viene de NetSuite:</b> solo eliges proyecto y OC; beneficiario, RFC, moneda, tipo de cambio y montos se llenan solos. Si un dato está mal, corrígelo en NetSuite, no en el portal.</li>
+          <li><b>Pago Parcial:</b> capturas el subtotal sin IVA y no puede exceder el total de la OC; el IVA del 16% se calcula automáticamente.</li>
+          <li><b>Aclaración no es rechazo:</b> la solicitud vuelve a ti con un comentario; respondes y reenvías la misma solicitud desde «Mis Solicitudes».</li>
+          <li><b>No necesitas vigilar el portal:</b> cada cambio de estado te llega por correo — autorización, decisión, fecha de pago programada y pago realizado.</li>
+          <li><b>«Pagada» es real:</b> el analista solo puede marcar el pago como realizado si ya existe en NetSuite.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ FOOTER ═══════════ -->
+  <footer>
+    <span class="small">Enlight · Proceso Portal de Pagos · Documentado julio 2026</span>
+    <span class="small">¿Dudas? Equipo TECH con tu ID <b style="font-weight:700">PAY-…</b></span>
+  </footer>
+
+</div>
+</body>
+</html>
