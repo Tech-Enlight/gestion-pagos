@@ -20,6 +20,10 @@ dist-ssr
 # n8n workflow exports — kept locally for reference, not tracked (n8n cloud is source of truth)
 public/n8n/
 
+# Claude Code personal settings (session permission grants, may embed local secrets)
+# Shared config (.claude/settings.json, agents/, skills/) stays committable.
+.claude/settings.local.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
