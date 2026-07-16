@@ -22,6 +22,10 @@ dist-ssr
 n8n-exports/
 public/n8n/
 
+# NetSuite integration reference doc — kept locally, not tracked (documents internal
+# NetSuite account ID, endpoints, and SuiteQL patterns; no secrets, just recon surface).
+NetSuite_Integration_Reference.md
+
 # Claude Code personal settings (session permission grants, may embed local secrets)
 # Shared config (.claude/settings.json, agents/, skills/) stays committable.
 .claude/settings.local.json
