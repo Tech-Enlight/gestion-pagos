@@ -6,7 +6,7 @@ React/TypeScript SPA for payment request management: employees submit payment re
 ## Status
 - **Phase:** Active Development
 - **Last audited:** 2026-07-15
-- **Last modified:** 2026-07-15
+- **Last modified:** 2026-08-13
 - **Owner:** Emiliano / Enlight TECH
 
 ## Architecture
@@ -70,7 +70,8 @@ graph LR
 3. mockData.ts in src/ - ensure not loaded in production build.
 4. `NetSuite_Integration_Reference.md` (§ around line 358) still references the old `public/n8n/` export path — stale since the 2026-07-15 move to `n8n-exports/`; update next time that doc is touched.
 5. Per-role sidebar visibility (matrix below) has not yet been re-verified live per-role by Emiliano — confirmed only in code (Sidebar.tsx/App.tsx RoleGates), not by walking through each role in the browser.
-6. "Marcar Pagado" and the "Rechazar" email have not been tested live end-to-end — Marcar Pagado needs an OC with a paid bill in NetSuite to trigger; blocks full confidence in the Finanzas happy path.
+6. "Marcar Pagado" and the "Rechazar" email have not been tested live end-to-end. Live-tested 2026-08-13 up through NetSuite bill/payment matching (see § NetSuite OC/Payment Matching Fixes below); actual "Paid" transition + Rechazar email still unverified.
+7. **Blocking, added 2026-08-13** — the OC dropdown fix and the partial-payment-aware Marcar Pagado gate (see § NetSuite OC/Payment Matching Fixes) are only live in the local `n8n-exports/workflow-PortalDePagos.json` mirror. Two manual steps remain before either works in production: (a) re-import/paste the changed nodes into the live n8n cloud workflow, (b) add a "NetSuite Payment ID" column to the "Pagos Operaciones" Google Sheet. Until both are done, `nsPaymentId` stays empty for every request and Marcar Pagado behaves as before.
 
 ## Approval Flow (confirmed with Emiliano 2026-07-14/15 — no routing by project type)
 1. Requester submits (`Autorización`) → email to MAC-Dirección roster (`roles=mac,operaciones,ingenieria,servicios`), sent from `postSolicitudes`.
@@ -103,6 +104,13 @@ Status transitions trigger Gmail emails from inside the existing n8n workflows (
 - Notification routing (see Approval Flow): submission → `roles=mac,operaciones,ingenieria,servicios`; `Pending Fin` → `admin,superadmin`; re-envío (`Autorización` via patchStatus) → `roles=mac,operaciones,ingenieria,servicios`; `Payment Approved` → `analista_contable` (roster URL is a dynamic expression on `rosterRoles`); `Rejected`/approval confirmations → requester. In `patchStatus` the confirmation and next-role notification branches run in parallel off `Preparar notificacion estado`.
 - JSON exports live locally under `n8n-exports/` (moved out of `public/` 2026-07-15 so no build/deploy can ever ship them — they may embed API tokens, which is accepted since the folder is gitignored). Not on GitHub, not in the Vercel deploy. The live workflows in n8n cloud (egenlight.app.n8n.cloud) are the source of truth; changes must be imported there to take effect (all 2026-07-15 fixes above were re-imported and verified live). Never deploy with `vercel` CLI from the local working dir.
 
+## NetSuite OC/Payment Matching Fixes — 2026-08-13 (local mirror only, not yet imported to n8n cloud)
+Found and fixed while live-testing a full payment cycle against PO-00098600 (NetSuite id 840258, project PROJ-588/id 9600). Both fixes are in `n8n-exports/workflow-PortalDePagos.json`; see Known Issue #7 for what's still pending.
+
+- **OC dropdown (`ocs-por-proyecto`) missed POs with project assigned at the line level.** The query only matched the header field `custbody_bb_project`. Newer POs in this account (e.g. PO-00098600) instead carry project via a line-level custom segment, `transactionLine.cseg_bb_project` — a completely different NetSuite ID space than `job.id` (segment record id ≠ job id; only the display text, e.g. "PROJ-588 - ...", links them). `Code: OAuth SuiteQL` now matches `custbody_bb_project = :projectId OR BUILTIN.DF(tl.cseg_bb_project) LIKE (SELECT j.entityId FROM job j WHERE j.id = :projectId) || ' - %'` via a `LEFT JOIN transactionLine`, with `DISTINCT` to dedupe the line join.
+- **PO status codes in the query didn't match this account's actual mapping.** The dropdown whitelisted `('B','E','F')` assuming NetSuite's generic status-letter meanings. This account's real `purchaseOrder.status` mapping is: A=Aprobación del supervisor pendiente, B=Recepción pendiente, C=Rechazado por supervisor, D=Parcialmente recibida, E=Facturación pendiente/parcialmente recibido, F=Factura pendiente, **G=Totalmente facturada**, H=Cerrada. Confirmed by querying `SELECT DISTINCT status, BUILTIN.DF(status) FROM purchaseOrder` directly. Changed the filter to `t.status NOT IN ('A','C','H')` (exclude only pending-approval/rejected/closed) so it doesn't silently drop valid statuses like G again if the letter mapping is ever misremembered.
+- **"Marcar Pagado" gate only recognized fully-paid bills, but bills here are routinely paid in installments.** The old gate required `bill.is_paid` (NetSuite status = "Pagado por completo"), so a bill with any partial payment blocked every solicitud tied to it indefinitely. Reworked to match on amount instead: `pagos-por-oc`'s merge node (`Code: Merge Bills + Payments`) now returns **one row per (bill, payment) pair**, each carrying its own `payment_id` (previously collapsed into a single aggregated total per bill, with no `payment_id` exposed at all). Frontend (`FinanceManagement.tsx`) matches a request's `amount` against candidate payments (±1%/±1 unit tolerance) and excludes any `payment_id` already claimed by another request (via a new `nsPaymentId` field on `Request`, round-tripped through `patchFinanzas` → "NetSuite Payment ID" column → GET `/solicitudes`) — so two solicitudes can't be settled off the same NetSuite payment, and each installment can clear its own solicitud independently.
+
 ## Resolved
 - 2026-07-06: Removed stray `gestioon-pagos/` nested git clone (leftover duplicate of this same repo, not part of the Vercel deploy which builds from repo root). Its only tracked content, `decision_pagos.html`, was moved to `public/uploads/decision_pagos.html`; the outdated duplicate `netsuite_integration.md` was dropped in favor of the more complete root-level `NetSuite_Integration_Reference.md`. Real `.env` values (previously only present untracked inside the nested clone) were copied into the root `.env` (gitignored, never committed in either location — the prior "exposed credentials" note was inaccurate).
 - 2026-07-15: Aclaración round-trip, re-envío notification, and `patchFinanzas` race condition (see Email Notifications) fixed, re-imported to n8n cloud, and live-tested end-to-end for the happy path.
@@ -111,3 +119,9 @@ Status transitions trigger Gmail emails from inside the existing n8n workflows (
 - Frontend/React tasks -> @agent-html
 - NetSuite tasks -> @agent-netsuite
 - n8n tasks -> @agent-n8n
+
+---
+
+## Audit Update — 2026-07-27
+Re-verified the CRITICAL credential-exposure flag from the 2026-07-01 global knowledge map (".env with Google OAuth Client ID + n8n webhook base URL committed inside gestion-pagos/gestioon-pagos/.env"). Current state: `gestion-pagos/.env` exists at the repo root (2 lines: `VITE_GOOGLE_CLIENT_ID`, `VITE_N8N_WEBHOOK_BASE`) but per `.gitignore` and this file's own 2026-07-06 "Resolved" note, it is gitignored and was never committed in either the root or the old nested `gestioon-pagos/` clone — the prior audit's framing ("committed") appears to have been inaccurate/stale. **No new action required**, but recommend the next global knowledge map refresh explicitly mark this item as resolved/non-issue rather than continuing to carry it as an open CRITICAL, to avoid repeat false-alarm flags.
+No file activity since 2026-07-16 (dist/ rebuild + package-lock). Confirmed still Active Dev per the detailed Approval Flow / Email Notifications sections already in this file (last live test 2026-07-15).

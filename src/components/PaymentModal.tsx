@@ -34,6 +34,7 @@ export interface PaymentData {
   serviceDelivery?: string;
   proposal?: string;
   paymentProof?: string;
+  nsPaymentId?: string;
 }
 
 const BANK_OPTIONS = [
@@ -269,6 +270,7 @@ const PaymentModal: React.FC<Props> = ({
         serviceDelivery: serviceDelivery.trim() || undefined,
         proposal: proposal.trim() || undefined,
         paymentProof: paymentProof.trim() || undefined,
+        nsPaymentId: activeBill?.payment_id,
       });
     } else if (onConfirmBulk) {
       const data = requests!.map((r) => {
@@ -282,6 +284,7 @@ const PaymentModal: React.FC<Props> = ({
         const del = (individualServiceDeliveries[r.id] || "").trim() || undefined;
         const prop = (individualProposals[r.id] || "").trim() || undefined;
         const proof = (individualPaymentProofs[r.id] || "").trim() || undefined;
+        const matchedBill = nsPaidBillsMap?.[r.id]?.[0];
 
         const paymentData: PaymentData = {
           amountPaid: amtPaid,
@@ -299,6 +302,7 @@ const PaymentModal: React.FC<Props> = ({
           serviceDelivery: del,
           proposal: prop,
           paymentProof: proof,
+          nsPaymentId: matchedBill?.payment_id,
         };
         return { id: r.id, paymentData };
       });

@@ -63,6 +63,7 @@ export interface Request {
   ocTotal?: number;
   exchangeRate?: number;
   estimatedPaymentDate?: string;
+  nsPaymentId?: string;
 }
 
 export const exchangeRates: ExchangeRate[] = [

@@ -152,6 +152,9 @@ function normalizeCurrency(nsCurrency: string): string {
   return map[nsCurrency] ?? nsCurrency;
 }
 
+// One entry per (bill, payment) pair — a bill with 3 partial payments yields
+// 3 entries here, each with its own payment_id, so a specific installment can
+// be matched to a specific solicitud and marked as claimed.
 export interface NSBill {
   bill_id: string;
   bill_number: string;
@@ -164,9 +167,9 @@ export interface NSBill {
   subsidiary: string;
   memo: string;
   is_paid: boolean;
+  payment_id: string;
   payment_date: string | null;
   payment_amount: number | null;
-  payment_count: number;
   bank_account: string | null;
 }
 
