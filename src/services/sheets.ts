@@ -168,6 +168,7 @@ export interface NSBill {
   memo: string;
   is_paid: boolean;
   payment_id: string;
+  payment_tranid: string | null;
   payment_date: string | null;
   payment_amount: number | null;
   bank_account: string | null;

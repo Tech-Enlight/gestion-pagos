@@ -124,6 +124,9 @@ const PaymentModal: React.FC<Props> = ({
       if (activeBill.bank_account) {
         setBankName(activeBill.bank_account);
       }
+      if (activeBill.payment_tranid) {
+        setSingleOperationRef(activeBill.payment_tranid);
+      }
     }
   }, [activeBill]);
 
@@ -538,7 +541,12 @@ const PaymentModal: React.FC<Props> = ({
                   )}
 
                   <div>
-                    <label className={labelClass}>Referencia de Operación*</label>
+                    <label className={labelClass}>
+                      Referencia de Operación*{" "}
+                      {activeBill?.payment_tranid && (
+                        <span className="text-gray-500">(NetSuite)</span>
+                      )}
+                    </label>
                     <input
                       type="text"
                       value={singleOperationRef}
