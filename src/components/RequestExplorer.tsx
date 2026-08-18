@@ -34,6 +34,14 @@ const RequestExplorer: React.FC<Props> = ({ requests, onUpdateRequest, mode = "e
   const [statusFilter, setStatusFilter] = useState("Todos");
   const [selected, setSelected] = useState<Request | null>(null);
   const [clarificationNote, setClarificationNote] = useState("");
+  // "Editar solicitud" path on aclaración — lets the requester correct
+  // concept/department/amount before resending, instead of only replying.
+  const [editMode, setEditMode] = useState(false);
+  const [editConcept, setEditConcept] = useState("");
+  const [editDepartment, setEditDepartment] = useState("");
+  const [editPaymentType, setEditPaymentType] = useState<"Completo" | "Parcial">("Completo");
+  const [editSubtotal, setEditSubtotal] = useState("");
+  const [editErrors, setEditErrors] = useState<Record<string, string>>({});
   const isMine = mode === "mine";
 
   const summary = useMemo(() => {
@@ -60,6 +68,8 @@ const RequestExplorer: React.FC<Props> = ({ requests, onUpdateRequest, mode = "e
   const handleSelect = (r: Request) => {
     setSelected(r);
     setClarificationNote("");
+    setEditMode(false);
+    setEditErrors({});
   };
 
   const handleResubmit = () => {
@@ -68,6 +78,62 @@ const RequestExplorer: React.FC<Props> = ({ requests, onUpdateRequest, mode = "e
     onUpdateRequest(selected.id, STATUS.AUTORIZACION, { clarificationResponse: note || undefined });
     setSelected(null);
     setClarificationNote("");
+  };
+
+  const startEdit = () => {
+    if (!selected) return;
+    setEditConcept(selected.concept);
+    setEditDepartment(selected.department);
+    setEditPaymentType((selected.paymentType as "Completo" | "Parcial") || "Completo");
+    setEditSubtotal(selected.paymentType === "Parcial" ? selected.subtotal.toString() : "");
+    setEditErrors({});
+    setEditMode(true);
+  };
+
+  const handleResubmitWithEdits = () => {
+    if (!selected) return;
+    const eErr: Record<string, string> = {};
+    if (!editConcept.trim()) eErr.concept = "Concepto requerido";
+    if (!editDepartment.trim()) eErr.department = "Departamento requerido";
+
+    const ocTotal = selected.ocTotal ?? selected.amount;
+    let subtotal = 0;
+    let iva = 0;
+    let amount = 0;
+    if (editPaymentType === "Completo") {
+      subtotal = +(ocTotal / 1.16).toFixed(2);
+      iva = +(ocTotal - subtotal).toFixed(2);
+      amount = ocTotal;
+    } else {
+      const v = Number(editSubtotal);
+      if (!editSubtotal || v <= 0) {
+        eErr.subtotal = "Subtotal válido requerido";
+      } else if (v > ocTotal) {
+        eErr.subtotal = `No puede exceder el total de la OC ($${ocTotal.toLocaleString("es-MX", { minimumFractionDigits: 2 })})`;
+      }
+      subtotal = v || 0;
+      iva = +(subtotal * 0.16).toFixed(2);
+      amount = +(subtotal + iva).toFixed(2);
+    }
+
+    if (Object.keys(eErr).length > 0) {
+      setEditErrors(eErr);
+      return;
+    }
+
+    const note = clarificationNote.trim();
+    onUpdateRequest(selected.id, STATUS.AUTORIZACION, {
+      clarificationResponse: note || undefined,
+      concept: editConcept.trim(),
+      department: editDepartment.trim(),
+      paymentType: editPaymentType,
+      subtotal,
+      iva,
+      amount,
+    });
+    setSelected(null);
+    setClarificationNote("");
+    setEditMode(false);
   };
 
   return (
@@ -378,17 +444,121 @@ const RequestExplorer: React.FC<Props> = ({ requests, onUpdateRequest, mode = "e
                   />
                 </div>
 
-                {/* Resubmit button */}
-                <button
-                  onClick={handleResubmit}
-                  className="w-full py-2 rounded-lg text-white text-sm font-semibold transition-colors hover:brightness-110"
-                  style={{
-                    backgroundColor: "#00aa85",
-                    fontFamily: "Alexandria, sans-serif",
-                  }}
-                >
-                  Re-enviar a Autorización
-                </button>
+                {!editMode ? (
+                  <>
+                    {/* Two options: just answer, or edit the request first */}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleResubmit}
+                        className="flex-1 py-2 rounded-lg text-white text-sm font-semibold transition-colors hover:brightness-110"
+                        style={{
+                          backgroundColor: "#00aa85",
+                          fontFamily: "Alexandria, sans-serif",
+                        }}
+                      >
+                        Solo responder y reenviar
+                      </button>
+                      <button
+                        onClick={startEdit}
+                        className="flex-1 py-2 rounded-lg text-gray-200 text-sm font-semibold border border-gray-600 hover:border-[#00aa85] hover:text-white transition-colors"
+                        style={{
+                          backgroundColor: "#162430",
+                          fontFamily: "Alexandria, sans-serif",
+                        }}
+                      >
+                        Editar solicitud
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="rounded-lg border border-gray-700 p-3 space-y-3" style={{ backgroundColor: "#162430" }}>
+                    <p className="text-gray-400 text-[10px] uppercase tracking-wider font-semibold">
+                      Editar antes de reenviar
+                    </p>
+
+                    <div>
+                      <label className="block text-gray-400 text-[10px] uppercase tracking-wider mb-1 font-semibold">
+                        Concepto
+                      </label>
+                      <textarea
+                        value={editConcept}
+                        onChange={(e) => { setEditConcept(e.target.value); setEditErrors((p) => ({ ...p, concept: "" })); }}
+                        rows={2}
+                        className={`w-full px-3 py-2 rounded-lg text-white text-xs outline-none border transition-colors resize-none ${editErrors.concept ? "border-red-500" : "border-gray-600 focus:border-[#00aa85]"}`}
+                        style={{ backgroundColor: "#293C47", fontFamily: "Alexandria, sans-serif" }}
+                      />
+                      {editErrors.concept && <p className="text-red-400 text-xs mt-1">{editErrors.concept}</p>}
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-400 text-[10px] uppercase tracking-wider mb-1 font-semibold">
+                        Departamento
+                      </label>
+                      <input
+                        type="text"
+                        value={editDepartment}
+                        onChange={(e) => { setEditDepartment(e.target.value); setEditErrors((p) => ({ ...p, department: "" })); }}
+                        className={`w-full px-3 py-2 rounded-lg text-white text-xs outline-none border transition-colors ${editErrors.department ? "border-red-500" : "border-gray-600 focus:border-[#00aa85]"}`}
+                        style={{ backgroundColor: "#293C47", fontFamily: "Alexandria, sans-serif" }}
+                      />
+                      {editErrors.department && <p className="text-red-400 text-xs mt-1">{editErrors.department}</p>}
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-400 text-[10px] uppercase tracking-wider mb-1 font-semibold">
+                        Tipo de pago
+                      </label>
+                      <div className="flex gap-2">
+                        {(["Completo", "Parcial"] as const).map((t) => (
+                          <button
+                            key={t}
+                            type="button"
+                            onClick={() => { setEditPaymentType(t); setEditErrors((p) => ({ ...p, subtotal: "" })); }}
+                            className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${editPaymentType === t
+                                ? "border-[#00aa85] text-[#00aa85] bg-[#00aa85]/10"
+                                : "border-gray-600 text-gray-400 hover:border-gray-400"
+                              }`}
+                          >
+                            {t}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {editPaymentType === "Parcial" && (
+                      <div>
+                        <label className="block text-gray-400 text-[10px] uppercase tracking-wider mb-1 font-semibold">
+                          Subtotal ({selected.currency})
+                        </label>
+                        <input
+                          type="number"
+                          value={editSubtotal}
+                          onChange={(e) => { setEditSubtotal(e.target.value); setEditErrors((p) => ({ ...p, subtotal: "" })); }}
+                          step="0.01"
+                          className={`w-full px-3 py-2 rounded-lg text-white text-xs outline-none border transition-colors ${editErrors.subtotal ? "border-red-500" : "border-gray-600 focus:border-[#00aa85]"}`}
+                          style={{ backgroundColor: "#293C47", fontFamily: "Alexandria, sans-serif" }}
+                        />
+                        {editErrors.subtotal && <p className="text-red-400 text-xs mt-1">{editErrors.subtotal}</p>}
+                      </div>
+                    )}
+
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleResubmitWithEdits}
+                        className="flex-1 py-2 rounded-lg text-white text-sm font-semibold transition-colors hover:brightness-110"
+                        style={{ backgroundColor: "#00aa85", fontFamily: "Alexandria, sans-serif" }}
+                      >
+                        Guardar cambios y reenviar
+                      </button>
+                      <button
+                        onClick={() => { setEditMode(false); setEditErrors({}); }}
+                        className="px-4 py-2 rounded-lg text-gray-300 text-sm font-medium border border-gray-600 hover:border-gray-400 transition-colors"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

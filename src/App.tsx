@@ -56,6 +56,12 @@ function AppContent() {
       rejectReason?: string;
       clarificationRequest?: string;
       clarificationResponse?: string;
+      concept?: string;
+      department?: string;
+      subtotal?: number;
+      iva?: number;
+      amount?: number;
+      paymentType?: string;
     }
   ) => {
     await updateRequestStatus(id, status, user?.email || "unknown@enlight.mx", extra);

@@ -63,6 +63,13 @@ export async function updateRequestStatus(
     rejectReason?: string;
     clarificationRequest?: string;
     clarificationResponse?: string;
+    // Edited on resubmit after an aclaración ("Editar solicitud" path)
+    concept?: string;
+    department?: string;
+    subtotal?: number;
+    iva?: number;
+    amount?: number;
+    paymentType?: string;
   }
 ): Promise<void> {
   const res = await fetch(`${BASE}/solicitudes/status`, {
