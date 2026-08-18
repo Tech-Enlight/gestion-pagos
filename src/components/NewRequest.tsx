@@ -56,35 +56,6 @@ const normalizeCurrency = (moneda: string): string => {
   return "MXN";
 };
 
-/**
- * Runs `worker` over `items` with at most `limit` in flight at once.
- * Each item behind the OC paid-status check fires several chained NetSuite
- * SuiteQL calls inside n8n, so running a whole OC list unthrottled floods
- * NetSuite and trips its rate limit (429s in the n8n executions).
- */
-async function mapWithConcurrency<T, R>(
-  items: T[],
-  limit: number,
-  worker: (item: T) => Promise<R>
-): Promise<(R | undefined)[]> {
-  const results: (R | undefined)[] = new Array(items.length);
-  let nextIndex = 0;
-  const runNext = async (): Promise<void> => {
-    while (nextIndex < items.length) {
-      const current = nextIndex++;
-      try {
-        results[current] = await worker(items[current]);
-      } catch {
-        results[current] = undefined;
-      }
-    }
-  };
-  await Promise.all(
-    Array.from({ length: Math.min(limit, items.length) }, runNext)
-  );
-  return results;
-}
-
 /* ------------------------------------------------------------------ */
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
@@ -94,10 +65,13 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate }) => {
   // ---- Cascade data ----
   const [projects, setProjects] = useState<NSProject[]>([]);
   const [ocList, setOcList] = useState<NSOC[]>([]);
-  // Which OCs already have a fully-paid bill in NetSuite ("Pagado por completo") —
-  // "Estatus OC: Totalmente facturada" only means fully billed, not fully paid,
-  // so this needs its own check against the bills/payments endpoint.
-  const [ocPaidMap, setOcPaidMap] = useState<Record<string, boolean>>({});
+  // Whether the *selected* OC already has a fully-paid bill in NetSuite
+  // ("Pagado por completo") — "Estatus OC: Totalmente facturada" only means
+  // fully billed, not fully paid, so this needs its own check against the
+  // bills/payments endpoint. null = not yet checked / still checking (treated
+  // as unsafe-to-submit, same as a confirmed paid OC).
+  const [selectedOcPaid, setSelectedOcPaid] = useState<boolean | null>(null);
+  const [checkingPaidStatus, setCheckingPaidStatus] = useState(false);
   const [vendor, setVendor] = useState<NSVendor | null>(null);
 
   // ---- Loading / error states ----
@@ -171,7 +145,8 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate }) => {
     // Reset downstream
     setSelectedOcId("");
     setOcList([]);
-    setOcPaidMap({});
+    setSelectedOcPaid(null);
+    setCheckingPaidStatus(false);
     setVendor(null);
     setPaymentType("Completo");
     setPartialSubtotal("");
@@ -183,25 +158,7 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate }) => {
     setFetchError(null);
     fetchOCsByProject(projectId)
       .then((data: any) => {
-        const list = (data.oc_list || []) as NSOC[];
-        setOcList(list);
-
-        // Check each OC's bills for an already-completed payment. Doesn't block
-        // the dropdown — it fills in badges as results come back. Throttled to
-        // avoid tripping NetSuite's rate limit (each check is itself a chain of
-        // several SuiteQL calls inside n8n).
-        mapWithConcurrency(list, 2, (oc) =>
-          fetchBillsByOC(oc.internal_id).then((billsData) => ({
-            id: oc.internal_id,
-            paid: billsData.bills.some((b) => b.is_paid),
-          }))
-        ).then((results) => {
-          const map: Record<string, boolean> = {};
-          results.forEach((r) => {
-            if (r) map[r.id] = r.paid;
-          });
-          setOcPaidMap(map);
-        });
+        setOcList((data.oc_list || []) as NSOC[]);
       })
       .catch((err) => {
         setFetchError("No se pudieron cargar las OCs del proyecto.");
@@ -219,6 +176,7 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate }) => {
       setVendor(null);
       setPaymentType("Completo");
       setPartialSubtotal("");
+      setSelectedOcPaid(null);
       setErrors({});
 
       const oc = ocList.find((o) => o.internal_id === ocInternalId);
@@ -232,6 +190,17 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate }) => {
           console.error(err);
         })
         .finally(() => setLoadingVendor(false));
+
+      // Only the selected OC is checked for an already-completed payment —
+      // "Estatus OC: Totalmente facturada" means fully billed, not fully paid.
+      setCheckingPaidStatus(true);
+      fetchBillsByOC(oc.internal_id)
+        .then((billsData) => setSelectedOcPaid(billsData.bills.some((b) => b.is_paid)))
+        .catch((err) => {
+          setSelectedOcPaid(null);
+          console.error(err);
+        })
+        .finally(() => setCheckingPaidStatus(false));
     },
     [ocList]
   );
@@ -243,6 +212,8 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate }) => {
     const e: Record<string, string> = {};
     if (!selectedProjectId) e.project = "Selecciona un proyecto";
     if (!selectedOcId) e.oc = "Selecciona una OC";
+    else if (checkingPaidStatus) e.oc = "Verificando estado de pago en NetSuite, espera un momento";
+    else if (selectedOcPaid !== false) e.oc = "Esta OC ya tiene un pago registrado en NetSuite (o no se pudo verificar)";
     if (!concept.trim()) e.concept = "Concepto requerido";
     if (!department.trim()) e.department = "Departamento requerido";
     if (paymentType === "Parcial") {
@@ -302,7 +273,8 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate }) => {
     setSelectedProjectId("");
     setSelectedOcId("");
     setOcList([]);
-    setOcPaidMap({});
+    setSelectedOcPaid(null);
+    setCheckingPaidStatus(false);
     setVendor(null);
     setPaymentType("Completo");
     setPartialSubtotal("");
@@ -407,7 +379,6 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate }) => {
                 options={ocList.map((oc) => ({
                   value: oc.internal_id,
                   label: `${oc.oc_number} — $${oc.monto_total.toLocaleString("es-MX", { minimumFractionDigits: 2 })} ${normalizeCurrency(oc.moneda)}`,
-                  badge: ocPaidMap[oc.internal_id] ? "Ya pagada" : undefined,
                 }))}
                 value={selectedOcId}
                 onChange={handleOCChange}
@@ -428,10 +399,14 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate }) => {
             <Skeleton />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {ocPaidMap[selectedOC.internal_id] && (
+              {checkingPaidStatus ? (
+                <div className="md:col-span-2 flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-600 bg-[#293C47] text-gray-400 text-xs font-medium">
+                  Verificando en NetSuite si esta OC ya tiene un pago registrado…
+                </div>
+              ) : selectedOcPaid && (
                 <div className="md:col-span-2 flex items-center gap-2 px-3 py-2 rounded-lg border border-yellow-500/40 bg-yellow-500/10 text-yellow-400 text-xs font-medium">
                   <AlertTriangle size={14} className="shrink-0" />
-                  Esta OC ya tiene un pago completo registrado en NetSuite. Verifica que no exista ya una solicitud pagada para ella antes de continuar.
+                  Esta OC ya tiene un pago completo registrado en NetSuite. No se puede enviar una solicitud para ella.
                 </div>
               )}
               <ReadonlyField label="OC" value={selectedOC.oc_number} />
@@ -583,14 +558,22 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate }) => {
           </FormSection>
 
           {/* Submit */}
-          <div className="flex justify-end">
+          <div className="flex flex-col items-end gap-1.5">
             <button
               onClick={handleSubmit}
-              className="px-8 py-3 rounded-lg text-white font-semibold text-sm hover:opacity-90 transition-colors"
+              disabled={checkingPaidStatus || (!!selectedOC && !!selectedOcPaid)}
+              className="px-8 py-3 rounded-lg text-white font-semibold text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:opacity-40 hover:opacity-90"
               style={{ backgroundColor: "#00aa85", fontFamily: "Alexandria, sans-serif" }}
             >
               Enviar Solicitud →
             </button>
+            {checkingPaidStatus ? (
+              <p className="text-gray-400 text-xs">Verificando estado de pago en NetSuite…</p>
+            ) : selectedOC && selectedOcPaid ? (
+              <p className="text-yellow-400 text-xs">
+                Esta OC ya tiene un pago registrado en NetSuite — no se puede enviar.
+              </p>
+            ) : null}
           </div>
         </>
       )}
