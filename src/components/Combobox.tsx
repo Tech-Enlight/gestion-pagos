@@ -4,6 +4,7 @@ import { ChevronDown, Check, X } from "lucide-react";
 export interface ComboboxOption {
   value: string;
   label: string;
+  badge?: string;
 }
 
 interface ComboboxProps {
@@ -238,7 +239,14 @@ export const Combobox: React.FC<ComboboxProps> = ({
                     }`}
                     style={{ fontFamily: "Alexandria, sans-serif" }}
                   >
-                    <span className="truncate pr-4">{option.label}</span>
+                    <span className="truncate pr-4 flex items-center gap-2">
+                      {option.label}
+                      {option.badge && (
+                        <span className="shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-[#00aa85]/20 text-[#00aa85]">
+                          {option.badge}
+                        </span>
+                      )}
+                    </span>
                     {isSelected && (
                       <Check size={16} className="text-[#00aa85] flex-shrink-0" />
                     )}

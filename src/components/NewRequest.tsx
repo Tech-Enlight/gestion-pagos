@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../context/AuthContext";
-import { fetchProjects, fetchOCsByProject, fetchVendorName } from "../services/sheets";
+import { fetchProjects, fetchOCsByProject, fetchVendorName, fetchBillsByOC } from "../services/sheets";
 import type { Request } from "../data/mockData";
 import { Combobox } from "./Combobox";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, AlertTriangle } from "lucide-react";
 
 /* ------------------------------------------------------------------ */
 /*  Types for NS endpoint responses                                    */
@@ -65,6 +65,10 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate }) => {
   // ---- Cascade data ----
   const [projects, setProjects] = useState<NSProject[]>([]);
   const [ocList, setOcList] = useState<NSOC[]>([]);
+  // Which OCs already have a fully-paid bill in NetSuite ("Pagado por completo") —
+  // "Estatus OC: Totalmente facturada" only means fully billed, not fully paid,
+  // so this needs its own check against the bills/payments endpoint.
+  const [ocPaidMap, setOcPaidMap] = useState<Record<string, boolean>>({});
   const [vendor, setVendor] = useState<NSVendor | null>(null);
 
   // ---- Loading / error states ----
@@ -138,6 +142,7 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate }) => {
     // Reset downstream
     setSelectedOcId("");
     setOcList([]);
+    setOcPaidMap({});
     setVendor(null);
     setPaymentType("Completo");
     setPartialSubtotal("");
@@ -149,7 +154,25 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate }) => {
     setFetchError(null);
     fetchOCsByProject(projectId)
       .then((data: any) => {
-        setOcList((data.oc_list || []) as NSOC[]);
+        const list = (data.oc_list || []) as NSOC[];
+        setOcList(list);
+
+        // Check each OC's bills for an already-completed payment. Doesn't block
+        // the dropdown — it fills in badges as results come back.
+        Promise.allSettled(
+          list.map((oc) =>
+            fetchBillsByOC(oc.internal_id).then((billsData) => ({
+              id: oc.internal_id,
+              paid: billsData.bills.some((b) => b.is_paid),
+            }))
+          )
+        ).then((results) => {
+          const map: Record<string, boolean> = {};
+          results.forEach((r) => {
+            if (r.status === "fulfilled") map[r.value.id] = r.value.paid;
+          });
+          setOcPaidMap(map);
+        });
       })
       .catch((err) => {
         setFetchError("No se pudieron cargar las OCs del proyecto.");
@@ -250,6 +273,7 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate }) => {
     setSelectedProjectId("");
     setSelectedOcId("");
     setOcList([]);
+    setOcPaidMap({});
     setVendor(null);
     setPaymentType("Completo");
     setPartialSubtotal("");
@@ -354,6 +378,7 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate }) => {
                 options={ocList.map((oc) => ({
                   value: oc.internal_id,
                   label: `${oc.oc_number} — $${oc.monto_total.toLocaleString("es-MX", { minimumFractionDigits: 2 })} ${normalizeCurrency(oc.moneda)}`,
+                  badge: ocPaidMap[oc.internal_id] ? "Ya pagada" : undefined,
                 }))}
                 value={selectedOcId}
                 onChange={handleOCChange}
@@ -374,6 +399,12 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate }) => {
             <Skeleton />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {ocPaidMap[selectedOC.internal_id] && (
+                <div className="md:col-span-2 flex items-center gap-2 px-3 py-2 rounded-lg border border-yellow-500/40 bg-yellow-500/10 text-yellow-400 text-xs font-medium">
+                  <AlertTriangle size={14} className="shrink-0" />
+                  Esta OC ya tiene un pago completo registrado en NetSuite. Verifica que no exista ya una solicitud pagada para ella antes de continuar.
+                </div>
+              )}
               <ReadonlyField label="OC" value={selectedOC.oc_number} />
               <ReadonlyField label="Beneficiario" value={vendor?.name || "Cargando..."} />
               <ReadonlyField label="RFC" value={vendor?.rfc || "—"} />
