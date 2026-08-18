@@ -19,7 +19,7 @@ import { STATUS } from "../data/mockData";
 import type { Request, FinanceNote, ExchangeRate } from "../data/mockData";
 import { useAuth } from "../context/AuthContext";
 import type { PaymentData } from "./PaymentModal";
-import { fetchBillsByOC, fetchProjectById, fetchInvoiceLinkByOC } from "../services/sheets";
+import { fetchBillsByOC, fetchInvoiceLinkByOC } from "../services/sheets";
 import type { NSBill } from "../services/sheets";
 
 interface Props {
@@ -243,11 +243,12 @@ const FinanceManagement: React.FC<Props> = ({
       } else {
         setNsPaidBills(matched);
         setNsPoStatus(data.po_status ?? null);
-        if (req.nsProjectId) {
-          fetchProjectById(req.nsProjectId).then(proj => {
-            setNsProjectClient(proj?.customer ? `${proj.customer.code} — ${proj.customer.name}` : null);
-          });
-        }
+        // Cliente is resolved from the PO's linked project, not from the request's
+        // own nsProjectId — that field is only set when the request was created with
+        // a project selected, and isn't reliable for department-level or legacy requests.
+        setNsProjectClient(
+          data.customer_code && data.customer_name ? `${data.customer_code} — ${data.customer_name}` : null
+        );
         if (req.poNumber) {
           fetchInvoiceLinkByOC(req.poNumber).then(result => {
             setNsInvoiceLink(result?.drive_folder_url ?? null);
@@ -284,9 +285,8 @@ const FinanceManagement: React.FC<Props> = ({
           blocked.push(req.id);
           continue;
         }
-        const [data, proj, invLink] = await Promise.all([
+        const [data, invLink] = await Promise.all([
           fetchBillsByOC(req.nsOcInternalId),
-          req.nsProjectId ? fetchProjectById(req.nsProjectId) : Promise.resolve(null),
           req.poNumber ? fetchInvoiceLinkByOC(req.poNumber) : Promise.resolve(null),
         ]);
         const matched = matchPaymentsForRequest(data.bills, req);
@@ -296,7 +296,9 @@ const FinanceManagement: React.FC<Props> = ({
           eligible.push(req);
           allPaidBillsMap[req.id] = matched;
           if (data.po_status) allOcStatusMap[req.id] = data.po_status;
-          if (proj?.customer) allClientMap[req.id] = `${proj.customer.code} — ${proj.customer.name}`;
+          if (data.customer_code && data.customer_name) {
+            allClientMap[req.id] = `${data.customer_code} — ${data.customer_name}`;
+          }
           if (invLink?.drive_folder_url) allInvoiceLinkMap[req.id] = invLink.drive_folder_url;
         }
       }

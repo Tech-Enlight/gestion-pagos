@@ -178,6 +178,8 @@ export interface NSBillsResponse {
   bills: NSBill[];
   po_status?: string;
   po_number?: string;
+  customer_code?: string | null;
+  customer_name?: string | null;
   summary: {
     total_bills: number;
     total_billed: number;
