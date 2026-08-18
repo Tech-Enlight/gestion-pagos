@@ -56,6 +56,35 @@ const normalizeCurrency = (moneda: string): string => {
   return "MXN";
 };
 
+/**
+ * Runs `worker` over `items` with at most `limit` in flight at once.
+ * Each item behind the OC paid-status check fires several chained NetSuite
+ * SuiteQL calls inside n8n, so running a whole OC list unthrottled floods
+ * NetSuite and trips its rate limit (429s in the n8n executions).
+ */
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  worker: (item: T) => Promise<R>
+): Promise<(R | undefined)[]> {
+  const results: (R | undefined)[] = new Array(items.length);
+  let nextIndex = 0;
+  const runNext = async (): Promise<void> => {
+    while (nextIndex < items.length) {
+      const current = nextIndex++;
+      try {
+        results[current] = await worker(items[current]);
+      } catch {
+        results[current] = undefined;
+      }
+    }
+  };
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, runNext)
+  );
+  return results;
+}
+
 /* ------------------------------------------------------------------ */
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
@@ -158,18 +187,18 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate }) => {
         setOcList(list);
 
         // Check each OC's bills for an already-completed payment. Doesn't block
-        // the dropdown — it fills in badges as results come back.
-        Promise.allSettled(
-          list.map((oc) =>
-            fetchBillsByOC(oc.internal_id).then((billsData) => ({
-              id: oc.internal_id,
-              paid: billsData.bills.some((b) => b.is_paid),
-            }))
-          )
+        // the dropdown — it fills in badges as results come back. Throttled to
+        // avoid tripping NetSuite's rate limit (each check is itself a chain of
+        // several SuiteQL calls inside n8n).
+        mapWithConcurrency(list, 2, (oc) =>
+          fetchBillsByOC(oc.internal_id).then((billsData) => ({
+            id: oc.internal_id,
+            paid: billsData.bills.some((b) => b.is_paid),
+          }))
         ).then((results) => {
           const map: Record<string, boolean> = {};
           results.forEach((r) => {
-            if (r.status === "fulfilled") map[r.value.id] = r.value.paid;
+            if (r) map[r.id] = r.paid;
           });
           setOcPaidMap(map);
         });
