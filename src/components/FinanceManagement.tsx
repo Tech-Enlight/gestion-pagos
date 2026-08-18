@@ -151,8 +151,11 @@ const FinanceManagement: React.FC<Props> = ({
 
   // Actions — aprobar/rechazar del admin viven ahora en Decisión de Pagos;
   // aquí queda el flujo operativo de Finanzas (analista) y campos financieros.
-  const handleMarkPaid = (id: string, paymentData: PaymentData) => {
-    onUpdateFinanceFields(id, {
+  const handleMarkPaid = async (id: string, paymentData: PaymentData) => {
+    // Must await the fields write before the status write — both PATCH the same
+    // sheet row, and firing them concurrently races their read-modify-write cycles
+    // (whichever lands last overwrites the other's columns with a stale snapshot).
+    await onUpdateFinanceFields(id, {
       amountPaid: paymentData.amountPaid,
       exchangeRateUsed: paymentData.exchangeRate,
       amountMXN: paymentData.amountMXN,
@@ -171,7 +174,7 @@ const FinanceManagement: React.FC<Props> = ({
       nsPaymentId: paymentData.nsPaymentId,
       financeObservations: finObs.trim() || undefined,
     });
-    onUpdateRequest(id, STATUS.PAID);
+    await onUpdateRequest(id, STATUS.PAID);
     setPayTarget(null);
     setSelectedId(null);
   };
