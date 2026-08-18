@@ -13,6 +13,7 @@ interface Props {
   nsInvoiceLink?: string;
   nsClientMap?: Record<string, string>;
   nsInvoiceLinkMap?: Record<string, string>;
+  nsOcStatusMap?: Record<string, string>;
   onConfirm: (id: string, paymentData: PaymentData) => void;
   onConfirmBulk?: (data: { id: string; paymentData: PaymentData }[]) => void;
   onCancel: () => void;
@@ -63,11 +64,6 @@ const SERVICE_DELIVERY_OPTIONS = [
   "Otros gastos de la operación",
   "Gastos de departamento",
 ];
-const PROPOSAL_OPTIONS = [
-  "Autorizado",
-  "Aplazado",
-];
-
 const PaymentModal: React.FC<Props> = ({
   request,
   requests,
@@ -79,6 +75,7 @@ const PaymentModal: React.FC<Props> = ({
   nsInvoiceLink,
   nsClientMap,
   nsInvoiceLinkMap,
+  nsOcStatusMap,
   onConfirm,
   onConfirmBulk,
   onCancel,
@@ -112,8 +109,12 @@ const PaymentModal: React.FC<Props> = ({
   const [invoiceLink, setInvoiceLink] = useState(nsInvoiceLink ?? "");
   const [client, setClient] = useState(nsProjectClient ?? "");
   const [serviceDelivery, setServiceDelivery] = useState("");
-  const [proposal, setProposal] = useState("");
   const [paymentProof, setPaymentProof] = useState("");
+
+  // Propuesta is derived, not user-entered: a request that already went through
+  // Programar Pago (has an estimatedPaymentDate) was "Aplazado"; otherwise it was
+  // approved straight to payment ("Autorizado").
+  const getProposal = (r: Request) => (r.estimatedPaymentDate ? "Aplazado" : "Autorizado");
 
   // Pre-fill from NS bill when available
   useEffect(() => {
@@ -138,8 +139,8 @@ const PaymentModal: React.FC<Props> = ({
   const [individualInvoiceLinks, setIndividualInvoiceLinks] = useState<Record<string, string>>({});
   const [individualClients, setIndividualClients] = useState<Record<string, string>>({});
   const [individualServiceDeliveries, setIndividualServiceDeliveries] = useState<Record<string, string>>({});
-  const [individualProposals, setIndividualProposals] = useState<Record<string, string>>({});
   const [individualPaymentProofs, setIndividualPaymentProofs] = useState<Record<string, string>>({});
+  const [individualOcStatuses, setIndividualOcStatuses] = useState<Record<string, string>>({});
 
   // Pre-fill from NS bills map for bulk mode
   useEffect(() => {
@@ -170,6 +171,12 @@ const PaymentModal: React.FC<Props> = ({
     }
   }, [isBulk, nsInvoiceLinkMap]);
 
+  useEffect(() => {
+    if (isBulk && nsOcStatusMap) {
+      setIndividualOcStatuses((prev) => ({ ...prev, ...nsOcStatusMap }));
+    }
+  }, [isBulk, nsOcStatusMap]);
+
 
 
   // Handle common reference changes for bulk
@@ -196,7 +203,7 @@ const PaymentModal: React.FC<Props> = ({
   }, [applyRefToAll, commonRef, isBulk]);
 
   const handleIndividualFieldChange = (
-    field: "ref" | "invoice" | "link" | "client" | "delivery" | "proposal" | "proof",
+    field: "ref" | "invoice" | "link" | "client" | "delivery" | "ocStatus" | "proof",
     id: string,
     val: string
   ) => {
@@ -211,8 +218,8 @@ const PaymentModal: React.FC<Props> = ({
       setIndividualClients((prev) => ({ ...prev, [id]: val }));
     } else if (field === "delivery") {
       setIndividualServiceDeliveries((prev) => ({ ...prev, [id]: val }));
-    } else if (field === "proposal") {
-      setIndividualProposals((prev) => ({ ...prev, [id]: val }));
+    } else if (field === "ocStatus") {
+      setIndividualOcStatuses((prev) => ({ ...prev, [id]: val }));
     } else if (field === "proof") {
       setIndividualPaymentProofs((prev) => ({ ...prev, [id]: val }));
     }
@@ -271,7 +278,7 @@ const PaymentModal: React.FC<Props> = ({
         ocStatus: ocStatus.trim() || undefined,
         client: client.trim() || undefined,
         serviceDelivery: serviceDelivery.trim() || undefined,
-        proposal: proposal.trim() || undefined,
+        proposal: getProposal(request!),
         paymentProof: paymentProof.trim() || undefined,
         nsPaymentId: activeBill?.payment_id,
       });
@@ -285,7 +292,7 @@ const PaymentModal: React.FC<Props> = ({
         const invLink = (individualInvoiceLinks[r.id] || "").trim() || undefined;
         const cl = (individualClients[r.id] || "").trim() || undefined;
         const del = (individualServiceDeliveries[r.id] || "").trim() || undefined;
-        const prop = (individualProposals[r.id] || "").trim() || undefined;
+        const ocSt = (individualOcStatuses[r.id] || "").trim() || undefined;
         const proof = (individualPaymentProofs[r.id] || "").trim() || undefined;
         const matchedBill = nsPaidBillsMap?.[r.id]?.[0];
 
@@ -300,10 +307,10 @@ const PaymentModal: React.FC<Props> = ({
           invoiceLink: invLink,
           expenseType: expenseType || undefined,
           operationType: operationType || undefined,
-          ocStatus: ocStatus.trim() || undefined,
+          ocStatus: ocSt,
           client: cl,
           serviceDelivery: del,
-          proposal: prop,
+          proposal: getProposal(r),
           paymentProof: proof,
           nsPaymentId: matchedBill?.payment_id,
         };
@@ -623,7 +630,8 @@ const PaymentModal: React.FC<Props> = ({
                       <th className="px-3 py-2 w-[200px]">Link Factura</th>
                       <th className="px-3 py-2 w-[160px]">Cliente</th>
                       <th className="px-3 py-2 w-[220px]">Prestación Bien/Servicio</th>
-                      <th className="px-3 py-2 w-[160px]">Propuesta</th>
+                      <th className="px-3 py-2 w-[130px]">Propuesta</th>
+                      <th className="px-3 py-2 w-[180px]">Estatus OC</th>
                       <th className="px-3 py-2 w-[220px]">Comprobante Pago</th>
                     </tr>
                   </thead>
@@ -696,20 +704,16 @@ const PaymentModal: React.FC<Props> = ({
                             ))}
                           </select>
                         </td>
+                        <td className="px-3 py-2 text-gray-300">{getProposal(r)}</td>
                         <td className="px-3 py-2">
-                          <select
-                            value={individualProposals[r.id] || ""}
-                            onChange={(e) => handleIndividualFieldChange("proposal", r.id, e.target.value)}
+                          <input
+                            type="text"
+                            value={individualOcStatuses[r.id] || ""}
+                            onChange={(e) => handleIndividualFieldChange("ocStatus", r.id, e.target.value)}
                             className="w-full px-2 py-1 rounded text-white text-xs outline-none border border-gray-600 focus:border-[#00aa85] transition-colors"
                             style={{ backgroundColor: "#293C47", fontFamily: "Alexandria, sans-serif" }}
-                          >
-                            <option value="">Seleccionar...</option>
-                            {PROPOSAL_OPTIONS.map((opt) => (
-                              <option key={opt} value={opt}>
-                                {opt}
-                              </option>
-                            ))}
-                          </select>
+                            placeholder="Ej: Entregada, Parcial"
+                          />
                         </td>
                         <td className="px-3 py-2">
                           <input
@@ -801,19 +805,24 @@ const PaymentModal: React.FC<Props> = ({
 
                   <div>
                     <label className={labelClass}>Propuesta</label>
-                    <select
-                      value={proposal}
-                      onChange={(e) => setProposal(e.target.value)}
+                    <div
+                      className="px-3 py-2 rounded-lg text-white text-sm border border-gray-700"
+                      style={{ backgroundColor: "#243545", fontFamily: "Alexandria, sans-serif" }}
+                    >
+                      {getProposal(request!)}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className={labelClass}>Estatus OC</label>
+                    <input
+                      type="text"
+                      value={ocStatus}
+                      onChange={(e) => setOcStatus(e.target.value)}
                       className={inputClass}
                       style={inputStyle}
-                    >
-                      <option value="">Seleccionar...</option>
-                      {PROPOSAL_OPTIONS.map((opt) => (
-                        <option key={opt} value={opt}>
-                          {opt}
-                        </option>
-                      ))}
-                    </select>
+                      placeholder="Ej: Entregada, Parcial"
+                    />
                   </div>
                 </>
               )}
@@ -851,18 +860,6 @@ const PaymentModal: React.FC<Props> = ({
                     </option>
                   ))}
                 </select>
-              </div>
-
-              <div>
-                <label className={labelClass}>Estatus OC</label>
-                <input
-                  type="text"
-                  value={ocStatus}
-                  onChange={(e) => setOcStatus(e.target.value)}
-                  className={inputClass}
-                  style={inputStyle}
-                  placeholder="Ej: Entregada, Parcial"
-                />
               </div>
 
               {/* Single Mode Only: Comprobante de pago */}

@@ -63,6 +63,7 @@ const FinanceManagement: React.FC<Props> = ({
   const [nsInvoiceLink, setNsInvoiceLink] = useState<string | null>(null);
   const [nsClientMap, setNsClientMap] = useState<Record<string, string> | null>(null);
   const [nsInvoiceLinkMap, setNsInvoiceLinkMap] = useState<Record<string, string> | null>(null);
+  const [nsOcStatusMap, setNsOcStatusMap] = useState<Record<string, string> | null>(null);
   // For bulk: track which requests were blocked
   const [nsBulkBlocked, setNsBulkBlocked] = useState<string[]>([]);
   const [nsPaidBillsMap, setNsPaidBillsMap] = useState<Record<string, NSBill[]> | null>(null);
@@ -241,7 +242,7 @@ const FinanceManagement: React.FC<Props> = ({
         setNsPoStatus(data.po_status ?? null);
         if (req.nsProjectId) {
           fetchProjectById(req.nsProjectId).then(proj => {
-            setNsProjectClient(proj?.customer?.name ?? null);
+            setNsProjectClient(proj?.customer ? `${proj.customer.code} — ${proj.customer.name}` : null);
           });
         }
         if (req.poNumber) {
@@ -269,11 +270,11 @@ const FinanceManagement: React.FC<Props> = ({
     const eligible: Request[] = [];
     const blocked: string[] = [];
     const allPaidBillsMap: Record<string, NSBill[]> = {};
-    const allPoStatusMap: Record<string, string> = {};
 
     try {
       const allClientMap: Record<string, string> = {};
       const allInvoiceLinkMap: Record<string, string> = {};
+      const allOcStatusMap: Record<string, string> = {};
 
       for (const req of selectedRequests) {
         if (!req.nsOcInternalId) {
@@ -291,8 +292,8 @@ const FinanceManagement: React.FC<Props> = ({
         } else {
           eligible.push(req);
           allPaidBillsMap[req.id] = matched;
-          if (data.po_status) allPoStatusMap[req.id] = data.po_status;
-          if (proj?.customer?.name) allClientMap[req.id] = proj.customer.name;
+          if (data.po_status) allOcStatusMap[req.id] = data.po_status;
+          if (proj?.customer) allClientMap[req.id] = `${proj.customer.code} — ${proj.customer.name}`;
           if (invLink?.drive_folder_url) allInvoiceLinkMap[req.id] = invLink.drive_folder_url;
         }
       }
@@ -308,6 +309,7 @@ const FinanceManagement: React.FC<Props> = ({
         setNsPaidBillsMap(allPaidBillsMap);
         setNsClientMap(allClientMap);
         setNsInvoiceLinkMap(allInvoiceLinkMap);
+        setNsOcStatusMap(allOcStatusMap);
         // Filter selectedIds to only eligible, then open bulk payment modal
         setSelectedIds(eligible.map((r) => r.id));
         setIsBulkPaying(true);
@@ -1021,9 +1023,10 @@ const FinanceManagement: React.FC<Props> = ({
           nsPaidBillsMap={nsPaidBillsMap ?? undefined}
           nsClientMap={nsClientMap ?? undefined}
           nsInvoiceLinkMap={nsInvoiceLinkMap ?? undefined}
+          nsOcStatusMap={nsOcStatusMap ?? undefined}
           onConfirm={() => { }}
           onConfirmBulk={handleBulkMarkPaidConfirm}
-          onCancel={() => { setIsBulkPaying(false); setNsPaidBillsMap(null); setNsClientMap(null); setNsInvoiceLinkMap(null); }}
+          onCancel={() => { setIsBulkPaying(false); setNsPaidBillsMap(null); setNsClientMap(null); setNsInvoiceLinkMap(null); setNsOcStatusMap(null); }}
         />
       )}
     </div>

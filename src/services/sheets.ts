@@ -111,7 +111,7 @@ export async function fetchOCsByProject(projectId: string): Promise<any> {
 }
 
 // Agregar después de fetchOCsByProject:
-export async function fetchProjectById(projectId: string): Promise<{ internal_id: string; code: string; name: string; customer: { id: string; name: string } } | null> {
+export async function fetchProjectById(projectId: string): Promise<{ internal_id: string; code: string; name: string; customer: { id: string; code: string; name: string } } | null> {
   try {
     const res = await fetch(`${BASE}/proyecto-detalle?projectId=${encodeURIComponent(projectId)}`);
     if (!res.ok) return null;
