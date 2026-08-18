@@ -26,15 +26,15 @@ export interface PaymentData {
   bankName: string;
   operationRef: string;
   paymentMode: string;
-  invoiceNumber?: string;
-  invoiceLink?: string;
-  expenseType?: string;
-  operationType?: string;
-  ocStatus?: string;
-  client?: string;
-  serviceDelivery?: string;
-  proposal?: string;
-  paymentProof?: string;
+  invoiceNumber: string;
+  invoiceLink: string;
+  expenseType: string;
+  operationType: string;
+  ocStatus: string;
+  client: string;
+  serviceDelivery: string;
+  proposal: string;
+  paymentProof: string;
   nsPaymentId?: string;
 }
 
@@ -96,6 +96,9 @@ const PaymentModal: React.FC<Props> = ({
   const [operationType, setOperationType] = useState("");
   const [ocStatus, setOcStatus] = useState(nsPoStatus ?? "");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  // Bulk mode: which request IDs are missing each per-row required field —
+  // drives the red-border highlight on individual table cells.
+  const [bulkFieldErrors, setBulkFieldErrors] = useState<Record<string, string[]>>({});
 
   // Single-only state
   const [amountPaid, setAmountPaid] = useState<string>(
@@ -223,6 +226,12 @@ const PaymentModal: React.FC<Props> = ({
     } else if (field === "proof") {
       setIndividualPaymentProofs((prev) => ({ ...prev, [id]: val }));
     }
+    if (val.trim()) {
+      setBulkFieldErrors((prev) => {
+        if (!prev[field]?.includes(id)) return prev;
+        return { ...prev, [field]: prev[field].filter((x) => x !== id) };
+      });
+    }
   };
 
   // Calculations for single mode
@@ -237,22 +246,42 @@ const PaymentModal: React.FC<Props> = ({
     const e: Record<string, string> = {};
     if (!bankName) e.bankName = "Selecciona un banco";
     if (!paymentMode) e.paymentMode = "Selecciona modo de pago";
+    if (!operationType) e.operationType = "Selecciona tipo de operación";
+    if (!expenseType) e.expenseType = "Selecciona tipo de gasto";
 
     if (!isBulk) {
       if (!amountPaid || amountPaidNum <= 0) e.amountPaid = "Monto requerido";
       if (!singleOperationRef.trim()) e.singleOperationRef = "Referencia requerida";
       if (request?.currency === "USD" && exchangeRateNum <= 0)
         e.exchangeRate = "T/C inválido";
+      if (!singleInvoiceNumber.trim()) e.singleInvoiceNumber = "N° de factura requerido";
+      if (!invoiceLink.trim()) e.invoiceLink = "Link de factura requerido";
+      if (!client.trim()) e.client = "Cliente requerido";
+      if (!serviceDelivery) e.serviceDelivery = "Selecciona prestación del bien o servicio";
+      if (!ocStatus.trim()) e.ocStatus = "Estatus OC requerido";
+      if (!paymentProof.trim()) e.paymentProof = "Comprobante de pago requerido";
     } else {
-      const missingRefs: string[] = [];
-      requests!.forEach((r) => {
-        const ref = (individualRefs[r.id] || "").trim();
-        if (!ref) {
-          missingRefs.push(r.id);
+      const fieldDefs: { key: "ref" | "invoice" | "link" | "client" | "delivery" | "ocStatus" | "proof"; map: Record<string, string> }[] = [
+        { key: "ref", map: individualRefs },
+        { key: "invoice", map: individualInvoices },
+        { key: "link", map: individualInvoiceLinks },
+        { key: "client", map: individualClients },
+        { key: "delivery", map: individualServiceDeliveries },
+        { key: "ocStatus", map: individualOcStatuses },
+        { key: "proof", map: individualPaymentProofs },
+      ];
+      const missingByField: Record<string, string[]> = {};
+      const missingIds = new Set<string>();
+      fieldDefs.forEach(({ key, map }) => {
+        const missing = requests!.filter((r) => !(map[r.id] || "").trim()).map((r) => r.id);
+        if (missing.length > 0) {
+          missingByField[key] = missing;
+          missing.forEach((id) => missingIds.add(id));
         }
       });
-      if (missingRefs.length > 0) {
-        e.bulkReferences = `Referencia requerida para todas las solicitudes (Falta en: ${missingRefs.join(", ")})`;
+      setBulkFieldErrors(missingByField);
+      if (missingIds.size > 0) {
+        e.bulkReferences = `Completa todos los campos obligatorios de la tabla (Falta en: ${Array.from(missingIds).join(", ")})`;
       }
     }
 
@@ -271,15 +300,15 @@ const PaymentModal: React.FC<Props> = ({
         bankName,
         operationRef: singleOperationRef.trim(),
         paymentMode,
-        invoiceNumber: singleInvoiceNumber.trim() || undefined,
-        invoiceLink: invoiceLink.trim() || undefined,
-        expenseType: expenseType || undefined,
-        operationType: operationType || undefined,
-        ocStatus: ocStatus.trim() || undefined,
-        client: client.trim() || undefined,
-        serviceDelivery: serviceDelivery.trim() || undefined,
+        invoiceNumber: singleInvoiceNumber.trim(),
+        invoiceLink: invoiceLink.trim(),
+        expenseType,
+        operationType,
+        ocStatus: ocStatus.trim(),
+        client: client.trim(),
+        serviceDelivery,
         proposal: getProposal(request!),
-        paymentProof: paymentProof.trim() || undefined,
+        paymentProof: paymentProof.trim(),
         nsPaymentId: activeBill?.payment_id,
       });
     } else if (onConfirmBulk) {
@@ -288,12 +317,12 @@ const PaymentModal: React.FC<Props> = ({
         const exRate = lastRate.rate;
         const amtMXN = r.currency === "USD" ? amtPaid * exRate : amtPaid;
         const ref = (individualRefs[r.id] || "").trim();
-        const invNum = (individualInvoices[r.id] || "").trim() || undefined;
-        const invLink = (individualInvoiceLinks[r.id] || "").trim() || undefined;
-        const cl = (individualClients[r.id] || "").trim() || undefined;
-        const del = (individualServiceDeliveries[r.id] || "").trim() || undefined;
-        const ocSt = (individualOcStatuses[r.id] || "").trim() || undefined;
-        const proof = (individualPaymentProofs[r.id] || "").trim() || undefined;
+        const invNum = (individualInvoices[r.id] || "").trim();
+        const invLink = (individualInvoiceLinks[r.id] || "").trim();
+        const cl = (individualClients[r.id] || "").trim();
+        const del = (individualServiceDeliveries[r.id] || "").trim();
+        const ocSt = (individualOcStatuses[r.id] || "").trim();
+        const proof = (individualPaymentProofs[r.id] || "").trim();
         const matchedBill = nsPaidBillsMap?.[r.id]?.[0];
 
         const paymentData: PaymentData = {
@@ -305,8 +334,8 @@ const PaymentModal: React.FC<Props> = ({
           paymentMode,
           invoiceNumber: invNum,
           invoiceLink: invLink,
-          expenseType: expenseType || undefined,
-          operationType: operationType || undefined,
+          expenseType,
+          operationType,
           ocStatus: ocSt,
           client: cl,
           serviceDelivery: del,
@@ -326,6 +355,9 @@ const PaymentModal: React.FC<Props> = ({
     backgroundColor: "#293C47",
     fontFamily: "Alexandria, sans-serif",
   };
+  const bulkCellClass = (field: string, id: string) =>
+    `w-full px-2 py-1 rounded text-white text-xs outline-none border transition-colors ${bulkFieldErrors[field]?.includes(id) ? "border-red-500" : "border-gray-600 focus:border-[#00aa85]"
+    }`;
   const labelClass = "text-gray-400 text-xs font-medium mb-1 block";
 
   const totalUSD = isBulk ? requests!.filter(r => r.currency === "USD").reduce((sum, r) => sum + r.amount, 0) : 0;
@@ -626,13 +658,13 @@ const PaymentModal: React.FC<Props> = ({
                       <th className="px-3 py-2 w-[150px]">Beneficiario</th>
                       <th className="px-3 py-2 w-[120px]">Monto</th>
                       <th className="px-3 py-2 w-[220px]">Ref. Operación*</th>
-                      <th className="px-3 py-2 w-[180px]">N° Factura</th>
-                      <th className="px-3 py-2 w-[200px]">Link Factura</th>
-                      <th className="px-3 py-2 w-[160px]">Cliente</th>
-                      <th className="px-3 py-2 w-[220px]">Prestación Bien/Servicio</th>
+                      <th className="px-3 py-2 w-[180px]">N° Factura*</th>
+                      <th className="px-3 py-2 w-[200px]">Link Factura*</th>
+                      <th className="px-3 py-2 w-[160px]">Cliente*</th>
+                      <th className="px-3 py-2 w-[220px]">Prestación Bien/Servicio*</th>
                       <th className="px-3 py-2 w-[130px]">Propuesta</th>
-                      <th className="px-3 py-2 w-[180px]">Estatus OC</th>
-                      <th className="px-3 py-2 w-[220px]">Comprobante Pago</th>
+                      <th className="px-3 py-2 w-[180px]">Estatus OC*</th>
+                      <th className="px-3 py-2 w-[220px]">Comprobante Pago*</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -655,7 +687,7 @@ const PaymentModal: React.FC<Props> = ({
                             type="text"
                             value={individualRefs[r.id] || ""}
                             onChange={(e) => handleIndividualFieldChange("ref", r.id, e.target.value)}
-                            className="w-full px-2 py-1 rounded text-white text-xs outline-none border border-gray-600 focus:border-[#00aa85] transition-colors"
+                            className={bulkCellClass("ref", r.id)}
                             style={{ backgroundColor: "#293C47", fontFamily: "Alexandria, sans-serif" }}
                             placeholder="Requerido"
                           />
@@ -665,7 +697,7 @@ const PaymentModal: React.FC<Props> = ({
                             type="text"
                             value={individualInvoices[r.id] || ""}
                             onChange={(e) => handleIndividualFieldChange("invoice", r.id, e.target.value)}
-                            className="w-full px-2 py-1 rounded text-white text-xs outline-none border border-gray-600 focus:border-[#00aa85] transition-colors"
+                            className={bulkCellClass("invoice", r.id)}
                             style={{ backgroundColor: "#293C47", fontFamily: "Alexandria, sans-serif" }}
                             placeholder="Ej: FAC-123"
                           />
@@ -675,7 +707,7 @@ const PaymentModal: React.FC<Props> = ({
                             type="text"
                             value={individualInvoiceLinks[r.id] || ""}
                             onChange={(e) => handleIndividualFieldChange("link", r.id, e.target.value)}
-                            className="w-full px-2 py-1 rounded text-white text-xs outline-none border border-gray-600 focus:border-[#00aa85] transition-colors"
+                            className={bulkCellClass("link", r.id)}
                             style={{ backgroundColor: "#293C47", fontFamily: "Alexandria, sans-serif" }}
                             placeholder="Ej: https://..."
                           />
@@ -685,7 +717,7 @@ const PaymentModal: React.FC<Props> = ({
                             type="text"
                             value={individualClients[r.id] || ""}
                             onChange={(e) => handleIndividualFieldChange("client", r.id, e.target.value)}
-                            className="w-full px-2 py-1 rounded text-white text-xs outline-none border border-gray-600 focus:border-[#00aa85] transition-colors"
+                            className={bulkCellClass("client", r.id)}
                             style={{ backgroundColor: "#293C47", fontFamily: "Alexandria, sans-serif" }}
                           />
                         </td>
@@ -693,7 +725,7 @@ const PaymentModal: React.FC<Props> = ({
                           <select
                             value={individualServiceDeliveries[r.id] || ""}
                             onChange={(e) => handleIndividualFieldChange("delivery", r.id, e.target.value)}
-                            className="w-full px-2 py-1 rounded text-white text-xs outline-none border border-gray-600 focus:border-[#00aa85] transition-colors"
+                            className={bulkCellClass("delivery", r.id)}
                             style={{ backgroundColor: "#293C47", fontFamily: "Alexandria, sans-serif" }}
                           >
                             <option value="">Seleccionar...</option>
@@ -710,7 +742,7 @@ const PaymentModal: React.FC<Props> = ({
                             type="text"
                             value={individualOcStatuses[r.id] || ""}
                             onChange={(e) => handleIndividualFieldChange("ocStatus", r.id, e.target.value)}
-                            className="w-full px-2 py-1 rounded text-white text-xs outline-none border border-gray-600 focus:border-[#00aa85] transition-colors"
+                            className={bulkCellClass("ocStatus", r.id)}
                             style={{ backgroundColor: "#293C47", fontFamily: "Alexandria, sans-serif" }}
                             placeholder="Ej: Entregada, Parcial"
                           />
@@ -720,7 +752,7 @@ const PaymentModal: React.FC<Props> = ({
                             type="text"
                             value={individualPaymentProofs[r.id] || ""}
                             onChange={(e) => handleIndividualFieldChange("proof", r.id, e.target.value)}
-                            className="w-full px-2 py-1 rounded text-white text-xs outline-none border border-gray-600 focus:border-[#00aa85] transition-colors"
+                            className={bulkCellClass("proof", r.id)}
                             style={{ backgroundColor: "#293C47", fontFamily: "Alexandria, sans-serif" }}
                             placeholder="URL o ref"
                           />
@@ -733,13 +765,13 @@ const PaymentModal: React.FC<Props> = ({
             </div>
           )}
 
-          {/* === Optional fields === */}
+          {/* === Additional fields (all mandatory) === */}
           <div>
             <p
               className="text-gray-500 text-xs font-semibold mb-3 uppercase tracking-wide"
               style={{ fontFamily: "Alexandria, sans-serif" }}
             >
-              Datos complementarios comunes (opcionales)
+              Datos complementarios
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Single Mode Only Fields */}
@@ -747,51 +779,74 @@ const PaymentModal: React.FC<Props> = ({
                 <>
                   <div>
                     <label className={labelClass}>
-                      N° de Factura
+                      N° de Factura*
                       {hasNsBills && <span className="text-[#00aa85] ml-1">(NS)</span>}
                     </label>
                     <input
                       type="text"
                       value={singleInvoiceNumber}
-                      onChange={(e) => { if (!hasNsBills) setSingleInvoiceNumber(e.target.value); }}
+                      onChange={(e) => {
+                        if (!hasNsBills) {
+                          setSingleInvoiceNumber(e.target.value);
+                          setErrors((p) => ({ ...p, singleInvoiceNumber: "" }));
+                        }
+                      }}
                       readOnly={hasNsBills}
-                      className={`${inputClass} ${hasNsBills ? "opacity-70 cursor-not-allowed" : ""}`}
+                      className={`${inputClass} ${hasNsBills ? "opacity-70 cursor-not-allowed" : ""} ${errors.singleInvoiceNumber ? "border-red-500" : ""}`}
                       style={inputStyle}
                       placeholder="Ej: FAC-2023-1234"
                     />
+                    {errors.singleInvoiceNumber && (
+                      <p className="text-red-400 text-xs mt-1">{errors.singleInvoiceNumber}</p>
+                    )}
                   </div>
 
                   <div>
-                    <label className={labelClass}>Link Factura</label>
+                    <label className={labelClass}>Link Factura*</label>
                     <input
                       type="text"
                       value={invoiceLink}
-                      onChange={(e) => setInvoiceLink(e.target.value)}
-                      className={inputClass}
+                      onChange={(e) => {
+                        setInvoiceLink(e.target.value);
+                        setErrors((p) => ({ ...p, invoiceLink: "" }));
+                      }}
+                      className={`${inputClass} ${errors.invoiceLink ? "border-red-500" : ""}`}
                       style={inputStyle}
                       placeholder="URL del documento"
                     />
+                    {errors.invoiceLink && (
+                      <p className="text-red-400 text-xs mt-1">{errors.invoiceLink}</p>
+                    )}
                   </div>
 
                   <div>
-                    <label className={labelClass}>Cliente</label>
+                    <label className={labelClass}>Cliente*</label>
                     <input
                       type="text"
                       value={client}
-                      onChange={(e) => setClient(e.target.value)}
-                      className={inputClass}
+                      onChange={(e) => {
+                        setClient(e.target.value);
+                        setErrors((p) => ({ ...p, client: "" }));
+                      }}
+                      className={`${inputClass} ${errors.client ? "border-red-500" : ""}`}
                       style={inputStyle}
                     />
+                    {errors.client && (
+                      <p className="text-red-400 text-xs mt-1">{errors.client}</p>
+                    )}
                   </div>
 
                   <div>
                     <label className={labelClass}>
-                      Prestación del Bien o Servicio
+                      Prestación del Bien o Servicio*
                     </label>
                     <select
                       value={serviceDelivery}
-                      onChange={(e) => setServiceDelivery(e.target.value)}
-                      className={inputClass}
+                      onChange={(e) => {
+                        setServiceDelivery(e.target.value);
+                        setErrors((p) => ({ ...p, serviceDelivery: "" }));
+                      }}
+                      className={`${inputClass} ${errors.serviceDelivery ? "border-red-500" : ""}`}
                       style={inputStyle}
                     >
                       <option value="">Seleccionar...</option>
@@ -801,6 +856,9 @@ const PaymentModal: React.FC<Props> = ({
                         </option>
                       ))}
                     </select>
+                    {errors.serviceDelivery && (
+                      <p className="text-red-400 text-xs mt-1">{errors.serviceDelivery}</p>
+                    )}
                   </div>
 
                   <div>
@@ -814,26 +872,35 @@ const PaymentModal: React.FC<Props> = ({
                   </div>
 
                   <div>
-                    <label className={labelClass}>Estatus OC</label>
+                    <label className={labelClass}>Estatus OC*</label>
                     <input
                       type="text"
                       value={ocStatus}
-                      onChange={(e) => setOcStatus(e.target.value)}
-                      className={inputClass}
+                      onChange={(e) => {
+                        setOcStatus(e.target.value);
+                        setErrors((p) => ({ ...p, ocStatus: "" }));
+                      }}
+                      className={`${inputClass} ${errors.ocStatus ? "border-red-500" : ""}`}
                       style={inputStyle}
                       placeholder="Ej: Entregada, Parcial"
                     />
+                    {errors.ocStatus && (
+                      <p className="text-red-400 text-xs mt-1">{errors.ocStatus}</p>
+                    )}
                   </div>
                 </>
               )}
 
               {/* Shared Fields in both Single and Bulk modes */}
               <div>
-                <label className={labelClass}>Tipo de Operación</label>
+                <label className={labelClass}>Tipo de Operación*</label>
                 <select
                   value={operationType}
-                  onChange={(e) => setOperationType(e.target.value)}
-                  className={inputClass}
+                  onChange={(e) => {
+                    setOperationType(e.target.value);
+                    setErrors((p) => ({ ...p, operationType: "" }));
+                  }}
+                  className={`${inputClass} ${errors.operationType ? "border-red-500" : ""}`}
                   style={inputStyle}
                 >
                   <option value="">Seleccionar...</option>
@@ -843,14 +910,20 @@ const PaymentModal: React.FC<Props> = ({
                     </option>
                   ))}
                 </select>
+                {errors.operationType && (
+                  <p className="text-red-400 text-xs mt-1">{errors.operationType}</p>
+                )}
               </div>
 
               <div>
-                <label className={labelClass}>Tipo de Gasto</label>
+                <label className={labelClass}>Tipo de Gasto*</label>
                 <select
                   value={expenseType}
-                  onChange={(e) => setExpenseType(e.target.value)}
-                  className={inputClass}
+                  onChange={(e) => {
+                    setExpenseType(e.target.value);
+                    setErrors((p) => ({ ...p, expenseType: "" }));
+                  }}
+                  className={`${inputClass} ${errors.expenseType ? "border-red-500" : ""}`}
                   style={inputStyle}
                 >
                   <option value="">Seleccionar...</option>
@@ -860,20 +933,29 @@ const PaymentModal: React.FC<Props> = ({
                     </option>
                   ))}
                 </select>
+                {errors.expenseType && (
+                  <p className="text-red-400 text-xs mt-1">{errors.expenseType}</p>
+                )}
               </div>
 
               {/* Single Mode Only: Comprobante de pago */}
               {!isBulk && (
                 <div className="md:col-span-2">
-                  <label className={labelClass}>Comprobante de Pago</label>
+                  <label className={labelClass}>Comprobante de Pago*</label>
                   <input
                     type="text"
                     value={paymentProof}
-                    onChange={(e) => setPaymentProof(e.target.value)}
-                    className={inputClass}
+                    onChange={(e) => {
+                      setPaymentProof(e.target.value);
+                      setErrors((p) => ({ ...p, paymentProof: "" }));
+                    }}
+                    className={`${inputClass} ${errors.paymentProof ? "border-red-500" : ""}`}
                     style={inputStyle}
                     placeholder="URL o referencia del comprobante"
                   />
+                  {errors.paymentProof && (
+                    <p className="text-red-400 text-xs mt-1">{errors.paymentProof}</p>
+                  )}
                 </div>
               )}
             </div>
