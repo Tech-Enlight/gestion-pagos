@@ -82,7 +82,6 @@ const PaymentModal: React.FC<Props> = ({
 }) => {
   const lastRate = lastExchangeRate;
   const isBulk = Array.isArray(requests) && requests.length > 0;
-  const requestList = isBulk ? requests! : request ? [request] : [];
   const hasNsBills = !isBulk && Array.isArray(nsPaidBills) && nsPaidBills.length > 0;
 
   // Bill selector for when NS returns multiple paid bills
@@ -135,8 +134,6 @@ const PaymentModal: React.FC<Props> = ({
   }, [activeBill]);
 
   // Bulk-only state
-  const [applyRefToAll, setApplyRefToAll] = useState(true);
-  const [commonRef, setCommonRef] = useState("");
   const [individualRefs, setIndividualRefs] = useState<Record<string, string>>({});
   const [individualInvoices, setIndividualInvoices] = useState<Record<string, string>>({});
   const [individualInvoiceLinks, setIndividualInvoiceLinks] = useState<Record<string, string>>({});
@@ -144,22 +141,49 @@ const PaymentModal: React.FC<Props> = ({
   const [individualServiceDeliveries, setIndividualServiceDeliveries] = useState<Record<string, string>>({});
   const [individualPaymentProofs, setIndividualPaymentProofs] = useState<Record<string, string>>({});
   const [individualOcStatuses, setIndividualOcStatuses] = useState<Record<string, string>>({});
+  const [individualBanks, setIndividualBanks] = useState<Record<string, string>>({});
+  // Which NS bill/payment (index into nsPaidBillsMap[id]) is selected per row —
+  // matters when a request has more than one candidate payment matching by amount.
+  const [selectedBillIdxByRequest, setSelectedBillIdxByRequest] = useState<Record<string, number>>({});
 
-  // Pre-fill from NS bills map for bulk mode
+  const getBillsForRequest = (id: string): NSBill[] => nsPaidBillsMap?.[id] ?? [];
+  const getActiveBillForRequest = (r: Request): NSBill | null => {
+    const bills = getBillsForRequest(r.id);
+    return bills[selectedBillIdxByRequest[r.id] ?? 0] ?? null;
+  };
+
+  // Auto-assign each row's default bill/payment, preferring one not already
+  // claimed by an earlier row in this same batch (bulk gating guarantees every
+  // eligible row has at least one candidate). Also prefills invoice/ref/bank
+  // per row from the picked bill's own data — bulk mode should record what
+  // NetSuite actually shows for THAT payment, not the request's own amount or
+  // a one-size-fits-all reference.
   useEffect(() => {
-    if (isBulk && nsPaidBillsMap) {
-      const prefilledInvoices: Record<string, string> = {};
-      requests!.forEach((r) => {
-        const bills = nsPaidBillsMap[r.id];
-        if (bills && bills.length > 0) {
-          const firstBill = bills[0];
-          if (firstBill.bill_number) {
-            prefilledInvoices[r.id] = firstBill.bill_number;
-          }
-        }
-      });
-      setIndividualInvoices((prev) => ({ ...prev, ...prefilledInvoices }));
-    }
+    if (!isBulk || !nsPaidBillsMap) return;
+    const usedPaymentIds = new Set<string>();
+    const idxMap: Record<string, number> = {};
+    const refMap: Record<string, string> = {};
+    const invMap: Record<string, string> = {};
+    const bankMap: Record<string, string> = {};
+
+    requests!.forEach((r) => {
+      const bills = nsPaidBillsMap[r.id] || [];
+      let idx = bills.findIndex((b) => !usedPaymentIds.has(b.payment_id));
+      if (idx === -1) idx = 0;
+      idxMap[r.id] = idx;
+      const bill = bills[idx];
+      if (bill) {
+        usedPaymentIds.add(bill.payment_id);
+        if (bill.payment_tranid) refMap[r.id] = bill.payment_tranid;
+        if (bill.bill_number) invMap[r.id] = bill.bill_number;
+        if (bill.bank_account) bankMap[r.id] = bill.bank_account;
+      }
+    });
+
+    setSelectedBillIdxByRequest(idxMap);
+    setIndividualRefs((prev) => ({ ...prev, ...refMap }));
+    setIndividualInvoices((prev) => ({ ...prev, ...invMap }));
+    setIndividualBanks((prev) => ({ ...prev, ...bankMap }));
   }, [isBulk, nsPaidBillsMap, requests]);
 
   useEffect(() => {
@@ -180,38 +204,29 @@ const PaymentModal: React.FC<Props> = ({
     }
   }, [isBulk, nsOcStatusMap]);
 
-
-
-  // Handle common reference changes for bulk
-  const handleCommonRefChange = (val: string) => {
-    setCommonRef(val);
-    if (applyRefToAll) {
-      const updated: Record<string, string> = {};
-      requestList.forEach((r) => {
-        updated[r.id] = val;
-      });
-      setIndividualRefs(updated);
+  // When the analista manually picks a different candidate bill for a row,
+  // re-derive that row's invoice/ref/bank from the newly-selected bill.
+  const handleBillSelectionChange = (id: string, idx: number) => {
+    setSelectedBillIdxByRequest((prev) => ({ ...prev, [id]: idx }));
+    const bill = getBillsForRequest(id)[idx];
+    if (bill) {
+      setIndividualRefs((prev) => ({ ...prev, [id]: bill.payment_tranid || "" }));
+      setIndividualInvoices((prev) => ({ ...prev, [id]: bill.bill_number || "" }));
+      setIndividualBanks((prev) => ({ ...prev, [id]: bill.bank_account || "" }));
     }
+    setBulkFieldErrors((prev) => ({
+      ...prev,
+      invoice: (prev.invoice || []).filter((x) => x !== id),
+      bank: (prev.bank || []).filter((x) => x !== id),
+    }));
   };
 
-  // When toggle is checked, synchronize all references with commonRef
-  useEffect(() => {
-    if (isBulk && applyRefToAll) {
-      const updated: Record<string, string> = {};
-      requestList.forEach((r) => {
-        updated[r.id] = commonRef;
-      });
-      setIndividualRefs(updated);
-    }
-  }, [applyRefToAll, commonRef, isBulk]);
-
   const handleIndividualFieldChange = (
-    field: "ref" | "invoice" | "link" | "client" | "delivery" | "ocStatus" | "proof",
+    field: "ref" | "invoice" | "link" | "client" | "delivery" | "ocStatus" | "proof" | "bank",
     id: string,
     val: string
   ) => {
     if (field === "ref") {
-      setApplyRefToAll(false);
       setIndividualRefs((prev) => ({ ...prev, [id]: val }));
     } else if (field === "invoice") {
       setIndividualInvoices((prev) => ({ ...prev, [id]: val }));
@@ -225,6 +240,8 @@ const PaymentModal: React.FC<Props> = ({
       setIndividualOcStatuses((prev) => ({ ...prev, [id]: val }));
     } else if (field === "proof") {
       setIndividualPaymentProofs((prev) => ({ ...prev, [id]: val }));
+    } else if (field === "bank") {
+      setIndividualBanks((prev) => ({ ...prev, [id]: val }));
     }
     if (val.trim()) {
       setBulkFieldErrors((prev) => {
@@ -244,12 +261,12 @@ const PaymentModal: React.FC<Props> = ({
 
   const validate = (): boolean => {
     const e: Record<string, string> = {};
-    if (!bankName) e.bankName = "Selecciona un banco";
     if (!paymentMode) e.paymentMode = "Selecciona modo de pago";
     if (!operationType) e.operationType = "Selecciona tipo de operación";
     if (!expenseType) e.expenseType = "Selecciona tipo de gasto";
 
     if (!isBulk) {
+      if (!bankName) e.bankName = "Selecciona un banco";
       if (!amountPaid || amountPaidNum <= 0) e.amountPaid = "Monto requerido";
       if (!singleOperationRef.trim()) e.singleOperationRef = "Referencia requerida";
       if (request?.currency === "USD" && exchangeRateNum <= 0)
@@ -261,7 +278,7 @@ const PaymentModal: React.FC<Props> = ({
       if (!ocStatus.trim()) e.ocStatus = "Estatus OC requerido";
       if (!paymentProof.trim()) e.paymentProof = "Comprobante de pago requerido";
     } else {
-      const fieldDefs: { key: "ref" | "invoice" | "link" | "client" | "delivery" | "ocStatus" | "proof"; map: Record<string, string> }[] = [
+      const fieldDefs: { key: "ref" | "invoice" | "link" | "client" | "delivery" | "ocStatus" | "proof" | "bank"; map: Record<string, string> }[] = [
         { key: "ref", map: individualRefs },
         { key: "invoice", map: individualInvoices },
         { key: "link", map: individualInvoiceLinks },
@@ -269,6 +286,7 @@ const PaymentModal: React.FC<Props> = ({
         { key: "delivery", map: individualServiceDeliveries },
         { key: "ocStatus", map: individualOcStatuses },
         { key: "proof", map: individualPaymentProofs },
+        { key: "bank", map: individualBanks },
       ];
       const missingByField: Record<string, string[]> = {};
       const missingIds = new Set<string>();
@@ -282,6 +300,21 @@ const PaymentModal: React.FC<Props> = ({
       setBulkFieldErrors(missingByField);
       if (missingIds.size > 0) {
         e.bulkReferences = `Completa todos los campos obligatorios de la tabla (Falta en: ${Array.from(missingIds).join(", ")})`;
+      }
+
+      // Two rows must never settle off the same NetSuite payment.
+      const requestIdsByPaymentId: Record<string, string[]> = {};
+      requests!.forEach((r) => {
+        const bill = getActiveBillForRequest(r);
+        if (bill?.payment_id) {
+          (requestIdsByPaymentId[bill.payment_id] ??= []).push(r.id);
+        }
+      });
+      const duplicateIds = Object.values(requestIdsByPaymentId)
+        .filter((ids) => ids.length > 1)
+        .flat();
+      if (duplicateIds.length > 0) {
+        e.bulkDuplicatePayment = `Dos o más solicitudes tienen seleccionado el mismo pago de NetSuite (IDs: ${duplicateIds.join(", ")}). Elige una factura/pago distinto para cada una.`;
       }
     }
 
@@ -313,8 +346,11 @@ const PaymentModal: React.FC<Props> = ({
       });
     } else if (onConfirmBulk) {
       const data = requests!.map((r) => {
-        const amtPaid = r.amount;
-        const exRate = lastRate.rate;
+        const bill = getActiveBillForRequest(r);
+        // Record what NetSuite actually shows for THIS payment, not the
+        // request's own stated amount / today's generic FX rate.
+        const amtPaid = bill?.payment_amount ?? bill?.bill_total ?? r.amount;
+        const exRate = bill?.exchange_rate ?? lastRate.rate;
         const amtMXN = r.currency === "USD" ? amtPaid * exRate : amtPaid;
         const ref = (individualRefs[r.id] || "").trim();
         const invNum = (individualInvoices[r.id] || "").trim();
@@ -323,13 +359,13 @@ const PaymentModal: React.FC<Props> = ({
         const del = (individualServiceDeliveries[r.id] || "").trim();
         const ocSt = (individualOcStatuses[r.id] || "").trim();
         const proof = (individualPaymentProofs[r.id] || "").trim();
-        const matchedBill = nsPaidBillsMap?.[r.id]?.[0];
+        const bankForRow = (individualBanks[r.id] || "").trim();
 
         const paymentData: PaymentData = {
           amountPaid: amtPaid,
           exchangeRate: exRate,
           amountMXN: amtMXN,
-          bankName,
+          bankName: bankForRow,
           operationRef: ref,
           paymentMode,
           invoiceNumber: invNum,
@@ -341,7 +377,7 @@ const PaymentModal: React.FC<Props> = ({
           serviceDelivery: del,
           proposal: getProposal(r),
           paymentProof: proof,
-          nsPaymentId: matchedBill?.payment_id,
+          nsPaymentId: bill?.payment_id,
         };
         return { id: r.id, paymentData };
       });
@@ -410,42 +446,44 @@ const PaymentModal: React.FC<Props> = ({
               Datos obligatorios comunes
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Banco */}
-              <div>
-                <label className={labelClass}>
-                  Banco*
-                  {activeBill?.bank_account && <span className="text-[#00aa85] ml-1">(NS)</span>}
-                </label>
-                {activeBill?.bank_account ? (
-                  <input
-                    type="text"
-                    value={bankName}
-                    readOnly
-                    className={`${inputClass} opacity-70 cursor-not-allowed`}
-                    style={inputStyle}
-                  />
-                ) : (
-                  <select
-                    value={bankName}
-                    onChange={(e) => {
-                      setBankName(e.target.value);
-                      setErrors((p) => ({ ...p, bankName: "" }));
-                    }}
-                    className={inputClass}
-                    style={inputStyle}
-                  >
-                    <option value="">Seleccionar...</option>
-                    {BANK_OPTIONS.map((b) => (
-                      <option key={b} value={b}>
-                        {b}
-                      </option>
-                    ))}
-                  </select>
-                )}
-                {errors.bankName && (
-                  <p className="text-red-400 text-xs mt-1">{errors.bankName}</p>
-                )}
-              </div>
+              {/* Banco — single mode only; bulk sources bank per row from NetSuite (see below) */}
+              {!isBulk && (
+                <div>
+                  <label className={labelClass}>
+                    Banco*
+                    {activeBill?.bank_account && <span className="text-[#00aa85] ml-1">(NS)</span>}
+                  </label>
+                  {activeBill?.bank_account ? (
+                    <input
+                      type="text"
+                      value={bankName}
+                      readOnly
+                      className={`${inputClass} opacity-70 cursor-not-allowed`}
+                      style={inputStyle}
+                    />
+                  ) : (
+                    <select
+                      value={bankName}
+                      onChange={(e) => {
+                        setBankName(e.target.value);
+                        setErrors((p) => ({ ...p, bankName: "" }));
+                      }}
+                      className={inputClass}
+                      style={inputStyle}
+                    >
+                      <option value="">Seleccionar...</option>
+                      {BANK_OPTIONS.map((b) => (
+                        <option key={b} value={b}>
+                          {b}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  {errors.bankName && (
+                    <p className="text-red-400 text-xs mt-1">{errors.bankName}</p>
+                  )}
+                </div>
+              )}
 
               {/* Modo de Pago */}
               <div>
@@ -606,40 +644,174 @@ const PaymentModal: React.FC<Props> = ({
                 </>
               )}
 
-              {/* Bulk Mode: Common Reference Input with Apply-To-All check */}
-              {isBulk && (
-                <div className="md:col-span-2">
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-gray-400 text-xs font-medium">
-                      Referencia de Operación Común
-                    </label>
-                    <label className="flex items-center gap-1.5 cursor-pointer text-[#00aa85] text-xs font-semibold select-none">
-                      <input
-                        type="checkbox"
-                        checked={applyRefToAll}
-                        onChange={(e) => setApplyRefToAll(e.target.checked)}
-                        className="rounded border-gray-600 text-[#00aa85] focus:ring-0 focus:ring-offset-0 bg-[#293C47]"
-                      />
-                      Aplicar la misma referencia a todas
-                    </label>
-                  </div>
-                  <input
-                    type="text"
-                    value={commonRef}
-                    onChange={(e) => handleCommonRefChange(e.target.value)}
-                    className={inputClass}
-                    style={inputStyle}
-                    placeholder="Ej: TRF-MismoLote-2026"
-                  />
-                  {errors.bulkReferences && (
-                    <p className="text-red-400 text-xs mt-1">
-                      {errors.bulkReferences}
-                    </p>
-                  )}
-                </div>
-              )}
             </div>
           </div>
+
+          {/* Bulk Mode: per-request NetSuite payment confirmation — the
+              money-critical fields (which bill/payment, amount, FX, bank,
+              reference) live here, one card per request, instead of buried in
+              the details table, so an ambiguous or duplicate match is visible
+              before confirming. */}
+          {isBulk && (() => {
+            const paymentIdCounts: Record<string, number> = {};
+            requests!.forEach((r) => {
+              const b = getActiveBillForRequest(r);
+              if (b?.payment_id) paymentIdCounts[b.payment_id] = (paymentIdCounts[b.payment_id] || 0) + 1;
+            });
+            return (
+              <div className="space-y-2">
+                <p
+                  className="text-[#00aa85] text-xs font-semibold uppercase tracking-wide"
+                  style={{ fontFamily: "Alexandria, sans-serif" }}
+                >
+                  Confirmación de Pago por Solicitud (NetSuite)
+                </p>
+                {(errors.bulkReferences || errors.bulkDuplicatePayment) && (
+                  <div className="space-y-1">
+                    {errors.bulkDuplicatePayment && (
+                      <p className="text-red-400 text-xs">{errors.bulkDuplicatePayment}</p>
+                    )}
+                    {errors.bulkReferences && (
+                      <p className="text-red-400 text-xs">{errors.bulkReferences}</p>
+                    )}
+                  </div>
+                )}
+                <div className="space-y-2">
+                  {requests!.map((r) => {
+                    const bills = getBillsForRequest(r.id);
+                    const selectedIdx = selectedBillIdxByRequest[r.id] ?? 0;
+                    const bill = bills[selectedIdx] ?? null;
+                    const isDuplicate = !!bill && (paymentIdCounts[bill.payment_id] || 0) > 1;
+                    const amtPaid = bill?.payment_amount ?? bill?.bill_total ?? r.amount;
+                    const exRate = bill?.exchange_rate ?? lastRate.rate;
+
+                    return (
+                      <div
+                        key={r.id}
+                        className={`rounded-lg border p-3 space-y-2 ${isDuplicate ? "border-red-500" : "border-gray-700"}`}
+                        style={{ backgroundColor: "#1e2d3d" }}
+                      >
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className="font-semibold text-[#00aa85]">{r.id}</span>
+                            <span className="text-gray-400">{r.beneficiary}</span>
+                          </div>
+                          {isDuplicate && (
+                            <span className="text-red-400 text-[10px] font-bold uppercase tracking-wide">
+                              Pago duplicado en el lote
+                            </span>
+                          )}
+                        </div>
+
+                        {bills.length > 1 ? (
+                          <div>
+                            <label className="text-gray-400 text-[10px] uppercase tracking-wider mb-1 block font-semibold">
+                              Pago de NetSuite a aplicar*
+                            </label>
+                            <select
+                              value={selectedIdx}
+                              onChange={(e) => handleBillSelectionChange(r.id, Number(e.target.value))}
+                              className={`w-full px-2 py-1.5 rounded text-white text-xs outline-none border transition-colors ${isDuplicate ? "border-red-500" : "border-gray-600 focus:border-[#00aa85]"
+                                }`}
+                              style={{ backgroundColor: "#293C47", fontFamily: "Alexandria, sans-serif" }}
+                            >
+                              {bills.map((b, i) => (
+                                <option key={`${b.payment_id}-${i}`} value={i}>
+                                  {b.bill_number} — ${b.payment_amount?.toLocaleString("es-MX", { minimumFractionDigits: 2 })} {b.currency} — {b.payment_date}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        ) : (
+                          <p className="text-gray-500 text-[10px]">
+                            Factura NS: <span className="text-gray-300">{bill?.bill_number}</span> · Pagada {bill?.payment_date}
+                          </p>
+                        )}
+
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                          <div>
+                            <label className="text-gray-500 text-[10px] uppercase tracking-wider mb-1 block">
+                              Monto Pagado (NS)
+                            </label>
+                            <div
+                              className="px-2 py-1.5 rounded text-[#00aa85] text-xs font-semibold border border-gray-700"
+                              style={{ backgroundColor: "#243545" }}
+                            >
+                              ${amtPaid.toLocaleString("es-MX", { minimumFractionDigits: 2 })} {bill?.currency ?? r.currency}
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-gray-500 text-[10px] uppercase tracking-wider mb-1 block">
+                              Tipo de Cambio
+                            </label>
+                            <div
+                              className="px-2 py-1.5 rounded text-gray-300 text-xs border border-gray-700"
+                              style={{ backgroundColor: "#243545" }}
+                            >
+                              {exRate.toFixed(4)}
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-gray-500 text-[10px] uppercase tracking-wider mb-1 block">
+                              N° Factura (NS)
+                            </label>
+                            <div
+                              className="px-2 py-1.5 rounded text-white text-xs border border-gray-700 opacity-70"
+                              style={{ backgroundColor: "#243545" }}
+                            >
+                              {bill?.bill_number || "—"}
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-gray-400 text-[10px] uppercase tracking-wider mb-1 block font-semibold">
+                              Banco*
+                              {bill?.bank_account && <span className="text-[#00aa85] ml-1">(NS)</span>}
+                            </label>
+                            {bill?.bank_account ? (
+                              <div
+                                className="px-2 py-1.5 rounded text-white text-xs border border-gray-700 opacity-70"
+                                style={{ backgroundColor: "#243545" }}
+                              >
+                                {individualBanks[r.id]}
+                              </div>
+                            ) : (
+                              <select
+                                value={individualBanks[r.id] || ""}
+                                onChange={(e) => handleIndividualFieldChange("bank", r.id, e.target.value)}
+                                className={bulkCellClass("bank", r.id)}
+                                style={{ backgroundColor: "#293C47", fontFamily: "Alexandria, sans-serif" }}
+                              >
+                                <option value="">Seleccionar...</option>
+                                {BANK_OPTIONS.map((b) => (
+                                  <option key={b} value={b}>
+                                    {b}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
+                          </div>
+                          <div>
+                            <label className="text-gray-400 text-[10px] uppercase tracking-wider mb-1 block font-semibold">
+                              Ref. Operación*
+                              {bill?.payment_tranid && <span className="text-[#00aa85] ml-1">(NS)</span>}
+                            </label>
+                            <input
+                              type="text"
+                              value={individualRefs[r.id] || ""}
+                              onChange={(e) => handleIndividualFieldChange("ref", r.id, e.target.value)}
+                              className={bulkCellClass("ref", r.id)}
+                              style={{ backgroundColor: "#293C47", fontFamily: "Alexandria, sans-serif" }}
+                              placeholder="Ej: TRF-20231027-001"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Bulk Mode: Inline Requests Details Table */}
           {isBulk && (
@@ -648,17 +820,15 @@ const PaymentModal: React.FC<Props> = ({
                 className="px-4 py-2 border-b border-gray-700 text-xs font-bold text-gray-300 uppercase tracking-wide"
                 style={{ backgroundColor: "#243545" }}
               >
-                Información y Campos Únicos por Solicitud
+                Información Administrativa por Solicitud
               </div>
               <div className="max-h-80 overflow-y-auto overflow-x-auto custom-scrollbar">
-                <table className="w-full text-xs text-left min-w-[1500px]">
+                <table className="w-full text-xs text-left min-w-[1200px]">
                   <thead>
                     <tr className="border-b border-gray-700 text-gray-400" style={{ backgroundColor: "#1e2d3d" }}>
                       <th className="px-3 py-2 w-[70px]">ID</th>
                       <th className="px-3 py-2 w-[150px]">Beneficiario</th>
                       <th className="px-3 py-2 w-[120px]">Monto</th>
-                      <th className="px-3 py-2 w-[220px]">Ref. Operación*</th>
-                      <th className="px-3 py-2 w-[180px]">N° Factura*</th>
                       <th className="px-3 py-2 w-[200px]">Link Factura*</th>
                       <th className="px-3 py-2 w-[160px]">Cliente*</th>
                       <th className="px-3 py-2 w-[220px]">Prestación Bien/Servicio*</th>
@@ -681,26 +851,6 @@ const PaymentModal: React.FC<Props> = ({
                               MXN: ${(r.amount * lastRate.rate).toLocaleString("es-MX", { minimumFractionDigits: 2 })}
                             </span>
                           )}
-                        </td>
-                        <td className="px-3 py-2">
-                          <input
-                            type="text"
-                            value={individualRefs[r.id] || ""}
-                            onChange={(e) => handleIndividualFieldChange("ref", r.id, e.target.value)}
-                            className={bulkCellClass("ref", r.id)}
-                            style={{ backgroundColor: "#293C47", fontFamily: "Alexandria, sans-serif" }}
-                            placeholder="Requerido"
-                          />
-                        </td>
-                        <td className="px-3 py-2">
-                          <input
-                            type="text"
-                            value={individualInvoices[r.id] || ""}
-                            onChange={(e) => handleIndividualFieldChange("invoice", r.id, e.target.value)}
-                            className={bulkCellClass("invoice", r.id)}
-                            style={{ backgroundColor: "#293C47", fontFamily: "Alexandria, sans-serif" }}
-                            placeholder="Ej: FAC-123"
-                          />
                         </td>
                         <td className="px-3 py-2">
                           <input
