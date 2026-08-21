@@ -4,6 +4,8 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import { LoginScreen } from "./components/LoginScreen";
 import { Sidebar } from "./components/Sidebar";
 import { RoleGate } from "./components/RoleGate";
+import TopBar from "./components/TopBar";
+import Feed from "./components/Feed";
 import Dashboard from "./components/Dashboard";
 import NewRequest from "./components/NewRequest";
 import ApprovalManagement from "./components/ApprovalManagement";
@@ -87,8 +89,13 @@ function AppContent() {
   return (
     <div style={{ display: "flex", height: "100vh", background: "#121926" }}>
       <Sidebar currentView={currentView} setCurrentView={setCurrentView} />
-      <main style={{ flex: 1, overflow: "auto", padding: "2rem" }}>
-        {/* Los gates replican la matriz de visibilidad del Sidebar (2026-07-15) */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <TopBar onNavigate={setCurrentView} />
+        <main style={{ flex: 1, overflow: "auto", padding: "2rem" }}>
+        {/* Los gates replican la matriz de visibilidad del Sidebar (2026-07-15).
+            "inicio" queda intencionalmente sin RoleGate: todos los roles la leen (2026-08-20). */}
+        {currentView === "inicio" && <Feed />}
+
         <RoleGate
           allowedRoles={[
             "mac",
@@ -179,7 +186,8 @@ function AppContent() {
             </p>
           </div>
         )}
-      </main>
+        </main>
+      </div>
     </div>
   );
 }

@@ -26,6 +26,7 @@ import {
   Settings,
   LogOut,
   ClipboardCheck,
+  Home,
 } from "lucide-react";
 
 interface NavItem {
@@ -37,11 +38,12 @@ interface NavItem {
   badge?: number;
 }
 
-// Matriz de visibilidad por rol (confirmada 2026-07-15):
+// Matriz de visibilidad por rol (confirmada 2026-07-15, "Inicio" agregado 2026-08-20):
 //   Panel general → dirección + admin/superadmin · Aprobaciones → dirección + superadmin
 //   Finanzas → analista + superadmin · Decisión/Explorador → admin + analista + superadmin
-//   Nueva/Mis solicitudes, Tipo de cambio y Configuración → todos
+//   Inicio, Nueva/Mis solicitudes, Tipo de cambio y Configuración → todos
 const navItems: NavItem[] = [
+  { id: "inicio", label: "Inicio", roles: "all", icon: <Home size={17} />, group: "principal" },
   { id: "dashboard", label: "Panel general", roles: ["mac", "operaciones", "ingenieria", "servicios", "admin", "superadmin"], icon: <LayoutDashboard size={17} />, group: "principal" },
   { id: "nueva-solicitud", label: "Nueva solicitud", roles: "all", icon: <FilePlus2 size={17} />, group: "principal" },
   { id: "mis-solicitudes", label: "Mis solicitudes", roles: "all", icon: <ListTodo size={17} />, group: "principal" },
@@ -141,7 +143,11 @@ export const Sidebar: React.FC<Props> = ({ currentView, setCurrentView }) => {
       borderRight: "1px solid rgba(255,255,255,0.08)",
     }}>
       {/* Brand */}
-      <div style={{ padding: "24px 20px 20px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+      <div style={{
+        padding: "24px 20px 20px",
+        borderBottom: "1px solid rgba(255,255,255,0.08)",
+        display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center",
+      }}>
         <img src="/enlight/logo-white.svg" alt="Enlight" style={{ height: 28, display: "block" }} />
         <div style={{ marginTop: 18, color: "#fff", fontSize: 14, fontWeight: 600, letterSpacing: "-0.005em" }}>
           Portal de Pagos

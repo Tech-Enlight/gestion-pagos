@@ -28,7 +28,11 @@ export const LoginScreen: React.FC = () => {
           boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
         }}
       >
-        <img src="/enlight/logo-white.svg" alt="Enlight" style={{ height: 32, marginBottom: 28 }} />
+        <img
+          src="/enlight/logo-white.svg"
+          alt="Enlight"
+          style={{ height: 32, marginBottom: 28, display: "block", marginLeft: "auto", marginRight: "auto" }}
+        />
         <h1
           style={{
             color: "#fff",
