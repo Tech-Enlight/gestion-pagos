@@ -1,9 +1,15 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import StatusPill from "./StatusPill";
 import WorkflowTracker from "./WorkflowTracker";
+import { Combobox } from "./Combobox";
 import { STATUS, STATUS_LABEL, STATUS_DESC } from "../data/mockData";
 import type { Request } from "../data/mockData";
+import { fetchCecoList, type NSCeco } from "../services/sheets";
 import { Banknote, CalendarClock, Info } from "lucide-react";
+
+// NetSuite CeCo names come as "Dpto_Nombre_Del_Area" — clean up for a readable label
+const formatCecoName = (nombre: string): string =>
+  nombre.replace(/^Dpto_/, "").replace(/_/g, " ");
 
 interface Props {
   requests: Request[];
@@ -42,7 +48,18 @@ const RequestExplorer: React.FC<Props> = ({ requests, onUpdateRequest, mode = "e
   const [editPaymentType, setEditPaymentType] = useState<"Completo" | "Parcial">("Completo");
   const [editSubtotal, setEditSubtotal] = useState("");
   const [editErrors, setEditErrors] = useState<Record<string, string>>({});
+  const [cecoList, setCecoList] = useState<NSCeco[]>([]);
   const isMine = mode === "mine";
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchCecoList()
+      .then((list) => {
+        if (!cancelled) setCecoList(list);
+      })
+      .catch((err) => console.error(err));
+    return () => { cancelled = true; };
+  }, []);
 
   const summary = useMemo(() => {
     const needsAction = requests.filter(isClarification).length;
@@ -494,12 +511,17 @@ const RequestExplorer: React.FC<Props> = ({ requests, onUpdateRequest, mode = "e
                       <label className="block text-gray-400 text-[10px] uppercase tracking-wider mb-1 font-semibold">
                         Departamento
                       </label>
-                      <input
-                        type="text"
+                      <Combobox
+                        options={cecoList.map((c) => ({
+                          value: formatCecoName(c.nombre),
+                          label: formatCecoName(c.nombre),
+                          badge: c.code,
+                        }))}
                         value={editDepartment}
-                        onChange={(e) => { setEditDepartment(e.target.value); setEditErrors((p) => ({ ...p, department: "" })); }}
-                        className={`w-full px-3 py-2 rounded-lg text-white text-xs outline-none border transition-colors ${editErrors.department ? "border-red-500" : "border-gray-600 focus:border-[#00aa85]"}`}
-                        style={{ backgroundColor: "#293C47", fontFamily: "Alexandria, sans-serif" }}
+                        onChange={(v) => { setEditDepartment(v); setEditErrors((p) => ({ ...p, department: "" })); }}
+                        placeholder="Seleccionar departamento..."
+                        emptyMessage="No se encontraron departamentos."
+                        hasError={!!editErrors.department}
                       />
                       {editErrors.department && <p className="text-red-400 text-xs mt-1">{editErrors.department}</p>}
                     </div>

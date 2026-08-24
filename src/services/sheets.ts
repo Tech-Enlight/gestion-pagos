@@ -117,6 +117,19 @@ export async function fetchOCsByProject(projectId: string): Promise<any> {
   return res.json();
 }
 
+export interface NSCeco {
+  internal_id: string;
+  code: string;
+  nombre: string;
+}
+
+export async function fetchCecoList(): Promise<NSCeco[]> {
+  const res = await fetch(`${BASE}/ceco-list`);
+  if (!res.ok) throw new Error("Error al cargar CeCo");
+  const data = await safeJson(res);
+  return data?.ceco_list ?? [];
+}
+
 // Agregar después de fetchOCsByProject:
 export async function fetchProjectById(projectId: string): Promise<{ internal_id: string; code: string; name: string; customer: { id: string; code: string; name: string } } | null> {
   try {

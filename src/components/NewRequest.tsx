@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../context/AuthContext";
-import { fetchProjects, fetchOCsByProject, fetchVendorName, fetchBillsByOC } from "../services/sheets";
+import { fetchProjects, fetchOCsByProject, fetchVendorName, fetchBillsByOC, fetchCecoList, type NSCeco } from "../services/sheets";
 import type { Request } from "../data/mockData";
 import { Combobox } from "./Combobox";
 import { CheckCircle2, AlertTriangle } from "lucide-react";
@@ -56,6 +56,10 @@ const normalizeCurrency = (moneda: string): string => {
   return "MXN";
 };
 
+// NetSuite CeCo names come as "Dpto_Nombre_Del_Area" — clean up for a readable label
+const formatCecoName = (nombre: string): string =>
+  nombre.replace(/^Dpto_/, "").replace(/_/g, " ");
+
 /* ------------------------------------------------------------------ */
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
@@ -65,6 +69,7 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate }) => {
   // ---- Cascade data ----
   const [projects, setProjects] = useState<NSProject[]>([]);
   const [ocList, setOcList] = useState<NSOC[]>([]);
+  const [cecoList, setCecoList] = useState<NSCeco[]>([]);
   // Whether the *selected* OC already has a fully-paid bill in NetSuite
   // ("Pagado por completo") — "Estatus OC: Totalmente facturada" only means
   // fully billed, not fully paid, so this needs its own check against the
@@ -76,6 +81,7 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate }) => {
 
   // ---- Loading / error states ----
   const [loadingProjects, setLoadingProjects] = useState(true);
+  const [loadingCeco, setLoadingCeco] = useState(true);
   const [loadingOCs, setLoadingOCs] = useState(false);
   const [loadingVendor, setLoadingVendor] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -133,6 +139,22 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate }) => {
       })
       .finally(() => {
         if (!cancelled) setLoadingProjects(false);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoadingCeco(true);
+    fetchCecoList()
+      .then((list) => {
+        if (!cancelled) setCecoList(list);
+      })
+      .catch((err) => {
+        console.error(err);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingCeco(false);
       });
     return () => { cancelled = true; };
   }, []);
@@ -539,18 +561,25 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate }) => {
                 <label className="block text-gray-300 text-xs font-medium mb-1" style={{ fontFamily: "Alexandria, sans-serif" }}>
                   Departamento solicitante <span className="text-red-400">*</span>
                 </label>
-                <input
-                  type="text"
-                  value={department}
-                  onChange={(e) => {
-                    setDepartment(e.target.value);
-                    setErrors((prev) => { const n = { ...prev }; delete n.department; return n; });
-                  }}
-                  placeholder="Tu departamento"
-                  className={`w-full px-3 py-2 rounded-lg text-white text-sm outline-none border transition-colors ${errors.department ? "border-red-500" : "border-gray-600 focus:border-[#00aa85]"
-                    }`}
-                  style={{ backgroundColor: "#293C47", fontFamily: "Alexandria, sans-serif" }}
-                />
+                {loadingCeco ? (
+                  <Skeleton />
+                ) : (
+                  <Combobox
+                    options={cecoList.map((c) => ({
+                      value: formatCecoName(c.nombre),
+                      label: formatCecoName(c.nombre),
+                      badge: c.code,
+                    }))}
+                    value={department}
+                    onChange={(v) => {
+                      setDepartment(v);
+                      setErrors((prev) => { const n = { ...prev }; delete n.department; return n; });
+                    }}
+                    placeholder="Seleccionar departamento..."
+                    emptyMessage="No se encontraron departamentos."
+                    hasError={!!errors.department}
+                  />
+                )}
                 {errors.department && <p className="text-red-400 text-xs mt-1">{errors.department}</p>}
               </div>
               <ReadonlyField label="Persona Solicitante" value={user?.name || "Sin sesión"} />
