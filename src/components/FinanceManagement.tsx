@@ -251,7 +251,7 @@ const FinanceManagement: React.FC<Props> = ({
         );
         if (req.poNumber) {
           fetchInvoiceLinkByOC(req.poNumber).then(result => {
-            setNsInvoiceLink(result?.drive_folder_url ?? null);
+            setNsInvoiceLink(result?.invoice_url ?? result?.drive_folder_url ?? null);
           });
         }
         setPayTarget(req.id);
@@ -299,7 +299,8 @@ const FinanceManagement: React.FC<Props> = ({
           if (data.customer_code && data.customer_name) {
             allClientMap[req.id] = `${data.customer_code} — ${data.customer_name}`;
           }
-          if (invLink?.drive_folder_url) allInvoiceLinkMap[req.id] = invLink.drive_folder_url;
+          const resolvedInvoiceLink = invLink?.invoice_url ?? invLink?.drive_folder_url;
+          if (resolvedInvoiceLink) allInvoiceLinkMap[req.id] = resolvedInvoiceLink;
         }
       }
 

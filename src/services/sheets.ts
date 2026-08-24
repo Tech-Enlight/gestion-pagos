@@ -142,13 +142,16 @@ export async function fetchProjectById(projectId: string): Promise<{ internal_id
 }
 
 export async function fetchInvoiceLinkByOC(ocNumber: string): Promise<{
-  drive_folder_url: string | null
+  drive_folder_url: string | null;
+  invoice_url: string | null;
 } | null> {
   try {
     const res = await fetch(`${BASE}/link-factura?ocNumber=${encodeURIComponent(ocNumber)}`);
     if (!res.ok) return null;
     const data = await res.json();
-    return data.found ? { drive_folder_url: data.drive_folder_url } : null;
+    return data.found
+      ? { drive_folder_url: data.drive_folder_url, invoice_url: data.invoice_url }
+      : null;
   } catch {
     return null;
   }
