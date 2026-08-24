@@ -130,6 +130,9 @@ const PaymentModal: React.FC<Props> = ({
       if (activeBill.payment_tranid) {
         setSingleOperationRef(activeBill.payment_tranid);
       }
+      if (activeBill.cep_url) {
+        setPaymentProof(activeBill.cep_url);
+      }
     }
   }, [activeBill]);
 
@@ -165,6 +168,7 @@ const PaymentModal: React.FC<Props> = ({
     const refMap: Record<string, string> = {};
     const invMap: Record<string, string> = {};
     const bankMap: Record<string, string> = {};
+    const proofMap: Record<string, string> = {};
 
     requests!.forEach((r) => {
       const bills = nsPaidBillsMap[r.id] || [];
@@ -177,6 +181,7 @@ const PaymentModal: React.FC<Props> = ({
         if (bill.payment_tranid) refMap[r.id] = bill.payment_tranid;
         if (bill.bill_number) invMap[r.id] = bill.bill_number;
         if (bill.bank_account) bankMap[r.id] = bill.bank_account;
+        if (bill.cep_url) proofMap[r.id] = bill.cep_url;
       }
     });
 
@@ -184,6 +189,7 @@ const PaymentModal: React.FC<Props> = ({
     setIndividualRefs((prev) => ({ ...prev, ...refMap }));
     setIndividualInvoices((prev) => ({ ...prev, ...invMap }));
     setIndividualBanks((prev) => ({ ...prev, ...bankMap }));
+    setIndividualPaymentProofs((prev) => ({ ...prev, ...proofMap }));
   }, [isBulk, nsPaidBillsMap, requests]);
 
   useEffect(() => {
@@ -213,6 +219,7 @@ const PaymentModal: React.FC<Props> = ({
       setIndividualRefs((prev) => ({ ...prev, [id]: bill.payment_tranid || "" }));
       setIndividualInvoices((prev) => ({ ...prev, [id]: bill.bill_number || "" }));
       setIndividualBanks((prev) => ({ ...prev, [id]: bill.bank_account || "" }));
+      setIndividualPaymentProofs((prev) => ({ ...prev, [id]: bill.cep_url || "" }));
     }
     setBulkFieldErrors((prev) => ({
       ...prev,

@@ -192,6 +192,7 @@ export interface NSBill {
   payment_date: string | null;
   payment_amount: number | null;
   bank_account: string | null;
+  cep_url: string | null;
 }
 
 export interface NSBillsResponse {
