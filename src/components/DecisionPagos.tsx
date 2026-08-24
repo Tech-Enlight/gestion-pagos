@@ -35,6 +35,7 @@ import {
 } from "../services/decision";
 import { useAuth } from "../context/AuthContext";
 import { STATUS } from "../data/mockData";
+import { fetchInvoiceLinkByOC } from "../services/sheets";
 import RejectModal from "./RejectModal";
 
 // ─── Theme tokens ────────────────────────────────────────────
@@ -504,6 +505,19 @@ const ExpandedPanel: React.FC<{
   const ocKey = p.oc ? String(p.oc).replace(/\s+/g, "").toUpperCase() : null;
   const oc = ocKey ? ocData[ocKey] : null;
   const fc = p.proj_id ? fcData[p.proj_id.trim()] : null;
+
+  // Invoice PDF from Recepción de Facturas, looked up live by OC so the
+  // decision-maker can open the actual document before approving/rejecting.
+  const [invoiceUrl, setInvoiceUrl] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    setInvoiceUrl(null);
+    if (!p.oc) return;
+    fetchInvoiceLinkByOC(p.oc).then((result) => {
+      if (!cancelled) setInvoiceUrl(result?.invoice_url ?? result?.drive_folder_url ?? null);
+    });
+    return () => { cancelled = true; };
+  }, [p.oc]);
   const titleMap: Record<DecisionColor, string> = {
     verde: "✓ Procede el pago",
     rojo: "✗ No procede el pago",
@@ -541,7 +555,12 @@ const ExpandedPanel: React.FC<{
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 14 }}>
         <ExpBlock title="Documento">
           <ExpField label="OC" value={p.oc || "—"} mono />
-          <ExpField label="Factura" value={p.factura || "—"} mono />
+          <ExpField
+            label="Factura"
+            value={invoiceUrl ? (p.factura || "Ver factura") : (p.factura || "—")}
+            mono
+            href={invoiceUrl}
+          />
           <ExpField label="Concepto" value={p.concepto || "—"} />
           <ExpField label="Prestación" value={p.prest || "—"} />
         </ExpBlock>
@@ -634,13 +653,27 @@ const ExpBlock: React.FC<{ title: string; children: React.ReactNode }> = ({ titl
   </div>
 );
 
-const ExpField: React.FC<{ label: string; value: string; mono?: boolean; bold?: boolean }> = ({ label, value, mono, bold }) => (
+const ExpField: React.FC<{ label: string; value: string; mono?: boolean; bold?: boolean; href?: string | null }> = ({ label, value, mono, bold, href }) => (
   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4, gap: 8 }}>
     <span style={{ fontSize: 11, color: T.textMuted, fontFamily: T.fontAlt, flexShrink: 0 }}>{label}</span>
-    <span style={{
-      fontSize: 12, color: T.text, fontFamily: mono ? "monospace" : T.fontAlt,
-      fontWeight: bold ? 700 : 400, textAlign: "right", overflow: "hidden", textOverflow: "ellipsis",
-    }}>{value}</span>
+    {href ? (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          fontSize: 12, color: T.jade, fontFamily: mono ? "monospace" : T.fontAlt,
+          fontWeight: bold ? 700 : 400, textAlign: "right", overflow: "hidden", textOverflow: "ellipsis",
+          textDecoration: "underline",
+        }}
+      >{value}</a>
+    ) : (
+      <span style={{
+        fontSize: 12, color: T.text, fontFamily: mono ? "monospace" : T.fontAlt,
+        fontWeight: bold ? 700 : 400, textAlign: "right", overflow: "hidden", textOverflow: "ellipsis",
+      }}>{value}</span>
+    )}
   </div>
 );
 
