@@ -1,12 +1,13 @@
 import React from "react";
 import type { Request } from "../data/mockData";
-import { 
-  CheckCircle2, 
-  Circle, 
-  Clock, 
+import {
+  CheckCircle2,
+  Circle,
+  Clock,
   XCircle,
   User,
-  Calendar
+  Calendar,
+  FileText
 } from "lucide-react";
 
 interface Props {
@@ -84,6 +85,13 @@ const WorkflowTracker: React.FC<Props> = ({ request, onClose }) => {
 
       <div className="p-5">
         <div className="flex flex-wrap gap-x-4 gap-y-2 mb-6">
+          {request.poNumber && (
+            <div className="flex items-center gap-1.5 text-gray-400 text-[10px] uppercase tracking-wider font-medium">
+              <FileText size={12} className="text-[#3d7d80]" />
+              <span>OC:</span>
+              <span className="text-gray-200 font-bold">{request.poNumber}</span>
+            </div>
+          )}
           <div className="flex items-center gap-1.5 text-gray-400 text-[10px] uppercase tracking-wider font-medium">
             <User size={12} className="text-[#3d7d80]" />
             <span>Solicitante:</span>
