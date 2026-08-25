@@ -235,6 +235,16 @@ const RequestExplorer: React.FC<Props> = ({ requests, onUpdateRequest, mode = "e
                   <th className="text-left px-4 py-3 text-gray-300 font-semibold">
                     ID
                   </th>
+                  {isMine && (
+                    <>
+                      <th className="text-left px-4 py-3 text-gray-300 font-semibold">
+                        # PO
+                      </th>
+                      <th className="text-left px-4 py-3 text-gray-300 font-semibold">
+                        Proyecto
+                      </th>
+                    </>
+                  )}
                   <th className="text-left px-4 py-3 text-gray-300 font-semibold">
                     Beneficiario
                   </th>
@@ -259,7 +269,7 @@ const RequestExplorer: React.FC<Props> = ({ requests, onUpdateRequest, mode = "e
                     </th>
                   )}
                   <th className="text-left px-4 py-3 text-gray-300 font-semibold">
-                    Fecha
+                    Fecha solicitud
                   </th>
                 </tr>
               </thead>
@@ -267,7 +277,7 @@ const RequestExplorer: React.FC<Props> = ({ requests, onUpdateRequest, mode = "e
                 {filtered.length === 0 && (
                   <tr>
                     <td
-                      colSpan={isMine ? 7 : 6}
+                      colSpan={isMine ? 9 : 6}
                       className="px-4 py-8 text-center text-gray-500"
                     >
                       {isMine
@@ -315,6 +325,14 @@ const RequestExplorer: React.FC<Props> = ({ requests, onUpdateRequest, mode = "e
                         )}
                       </span>
                     </td>
+                    {isMine && (
+                      <>
+                        <td className="px-4 py-3 text-gray-400 font-mono text-xs">{r.poNumber || "—"}</td>
+                        <td className="px-4 py-3 text-gray-400 max-w-[160px] truncate" title={r.projectNumber}>
+                          {r.projectNumber || "—"}
+                        </td>
+                      </>
+                    )}
                     <td className="px-4 py-3 text-gray-300">{r.beneficiary}</td>
                     <td className="px-4 py-3 text-gray-400 max-w-[220px] truncate" title={isMine ? r.concept : r.projectNumber}>
                       {isMine ? r.concept : r.projectNumber}
