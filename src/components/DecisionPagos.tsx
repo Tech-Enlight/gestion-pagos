@@ -367,8 +367,8 @@ const PaymentCard: React.FC<CardProps> = ({
 }) => {
   const urg = urgLabel(p);
   const dc = DECISION_COLORS[decision.color];
-  const tagColor = p.propuesta === "Propuesta" ? T.jade : T.steel;
-  const tagBg = p.propuesta === "Propuesta" ? T.jadeFaint : T.steelFaint;
+  const tagColor = p.propuesta_bucket === "Propuesta" ? T.jade : T.steel;
+  const tagBg = p.propuesta_bucket === "Propuesta" ? T.jadeFaint : T.steelFaint;
 
   return (
     <div
@@ -931,8 +931,8 @@ const TabProveedores: React.FC<{ data: DecisionData }> = ({ data }) => {
     if (!map[k]) map[k] = { nombre: k, pagos: 0, propuesta: 0, aplazado: 0, total: 0 };
     map[k].pagos++;
     map[k].total += p.total_mxn;
-    if (p.propuesta === "Aplazado") map[k].aplazado += p.total_mxn;
-    else map[k].propuesta += p.total_mxn;
+    if (p.propuesta_bucket === "Aplazado") map[k].aplazado += p.total_mxn;
+    else if (p.propuesta_bucket === "Propuesta") map[k].propuesta += p.total_mxn;
   });
   const arr = Object.values(map).sort((a, b) => b.total - a.total);
   let acc = 0;
@@ -986,8 +986,8 @@ const TabClientes: React.FC<{ data: DecisionData }> = ({ data }) => {
     if (!cliMap[ck]) cliMap[ck] = { nombre: ck, pagos: 0, propuesta: 0, aplazado: 0, total: 0 };
     cliMap[ck].pagos++;
     cliMap[ck].total += p.total_mxn;
-    if (p.propuesta === "Aplazado") cliMap[ck].aplazado += p.total_mxn;
-    else cliMap[ck].propuesta += p.total_mxn;
+    if (p.propuesta_bucket === "Aplazado") cliMap[ck].aplazado += p.total_mxn;
+    else if (p.propuesta_bucket === "Propuesta") cliMap[ck].propuesta += p.total_mxn;
 
     const bk = p.banco || "Sin banco";
     if (!bankMap[bk]) bankMap[bk] = { nombre: bk, pagos: 0, total: 0 };
@@ -1181,10 +1181,10 @@ const SelectionBar: React.FC<SelBarProps> = ({
   const decidibles = sel.filter(canDecideOn).map((p) => p.id);
 
   const total = sel.reduce((s, p) => s + p.total_mxn, 0);
-  const propTotal = sel.filter((p) => p.propuesta === "Propuesta").reduce((s, p) => s + p.total_mxn, 0);
-  const aplazTotal = sel.filter((p) => p.propuesta === "Aplazado").reduce((s, p) => s + p.total_mxn, 0);
-  const nProp = sel.filter((p) => p.propuesta === "Propuesta").length;
-  const nAplaz = sel.filter((p) => p.propuesta === "Aplazado").length;
+  const propTotal = sel.filter((p) => p.propuesta_bucket === "Propuesta").reduce((s, p) => s + p.total_mxn, 0);
+  const aplazTotal = sel.filter((p) => p.propuesta_bucket === "Aplazado").reduce((s, p) => s + p.total_mxn, 0);
+  const nProp = sel.filter((p) => p.propuesta_bucket === "Propuesta").length;
+  const nAplaz = sel.filter((p) => p.propuesta_bucket === "Aplazado").length;
 
   return (
     <div style={{
@@ -1243,8 +1243,8 @@ const SelectionModal: React.FC<{ selected: Set<string>; pagos: PagoFlat[]; onClo
 }) => {
   const sel = pagos.filter((p) => selected.has(p.id)).sort((a, b) => b.total_mxn - a.total_mxn);
   const total = sel.reduce((s, p) => s + p.total_mxn, 0);
-  const propTotal = sel.filter((p) => p.propuesta === "Propuesta").reduce((s, p) => s + p.total_mxn, 0);
-  const aplazTotal = sel.filter((p) => p.propuesta === "Aplazado").reduce((s, p) => s + p.total_mxn, 0);
+  const propTotal = sel.filter((p) => p.propuesta_bucket === "Propuesta").reduce((s, p) => s + p.total_mxn, 0);
+  const aplazTotal = sel.filter((p) => p.propuesta_bucket === "Aplazado").reduce((s, p) => s + p.total_mxn, 0);
 
   return (
     <div
@@ -1280,8 +1280,8 @@ const SelectionModal: React.FC<{ selected: Set<string>; pagos: PagoFlat[]; onClo
             </thead>
             <tbody>
               {sel.map((p, i) => {
-                const tagColor = p.propuesta === "Propuesta" ? T.jade : T.steel;
-                const tagBg = p.propuesta === "Propuesta" ? T.jadeFaint : T.steelFaint;
+                const tagColor = p.propuesta_bucket === "Propuesta" ? T.jade : T.steel;
+                const tagBg = p.propuesta_bucket === "Propuesta" ? T.jadeFaint : T.steelFaint;
                 return (
                   <tr key={p.id} style={{ borderBottom: `1px solid rgba(255,255,255,0.04)` }}>
                     <td style={{ padding: "8px 12px", fontSize: 12, color: T.textMuted }}>{i + 1}.<span style={{ marginLeft: 4, padding: "1px 6px", background: tagBg, color: tagColor, borderRadius: 3, fontSize: 10, fontWeight: 700 }}>{p.propuesta || "—"}</span></td>
@@ -1306,7 +1306,7 @@ const SelectionModal: React.FC<{ selected: Set<string>; pagos: PagoFlat[]; onClo
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 20px", borderTop: `1px solid ${T.cardBorder}` }}>
           <div style={{ fontSize: 12, color: T.textMuted, fontFamily: T.fontAlt }}>
-            Propuesta: {sel.filter((p) => p.propuesta === "Propuesta").length} · {fmtMXN(propTotal)} &nbsp;|&nbsp; Aplazado: {sel.filter((p) => p.propuesta === "Aplazado").length} · {fmtMXN(aplazTotal)}
+            Propuesta: {sel.filter((p) => p.propuesta_bucket === "Propuesta").length} · {fmtMXN(propTotal)} &nbsp;|&nbsp; Aplazado: {sel.filter((p) => p.propuesta_bucket === "Aplazado").length} · {fmtMXN(aplazTotal)}
           </div>
           <div style={{ display: "flex", gap: 8 }}>
             <BarBtn label="Exportar CSV" onClick={onExportCSV} primary icon={<Download size={13} />} />
@@ -1514,7 +1514,7 @@ const DecisionPagos: React.FC<DecisionPagosProps> = ({ onUpdateRequest }) => {
         if (filters.oc === "pendiente" && (!oc || est === "aprobada" || est === "rechazada")) return false;
         if (filters.oc === "sin" && oc) return false;
       }
-      if (filters.propuesta.size > 0 && !filters.propuesta.has(p.propuesta)) return false;
+      if (filters.propuesta.size > 0 && !filters.propuesta.has(p.propuesta_bucket)) return false;
       if (filters.venc.size > 0) {
         const allowed = new Set<string>();
         if (filters.venc.has("vencido")) allowed.add("vencido");

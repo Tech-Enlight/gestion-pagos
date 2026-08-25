@@ -119,6 +119,7 @@ function AppContent() {
           <NewRequest
             onAddRequest={handleAddRequest}
             onNavigate={setCurrentView}
+            existingRequests={requests}
           />
         )}
 

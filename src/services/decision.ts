@@ -68,6 +68,11 @@ export interface PagoFlat {
   total_mxn: number;
   estatus: string;
   propuesta: string;
+  // Normalized "Propuesta" (went straight to payment) vs "Aplazado" bucket, derived
+  // from the raw `propuesta` label. PaymentModal's getProposal() only ever writes
+  // "Autorizado" or "Aplazado" (plus the legacy "Pagada") — never the literal
+  // "Propuesta" — so bucket comparisons must go through this field, not the raw one.
+  propuesta_bucket: "Propuesta" | "Aplazado" | "";
   operacion_cat: string;
   obs: string;
   prest: string;
@@ -228,6 +233,7 @@ function assembleData(
         total_mxn: p.monto_mxn || ((p.monto_solicitado || 0) * tc) || 0,
         estatus: p.estatus || "",
         propuesta: p.propuesta || "Sin categoría",
+        propuesta_bucket: p.propuesta === "Aplazado" ? "Aplazado" : p.propuesta ? "Propuesta" : "",
         operacion_cat: p.tipo_gasto || "",
         obs: p.obs_finanzas?.length ? p.obs_finanzas[0].text : "",
         prest: p.prestacion || "",
@@ -236,8 +242,8 @@ function assembleData(
   }
 
   const sum = (arr: PagoFlat[]) => arr.reduce((a, x) => a + (x.total_mxn || 0), 0);
-  const isProp = (p: PagoFlat) => p.propuesta === "Propuesta";
-  const isAplaz = (p: PagoFlat) => p.propuesta === "Aplazado";
+  const isProp = (p: PagoFlat) => p.propuesta_bucket === "Propuesta";
+  const isAplaz = (p: PagoFlat) => p.propuesta_bucket === "Aplazado";
 
   const kpis: KPIs = {
     total_general: sum(pagosFlat),

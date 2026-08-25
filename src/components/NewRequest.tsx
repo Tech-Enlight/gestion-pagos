@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../context/AuthContext";
 import { fetchProjects, fetchOCsByProject, fetchVendorName, fetchBillsByOC, fetchCecoList, type NSCeco } from "../services/sheets";
 import type { Request } from "../data/mockData";
+import { STATUS, STATUS_LABEL } from "../data/mockData";
 import { Combobox } from "./Combobox";
 import { CheckCircle2, AlertTriangle } from "lucide-react";
 
@@ -44,7 +45,17 @@ interface NSVendor {
 interface Props {
   onAddRequest: (req: Request) => void;
   onNavigate: (tab: string) => void;
+  // All requests currently loaded in the app — used to warn/block on duplicate
+  // requests against the same PO. Loaded once at app mount, so a request
+  // submitted by someone else in the last few minutes may not show up yet;
+  // this is a UX nudge, not a hard guarantee.
+  existingRequests: Request[];
 }
+
+// Statuses that mean "this request is done, its PO slot is free again" —
+// anything else (including Draft, which just means it's paused for
+// aclaración) still occupies the PO and should be surfaced/guarded against.
+const CLOSED_STATUSES: string[] = [STATUS.PAID, STATUS.REJECTED];
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
@@ -63,7 +74,7 @@ const formatCecoName = (nombre: string): string =>
 /* ------------------------------------------------------------------ */
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
-const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate }) => {
+const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate, existingRequests }) => {
   const { user } = useAuth();
 
   // ---- Cascade data ----
@@ -121,6 +132,21 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate }) => {
       ? +(ocTotal - subtotalNum).toFixed(2)
       : +(subtotalNum * 0.16).toFixed(2);
   const total = paymentType === "Completo" ? ocTotal : +(subtotalNum + iva).toFixed(2);
+
+  // ---- Duplicate/overlapping request check for the selected OC ----
+  // Partial payments are legitimate — the same PO can have several open
+  // requests over time — so this only warns, and blocks only when another
+  // open request already asks for the same amount (an accidental duplicate,
+  // not a different installment).
+  const openRequestsForOc = selectedOC
+    ? existingRequests.filter(
+        (r) => r.poNumber === selectedOC.oc_number && !CLOSED_STATUSES.includes(r.status)
+      )
+    : [];
+  const duplicateAmountMatch =
+    total > 0
+      ? openRequestsForOc.find((r) => Math.abs(r.amount - total) <= Math.max(1, total * 0.01))
+      : undefined;
 
   // ================================================================
   //  1. Fetch projects on mount
@@ -236,6 +262,7 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate }) => {
     if (!selectedOcId) e.oc = "Selecciona una OC";
     else if (checkingPaidStatus) e.oc = "Verificando estado de pago en NetSuite, espera un momento";
     else if (selectedOcPaid !== false) e.oc = "Esta OC ya tiene un pago registrado en NetSuite (o no se pudo verificar)";
+    else if (duplicateAmountMatch) e.oc = `Ya existe una solicitud abierta (${duplicateAmountMatch.id}) por el mismo monto en esta OC`;
     if (!concept.trim()) e.concept = "Concepto requerido";
     if (!department.trim()) e.department = "Departamento requerido";
     if (paymentType === "Parcial") {
@@ -431,6 +458,23 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate }) => {
                   Esta OC ya tiene un pago completo registrado en NetSuite. No se puede enviar una solicitud para ella.
                 </div>
               )}
+              {!checkingPaidStatus && openRequestsForOc.length > 0 && (
+                <div className="md:col-span-2 flex items-start gap-2 px-3 py-2 rounded-lg border border-blue-400/30 bg-blue-400/10 text-blue-300 text-xs">
+                  <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium mb-1">
+                      Esta OC ya tiene {openRequestsForOc.length === 1 ? "otra solicitud abierta" : `${openRequestsForOc.length} otras solicitudes abiertas`} en el portal — revisa que esta no sea un duplicado (los pagos parciales sobre la misma OC son válidos):
+                    </p>
+                    <ul className="space-y-0.5">
+                      {openRequestsForOc.map((r) => (
+                        <li key={r.id}>
+                          {r.id} — $ {r.amount.toLocaleString("es-MX", { minimumFractionDigits: 2 })} {r.currency} · {STATUS_LABEL[r.status] || r.status}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
               <ReadonlyField label="OC" value={selectedOC.oc_number} />
               <ReadonlyField label="Beneficiario" value={vendor?.name || "Cargando..."} />
               <ReadonlyField label="RFC" value={vendor?.rfc || "—"} />
@@ -590,7 +634,7 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate }) => {
           <div className="flex flex-col items-end gap-1.5">
             <button
               onClick={handleSubmit}
-              disabled={checkingPaidStatus || (!!selectedOC && !!selectedOcPaid)}
+              disabled={checkingPaidStatus || (!!selectedOC && !!selectedOcPaid) || !!duplicateAmountMatch}
               className="px-8 py-3 rounded-lg text-white font-semibold text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:opacity-40 hover:opacity-90"
               style={{ backgroundColor: "#00aa85", fontFamily: "Alexandria, sans-serif" }}
             >
@@ -601,6 +645,10 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate }) => {
             ) : selectedOC && selectedOcPaid ? (
               <p className="text-yellow-400 text-xs">
                 Esta OC ya tiene un pago registrado en NetSuite — no se puede enviar.
+              </p>
+            ) : duplicateAmountMatch ? (
+              <p className="text-yellow-400 text-xs">
+                Ya existe una solicitud abierta ({duplicateAmountMatch.id}) por el mismo monto en esta OC — no se puede enviar.
               </p>
             ) : null}
           </div>

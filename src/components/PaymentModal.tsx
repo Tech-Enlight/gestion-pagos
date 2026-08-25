@@ -118,6 +118,15 @@ const PaymentModal: React.FC<Props> = ({
   // approved straight to payment ("Autorizado").
   const getProposal = (r: Request) => (r.estimatedPaymentDate ? "Aplazado" : "Autorizado");
 
+  // Single mode: nsInvoiceLink arrives asynchronously (fetched after the modal
+  // is already open), so the useState initializer above misses it — sync it
+  // in once it resolves.
+  useEffect(() => {
+    if (!isBulk && nsInvoiceLink) {
+      setInvoiceLink(nsInvoiceLink);
+    }
+  }, [isBulk, nsInvoiceLink]);
+
   // Pre-fill from NS bill when available
   useEffect(() => {
     if (activeBill) {
