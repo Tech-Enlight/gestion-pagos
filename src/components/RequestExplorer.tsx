@@ -11,6 +11,13 @@ import { Banknote, CalendarClock, Info } from "lucide-react";
 const formatCecoName = (nombre: string): string =>
   nombre.replace(/^Dpto_/, "").replace(/_/g, " ");
 
+// projectNumber comes as "PROJ-842 — SFV_Frialsa_Colombia_AmpliaciónII" — the table
+// only has room for the short code; the full name still shows on hover.
+const shortProjId = (projectNumber: string): string => {
+  const m = (projectNumber || "").match(/(PROJ-\d+)/);
+  return m ? m[1] : projectNumber || "—";
+};
+
 interface Props {
   requests: Request[];
   onUpdateRequest: (id: string, status: string, extra?: any) => void;
@@ -229,18 +236,19 @@ const RequestExplorer: React.FC<Props> = ({ requests, onUpdateRequest, mode = "e
             className="rounded-xl border border-gray-700 overflow-hidden"
             style={{ backgroundColor: "#1e2d3d" }}
           >
+            <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr style={{ backgroundColor: "#293C47" }}>
-                  <th className="text-left px-4 py-3 text-gray-300 font-semibold">
+                  <th className="text-left px-4 py-3 text-gray-300 font-semibold whitespace-nowrap">
                     ID
                   </th>
                   {isMine && (
                     <>
-                      <th className="text-left px-4 py-3 text-gray-300 font-semibold">
+                      <th className="text-left px-4 py-3 text-gray-300 font-semibold whitespace-nowrap">
                         # PO
                       </th>
-                      <th className="text-left px-4 py-3 text-gray-300 font-semibold">
+                      <th className="text-left px-4 py-3 text-gray-300 font-semibold whitespace-nowrap">
                         Proyecto
                       </th>
                     </>
@@ -253,22 +261,22 @@ const RequestExplorer: React.FC<Props> = ({ requests, onUpdateRequest, mode = "e
                       Concepto
                     </th>
                   ) : (
-                    <th className="text-left px-4 py-3 text-gray-300 font-semibold">
+                    <th className="text-left px-4 py-3 text-gray-300 font-semibold whitespace-nowrap">
                       Proyecto
                     </th>
                   )}
-                  <th className="text-right px-4 py-3 text-gray-300 font-semibold">
+                  <th className="text-right px-4 py-3 text-gray-300 font-semibold whitespace-nowrap">
                     Monto
                   </th>
-                  <th className="text-center px-4 py-3 text-gray-300 font-semibold">
+                  <th className="text-center px-4 py-3 text-gray-300 font-semibold whitespace-nowrap">
                     Estado
                   </th>
                   {isMine && (
-                    <th className="text-left px-4 py-3 text-gray-300 font-semibold">
+                    <th className="text-left px-4 py-3 text-gray-300 font-semibold whitespace-nowrap">
                       Pago programado
                     </th>
                   )}
-                  <th className="text-left px-4 py-3 text-gray-300 font-semibold">
+                  <th className="text-left px-4 py-3 text-gray-300 font-semibold whitespace-nowrap">
                     Fecha solicitud
                   </th>
                 </tr>
@@ -295,7 +303,7 @@ const RequestExplorer: React.FC<Props> = ({ requests, onUpdateRequest, mode = "e
                         : "hover:bg-[#243545]"
                       }`}
                   >
-                    <td className="px-4 py-3 text-[#00aa85] font-medium">
+                    <td className="px-4 py-3 text-[#00aa85] font-medium whitespace-nowrap">
                       <span className="flex items-center gap-2">
                         {r.id}
                         {isClarification(r) && (
@@ -327,24 +335,30 @@ const RequestExplorer: React.FC<Props> = ({ requests, onUpdateRequest, mode = "e
                     </td>
                     {isMine && (
                       <>
-                        <td className="px-4 py-3 text-gray-400 font-mono text-xs">{r.poNumber || "—"}</td>
-                        <td className="px-4 py-3 text-gray-400 max-w-[160px] truncate" title={r.projectNumber}>
-                          {r.projectNumber || "—"}
+                        <td className="px-4 py-3 text-gray-400 font-mono text-xs whitespace-nowrap">{r.poNumber || "—"}</td>
+                        <td className="px-4 py-3 text-gray-400 whitespace-nowrap" title={r.projectNumber}>
+                          {shortProjId(r.projectNumber)}
                         </td>
                       </>
                     )}
-                    <td className="px-4 py-3 text-gray-300">{r.beneficiary}</td>
-                    <td className="px-4 py-3 text-gray-400 max-w-[220px] truncate" title={isMine ? r.concept : r.projectNumber}>
-                      {isMine ? r.concept : r.projectNumber}
-                    </td>
-                    <td className="px-4 py-3 text-gray-200 text-right">
+                    <td className="px-4 py-3 text-gray-300 max-w-[160px] truncate" title={r.beneficiary}>{r.beneficiary}</td>
+                    {isMine ? (
+                      <td className="px-4 py-3 text-gray-400 max-w-[220px] truncate" title={r.concept}>
+                        {r.concept}
+                      </td>
+                    ) : (
+                      <td className="px-4 py-3 text-gray-400 whitespace-nowrap" title={r.projectNumber}>
+                        {shortProjId(r.projectNumber)}
+                      </td>
+                    )}
+                    <td className="px-4 py-3 text-gray-200 text-right whitespace-nowrap">
                       {r.amount.toLocaleString("es-MX")} {r.currency}
                     </td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-4 py-3 text-center whitespace-nowrap">
                       <StatusPill status={r.status} />
                     </td>
                     {isMine && (
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         {r.estimatedPaymentDate && r.status !== "Paid" && r.status !== "Rejected" ? (
                           <span className="inline-flex items-center gap-1.5 text-[#60a5fa] text-xs font-semibold">
                             <CalendarClock size={13} />
@@ -355,11 +369,12 @@ const RequestExplorer: React.FC<Props> = ({ requests, onUpdateRequest, mode = "e
                         )}
                       </td>
                     )}
-                    <td className="px-4 py-3 text-gray-400">{r.date}</td>
+                    <td className="px-4 py-3 text-gray-400 whitespace-nowrap">{r.date}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         </div>
 
