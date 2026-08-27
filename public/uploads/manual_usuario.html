@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portal de Pagos · Manual de Usuario · Enlight</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@200;300;400;600;700&family=Albert+Sans:wght@200;400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════════════════════════
+   Tokens — Enlight Design System (colors_and_type.css)
+   Mismos tokens que infografia-proceso-template.html — no modificar.
+   ══════════════════════════════════════════════════════════════════ */
+:root{
+  --enl-acero:#293C47; --enl-jade:#00AA85; --enl-cerceta:#3D7D80;
+  --enl-marino:#121926; --enl-gris:#828080;
+  --enl-jade-20:rgba(0,170,133,.20); --enl-jade-40:rgba(0,170,133,.40);
+  --enl-cerceta-20:rgba(61,125,128,.20); --enl-cerceta-40:rgba(61,125,128,.40);
+  --enl-gris-20:rgba(130,128,128,.20);
+  --enl-white:#FFFFFF; --enl-bone:#F5F6F7; --enl-mist:#E6EAEC; --enl-fog:#C5CCD0;
+  --font-primary:"Alexandria","Inter",system-ui,sans-serif;
+  --font-secondary:"Albert Sans","Inter",system-ui,sans-serif;
+  --tracking-eyebrow:.14em;
+  --radius-md:8px; --radius-lg:16px; --radius-pill:999px;
+  --shadow-2:0 4px 12px rgba(18,25,38,.08),0 2px 4px rgba(18,25,38,.04);
+  --grad-jade-to-acero:linear-gradient(90deg,var(--enl-jade) 0%,var(--enl-acero) 100%);
+  --sidebar-w:260px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-font-smoothing:antialiased;scroll-behavior:smooth}
+body{
+  font-family:var(--font-primary);font-weight:300;font-size:15px;
+  line-height:1.55;color:var(--enl-acero);background:var(--enl-bone);
+}
+
+/* ── Type presets ── */
+.eyebrow{
+  font-family:var(--font-secondary);font-weight:500;font-size:12px;
+  letter-spacing:var(--tracking-eyebrow);text-transform:uppercase;color:var(--enl-gris);
+}
+.h1{font-size:clamp(30px,4vw,42px);font-weight:600;line-height:1.1;letter-spacing:-.01em}
+.h2{font-size:clamp(20px,2.4vw,26px);font-weight:600;line-height:1.2;letter-spacing:-.01em}
+.grad-text{
+  background:var(--grad-jade-to-acero);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.small{font-family:var(--font-secondary);font-size:13px;color:var(--enl-gris)}
+
+/* ── Layout: sidebar fija + contenido ── */
+.shell{display:flex;max-width:1240px;margin:0 auto}
+.sidebar{
+  width:var(--sidebar-w);flex:none;position:sticky;top:0;align-self:flex-start;
+  height:100vh;overflow-y:auto;padding:28px 20px;border-right:1px solid var(--enl-mist);
+}
+.sidebar svg{height:28px;width:auto;margin-bottom:6px}
+.sidebar .eyebrow{display:block;margin-bottom:24px}
+.toc{list-style:none}
+.toc li{margin-bottom:2px}
+.toc a{
+  display:block;font-family:var(--font-secondary);font-size:13.5px;font-weight:500;
+  color:var(--enl-acero);text-decoration:none;padding:8px 12px;border-radius:var(--radius-md);
+  border-left:2px solid transparent;
+}
+.toc a:hover{background:var(--enl-mist)}
+.toc a.jade{color:var(--enl-cerceta)}
+.toc .toc-group{
+  font-family:var(--font-secondary);font-weight:700;font-size:10.5px;
+  letter-spacing:var(--tracking-eyebrow);text-transform:uppercase;color:var(--enl-gris);
+  padding:18px 12px 6px;
+}
+.toc .toc-group:first-child{padding-top:0}
+
+.content{flex:1;min-width:0;padding:0 40px 80px}
+.page{max-width:820px;margin:0 auto}
+
+/* ── Header dentro del contenido ── */
+header.topbar{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:24px 0;border-bottom:1px solid var(--enl-mist);margin-bottom:40px;
+}
+
+/* ── Hero ── */
+.hero{margin-bottom:48px}
+.hero p.lead{
+  font-weight:300;font-size:17px;max-width:640px;margin-top:14px;color:var(--enl-acero);
+}
+.meta-row{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
+.meta-pill{
+  display:inline-flex;align-items:center;gap:8px;
+  font-family:var(--font-secondary);font-weight:500;font-size:13px;
+  background:var(--enl-jade-20);color:var(--enl-acero);
+  border:1px solid var(--enl-jade-40);border-radius:var(--radius-pill);padding:8px 18px;
+}
+.meta-pill b{font-weight:700;color:var(--enl-cerceta)}
+
+/* ── Sections ── */
+section{margin-bottom:56px;scroll-margin-top:24px}
+.section-head{display:flex;align-items:baseline;gap:16px;margin-bottom:20px}
+.section-num{
+  font-family:var(--font-secondary);font-weight:700;font-size:13px;color:var(--enl-jade);
+  border:1.5px solid var(--enl-jade);border-radius:var(--radius-pill);
+  width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;flex:none;
+  align-self:center;
+}
+section > p.section-lead{
+  font-family:var(--font-secondary);font-size:14px;color:var(--enl-gris);
+  margin:-8px 0 20px;max-width:640px;
+}
+
+/* ── Feature block: screenshot + descripción ── */
+.feature{
+  background:var(--enl-white);border:1px solid var(--enl-mist);
+  border-radius:var(--radius-lg);padding:24px;box-shadow:var(--shadow-2);
+  margin-bottom:20px;
+}
+.feature h3{font-size:16px;font-weight:600;margin-bottom:10px}
+.feature .shot{
+  background:var(--enl-bone);border:1px dashed var(--enl-fog);border-radius:var(--radius-md);
+  aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;
+  margin-bottom:16px;overflow:hidden;
+}
+.feature .shot img{width:100%;height:100%;object-fit:cover;display:block}
+.feature .shot .placeholder{
+  font-family:var(--font-secondary);font-size:12.5px;color:var(--enl-gris);text-align:center;padding:16px;
+}
+.feature p{font-family:var(--font-secondary);font-size:13.5px;font-weight:400;color:var(--enl-acero);line-height:1.6}
+.feature ol.substeps{margin-top:12px;padding-left:20px}
+.feature ol.substeps li{
+  font-family:var(--font-secondary);font-size:13.5px;color:var(--enl-acero);
+  padding:4px 0;line-height:1.55;
+}
+
+/* ── Numbered step cards (flujo corto, tomado de la infografía) ── */
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.step{
+  background:var(--enl-white);border:1px solid var(--enl-mist);
+  border-radius:var(--radius-lg);padding:20px 16px;position:relative;
+  box-shadow:var(--shadow-2);
+}
+.step .n{
+  font-family:var(--font-secondary);font-weight:700;font-size:22px;
+  color:var(--enl-jade);display:block;margin-bottom:8px;
+}
+.step h3{font-size:15px;font-weight:600;line-height:1.25;margin-bottom:8px}
+.step p{font-family:var(--font-secondary);font-size:12.5px;font-weight:400;color:var(--enl-gris);line-height:1.5}
+.step:not(:last-child)::after{
+  content:"";position:absolute;right:-9px;top:50%;width:6px;height:6px;
+  border-top:1.5px solid var(--enl-fog);border-right:1.5px solid var(--enl-fog);
+  transform:translateY(-50%) rotate(45deg);z-index:2;
+}
+
+/* ── Roles / permisos ── */
+.roles{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.role-card{
+  background:var(--enl-white);border:1px solid var(--enl-mist);
+  border-radius:var(--radius-lg);padding:20px 22px;box-shadow:var(--shadow-2);
+}
+.role-card .badge-nivel{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:30px;height:30px;border-radius:var(--radius-pill);
+  background:var(--enl-acero);color:var(--enl-white);
+  font-family:var(--font-secondary);font-weight:700;font-size:13px;margin-bottom:10px;
+}
+.role-card.avanzado .badge-nivel{background:var(--enl-cerceta)}
+.role-card.admin .badge-nivel{background:var(--enl-jade)}
+.role-card h4{font-size:15px;font-weight:600;margin-bottom:6px}
+.role-card p{font-family:var(--font-secondary);font-size:13px;color:var(--enl-gris);line-height:1.5}
+
+/* ── Estados (idéntico a infografía) ── */
+.states{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.state{
+  background:var(--enl-white);border:1px solid var(--enl-mist);
+  border-radius:var(--radius-md);padding:16px 18px;
+}
+.state .dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:8px;flex:none}
+.state h4{font-family:var(--font-secondary);font-size:13px;font-weight:700;display:flex;align-items:center;margin-bottom:6px}
+.state p{font-family:var(--font-secondary);font-size:12.5px;font-weight:400;color:var(--enl-gris);line-height:1.5}
+.d-proc{background:var(--enl-fog)} .d-pend{background:var(--enl-cerceta)}
+.d-ok{background:var(--enl-jade)} .d-no{background:var(--enl-gris)}
+
+/* ── FAQ / Troubleshooting (accordion nativo <details>) ── */
+.faq-item{
+  background:var(--enl-white);border:1px solid var(--enl-mist);
+  border-radius:var(--radius-md);margin-bottom:10px;overflow:hidden;
+}
+.faq-item summary{
+  font-family:var(--font-secondary);font-weight:600;font-size:14px;
+  padding:16px 20px;cursor:pointer;list-style:none;display:flex;
+  justify-content:space-between;align-items:center;gap:12px;
+}
+.faq-item summary::-webkit-details-marker{display:none}
+.faq-item summary::after{
+  content:"+";font-weight:400;font-size:18px;color:var(--enl-jade);flex:none;
+}
+.faq-item[open] summary::after{content:"–"}
+.faq-item .a{
+  font-family:var(--font-secondary);font-size:13.5px;font-weight:400;color:var(--enl-acero);
+  padding:0 20px 18px;line-height:1.6;
+}
+
+/* ── Docs + tips (idéntico a infografía) ── */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.panel{
+  background:var(--enl-white);border:1px solid var(--enl-mist);
+  border-radius:var(--radius-lg);padding:26px 28px;box-shadow:var(--shadow-2);
+}
+.panel h3{font-size:16px;font-weight:600;margin-bottom:16px}
+.doclist{list-style:none}
+.doclist li{
+  font-family:var(--font-secondary);font-size:13.5px;font-weight:400;
+  padding:9px 0 9px 30px;position:relative;border-bottom:1px solid var(--enl-mist);
+}
+.doclist li:last-child{border-bottom:none}
+.doclist li::before{
+  content:"";position:absolute;left:2px;top:14px;width:11px;height:6px;
+  border-left:2px solid var(--enl-jade);border-bottom:2px solid var(--enl-jade);
+  transform:rotate(-45deg);
+}
+.doclist li .fmt{color:var(--enl-gris);font-size:12px}
+.tips{list-style:none}
+.tips li{
+  font-family:var(--font-secondary);font-size:13px;font-weight:400;color:var(--enl-acero);
+  padding:10px 0 10px 22px;position:relative;border-bottom:1px solid var(--enl-mist);line-height:1.5;
+}
+.tips li:last-child{border-bottom:none}
+.tips li::before{
+  content:"";position:absolute;left:2px;top:16px;width:7px;height:7px;
+  border-radius:50%;background:var(--enl-cerceta);
+}
+.tips b{font-weight:700}
+
+/* ── Footer ── */
+footer{
+  border-top:1px solid var(--enl-mist);padding-top:24px;
+  display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;
+}
+
+/* ── Responsive ── */
+@media(max-width:960px){
+  .sidebar{display:none}
+  .content{padding:0 20px 64px}
+  .steps{grid-template-columns:1fr 1fr}
+  .step:not(:last-child)::after{display:none}
+  .roles,.two-col{grid-template-columns:1fr}
+  .states{grid-template-columns:1fr 1fr}
+}
+@media(max-width:520px){
+  .steps,.states{grid-template-columns:1fr}
+}
+
+/* ── Print: cabe en tamaño carta ── */
+@media print{
+  body{background:var(--enl-white)}
+  .sidebar{display:none}
+  .shell{display:block}
+  .content{padding:0}
+  .page{max-width:100%}
+  .feature,.step,.panel,.state,.role-card{box-shadow:none}
+  .faq-item{border:1px solid var(--enl-mist)}
+  .faq-item:not([open]) .a{display:block !important}
+  section{margin-bottom:28px;break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- ═══════════ SIDEBAR / TOC ═══════════ -->
+  <nav class="sidebar">
+    <svg xmlns="http://www.w3.org/2000/svg" width="113.266" height="35" viewBox="0 0 113.266 35" role="img" aria-label="Enlight">
+      <defs><clipPath id="clip-path-sb"><rect width="113.266" height="35" fill="none"/></clipPath></defs>
+      <g clip-path="url(#clip-path-sb)">
+        <path d="M479.86,0a1.288,1.288,0,0,0-1.287,1.287V26.146a1.287,1.287,0,0,0,2.574,0V1.287A1.288,1.288,0,0,0,479.86,0" transform="translate(-431.581)" fill="#293C47"/>
+        <path d="M542.184,10.978a1.729,1.729,0,1,0,1.729,1.729,1.731,1.731,0,0,0-1.729-1.729" transform="translate(-487.387 -9.9)" fill="#00aa85"/>
+        <path d="M247.955,72.127h0a10.263,10.263,0,0,0-9.933,10.289v8.619a1.287,1.287,0,1,0,2.574,0V82.4a7.677,7.677,0,0,1,7.373-7.7,7.563,7.563,0,0,1,7.736,7.552v8.782a1.287,1.287,0,1,0,2.574,0V82.254a10.14,10.14,0,0,0-10.324-10.127" transform="translate(-214.65 -65.043)" fill="#293C47"/>
+        <path d="M857.8,7.081a10.111,10.111,0,0,0-7.562,3.4V1.286a1.287,1.287,0,0,0-2.574,0V17.244l.008.2v8.548a1.287,1.287,0,0,0,2.574,0l.008-8.757a7.551,7.551,0,1,1,15.1-.025v8.782a1.287,1.287,0,0,0,2.574,0l.008-8.757A10.154,10.154,0,0,0,857.8,7.081" transform="translate(-764.428 0.001)" fill="#293C47"/>
+        <path d="M1092.283,24.84a3.72,3.72,0,0,1-3.036-3.741V9.681h2.692a1.287,1.287,0,0,0,0-2.574h-2.692V1.287a1.287,1.287,0,0,0-2.574,0V21.1a6.23,6.23,0,0,0,4.952,6.222,1.288,1.288,0,0,0,.33.043,1.284,1.284,0,0,0,.328-2.525" transform="translate(-979.97)" fill="#293C47"/>
+        <path d="M10.275,73.953a10.354,10.354,0,0,0-7.266,3.108A9.513,9.513,0,0,0,0,83.545a1.289,1.289,0,0,0,1.287,1.286l18,.006a1.287,1.287,0,0,0,1.281-1.417,10.532,10.532,0,0,0-10.3-9.467m7.37,8.241a.162.162,0,0,1-.134.068l-14.535,0a.166.166,0,0,1-.136-.069.145.145,0,0,1-.023-.131,7.9,7.9,0,0,1,2-3.163,7.8,7.8,0,0,1,5.458-2.366,7.916,7.916,0,0,1,7.394,5.523.156.156,0,0,1-.024.143" transform="translate(0 -66.691)" fill="#293C47"/>
+        <path d="M23.559,196.977a1.3,1.3,0,0,0-1.208.846,7.984,7.984,0,0,1-7.282,5.218,7.713,7.713,0,0,1-7.3-5.186,1.292,1.292,0,0,0-1.219-.877,1.289,1.289,0,0,0-1.218,1.709,10.283,10.283,0,0,0,9.739,6.929,10.476,10.476,0,0,0,9.693-6.89,1.3,1.3,0,0,0-.149-1.2,1.267,1.267,0,0,0-1.054-.551" transform="translate(-4.742 -177.636)" fill="#293C47"/>
+        <path d="M545.651,71.554a1.324,1.324,0,0,0-1.287,1.354V90.674c0,.021.005.04.006.061s0,.014,0,.021a1.282,1.282,0,0,0,.849,1.125,1.236,1.236,0,0,0,.136.042l.057.013a1.181,1.181,0,0,0,.472,0l.057-.013a1.245,1.245,0,0,0,.136-.042,1.282,1.282,0,0,0,.849-1.125l0-.021c0-.021.006-.04.006-.061V72.908a1.324,1.324,0,0,0-1.287-1.354" transform="translate(-490.912 -64.528)" fill="#293C47"/>
+        <path d="M626.7,72.248a1.287,1.287,0,0,0-2.574,0v2.178l-.089-.1c-.1-.111-.2-.223-.311-.329l-.022-.022a10.159,10.159,0,0,0-17.3,6.382,10.076,10.076,0,0,0,2.657,7.7,10.525,10.525,0,0,0,7.39,3.3,9.721,9.721,0,0,0,7.19-2.968c.157-.157.312-.322.463-.494a11.214,11.214,0,0,1-1.449,5.152,7.922,7.922,0,0,1-6.305,3.377,7.77,7.77,0,0,1-5.631-2.425,1.32,1.32,0,0,0-1.733-.2,1.3,1.3,0,0,0-.526.923,1.276,1.276,0,0,0,.334.989,10.347,10.347,0,0,0,7.557,3.287c5.835,0,8.914-4.806,9.533-6.49.053-.143.281-.829.417-1.4a14.187,14.187,0,0,0,.367-2.989c.044-2.063.037-2.138.034-2.169Zm-3.167,1.9h0Zm.562,7.717a7.592,7.592,0,1,1-8.253-8.252q.343-.03.683-.03a7.6,7.6,0,0,1,7.57,8.283" transform="translate(-546.829 -63.993)" fill="#293C47"/>
+      </g>
+    </svg>
+    <span class="eyebrow">Manual de usuario</span>
+    <ul class="toc">
+      <li class="toc-group">Empezar</li>
+      <li><a href="#intro">¿Qué es esta herramienta?</a></li>
+      <li><a href="#acceso">Acceso y roles</a></li>
+      <li class="toc-group">Uso</li>
+      <li><a href="#primeros-pasos">Primeros pasos</a></li>
+      <li><a href="#funciones">Funciones principales</a></li>
+      <li><a href="#estados">Estados y seguimiento</a></li>
+      <li><a href="#requisitos">Requisitos y tips</a></li>
+      <li class="toc-group">Referencia</li>
+      <li><a href="#preguntas" class="jade">Preguntas frecuentes</a></li>
+      <li><a href="#problemas">Solución de problemas</a></li>
+      <li><a href="#contacto">Contacto y soporte</a></li>
+    </ul>
+  </nav>
+
+  <!-- ═══════════ CONTENIDO ═══════════ -->
+  <div class="content">
+    <div class="page">
+
+      <header class="topbar">
+        <span class="eyebrow">Documentación · TECH</span>
+      </header>
+
+      <!-- ═══════════ HERO ═══════════ -->
+      <div class="hero" id="intro">
+        <span class="eyebrow">Manual de usuario</span>
+        <h1 class="h1" style="margin-top:10px">Portal de <span class="grad-text">Pagos</span></h1>
+        <p class="lead">Aplicación web para solicitar, autorizar, decidir y pagar solicitudes de pago a proveedores. Cruza cada solicitud contra NetSuite (órdenes de compra, facturas y pagos) para que Finanzas nunca pague dos veces lo mismo ni sin evidencia. Cubre desde que un colaborador pide un pago hasta que Contabilidad lo marca como pagado.</p>
+        <div class="meta-row">
+          <span class="meta-pill">Acceso&nbsp;→&nbsp;<b>cuenta @enlight.mx (Google)</b></span>
+          <span class="meta-pill">Guía del proceso de aprobación&nbsp;→&nbsp;<b>infografia-portal-pagos.html</b></span>
+        </div>
+      </div>
+
+      <!-- ═══════════ ACCESO Y ROLES ═══════════ -->
+      <section id="acceso">
+        <div class="section-head">
+          <span class="section-num">1</span>
+          <h2 class="h2">Acceso y roles</h2>
+        </div>
+        <p class="section-lead">Entras con tu cuenta de Google de Enlight. Lo que ves en el menú lateral depende de tu rol — nadie ve pantallas que no le corresponden.</p>
+        <div class="roles">
+          <div class="role-card">
+            <span class="badge-nivel">1</span>
+            <h4>Solicitante (todos los roles)</h4>
+            <p>Cualquier colaborador puede crear solicitudes de pago (<b>Nueva solicitud</b>), ver y dar seguimiento a las suyas (<b>Mis solicitudes</b>), consultar el <b>Tipo de cambio</b> y leer <b>Inicio</b>. Puede responder o editar una solicitud cuando le piden aclaración.</p>
+          </div>
+          <div class="role-card avanzado">
+            <span class="badge-nivel">2</span>
+            <h4>MAC-Dirección (mac / operaciones / ingeniería / servicios)</h4>
+            <p>Además de lo anterior, autoriza en <b>Aprobaciones</b> las solicitudes de su equipo (Aprobar, Aclaración o Rechazar) antes de que pasen a Decisión de Pagos.</p>
+          </div>
+          <div class="role-card avanzado">
+            <span class="badge-nivel">3</span>
+            <h4>Analista contable</h4>
+            <p>Trabaja la bandeja de <b>Finanzas</b> (Programar Pago, Marcar Pagado con cruce contra NetSuite). Puede publicar avisos en <b>Inicio</b>. Ve <b>Decisión de Pagos</b> y <b>Explorador</b> solo en modo lectura.</p>
+          </div>
+          <div class="role-card admin">
+            <span class="badge-nivel">4</span>
+            <h4>Admin</h4>
+            <p>Decide las solicitudes en <b>Decisión de Pagos</b> (Aprobar → pasan directo a Finanzas, Aclaración, Rechazar) y consulta el <b>Explorador</b>. No ve Aprobaciones ni Finanzas.</p>
+          </div>
+          <div class="role-card admin" style="grid-column:1 / -1">
+            <span class="badge-nivel">5</span>
+            <h4>Superadmin</h4>
+            <p>Ve absolutamente todo: Panel general, Aprobaciones, Decisión de Pagos, Finanzas (con pestañas de seguimiento incluyendo "Pago Aprobado") y Explorador — pensado para dar soporte o cubrir cualquier paso del flujo.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════ PRIMEROS PASOS ═══════════ -->
+      <section id="primeros-pasos">
+        <div class="section-head">
+          <span class="section-num">2</span>
+          <h2 class="h2">Primeros pasos</h2>
+        </div>
+        <p class="section-lead">De cero a tu primera solicitud enviada.</p>
+        <div class="steps">
+          <div class="step">
+            <span class="n">01</span>
+            <h3>Entra con Google</h3>
+            <p>Inicia sesión con tu cuenta @enlight.mx. Tu rol y permisos se cargan automáticamente.</p>
+          </div>
+          <div class="step">
+            <span class="n">02</span>
+            <h3>Ve a "Nueva solicitud"</h3>
+            <p>Disponible para todos los roles en el menú principal.</p>
+          </div>
+          <div class="step">
+            <span class="n">03</span>
+            <h3>Elige Proyecto y OC</h3>
+            <p>El resto de los datos (proveedor, RFC, moneda, tipo de cambio, monto de la OC) se llenan solos desde NetSuite.</p>
+          </div>
+          <div class="step">
+            <span class="n">04</span>
+            <h3>Completa Concepto y Departamento, y envía</h3>
+            <p>La solicitud entra a la cola de <b>Autorización</b>. Recibirás un correo con el ID (ej. PAY-347) y podrás seguirla en "Mis solicitudes".</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════ FUNCIONES PRINCIPALES ═══════════ -->
+      <section id="funciones">
+        <div class="section-head">
+          <span class="section-num">3</span>
+          <h2 class="h2">Funciones principales</h2>
+        </div>
+        <p class="section-lead">Una pantalla por función. La cadena completa de aprobación (quién aprueba qué y en qué orden) está documentada en la infografía del proceso — aquí se explica qué hace cada pantalla.</p>
+
+        <div class="feature">
+          <h3>Inicio (avisos y notificaciones)</h3>
+          <div class="shot"><span class="placeholder">[Captura — Feed de Inicio con avisos y botón de "like"]</span></div>
+          <p>Pantalla de aterrizaje con comunicados del equipo de Finanzas para todo el portal, en vez de correos o chats sueltos. Todos los roles la ven al entrar.</p>
+          <ol class="substeps">
+            <li>Analista contable, admin y superadmin pueden redactar un aviso (texto + link opcional) y publicarlo con "Publicar".</li>
+            <li>Cualquier usuario puede reaccionar a un aviso con el ícono de rayo (<i>like</i>); el contador de likes es visible para todos.</li>
+            <li>La campana en la barra superior muestra un contador de avisos no leídos (se actualiza cada 90 segundos) y un desplegable con los más recientes; al entrar a Inicio se marcan como leídos automáticamente.</li>
+            <li>Si tienes una solicitud activa (en Autorización, Revisión Finanzas o Pago Aprobado), además del aviso en la app recibes un correo avisándote que hay una notificación pendiente en el Portal.</li>
+          </ol>
+        </div>
+
+        <div class="feature">
+          <h3>Nueva solicitud</h3>
+          <div class="shot"><span class="placeholder">[Captura — Formulario de Nueva Solicitud de Pago]</span></div>
+          <p>Formulario en cascada: eliges Proyecto → OC (orden de compra) y el sistema jala en vivo de NetSuite el proveedor, RFC, moneda, tipo de cambio y monto total de la OC — nada de esto se captura a mano.</p>
+          <ol class="substeps">
+            <li><b>Proyecto:</b> lista buscable de proyectos activos en NetSuite.</li>
+            <li><b>Orden de Compra (OC):</b> solo se listan las OCs abiertas del proyecto elegido (excluye las rechazadas/cerradas). Si una OC ya tiene un pago completo registrado en NetSuite se marca con el badge "Ya pagada" y no se puede seleccionar para enviar.</li>
+            <li><b>Datos de la OC (NetSuite):</b> beneficiario, RFC, moneda, tipo de cambio, monto total y estatus de la OC se muestran de solo lectura. Si ya existen otras solicitudes abiertas contra la misma OC, aparece un aviso azul con esos folios (los pagos parciales sobre la misma OC son válidos, no es necesariamente un error).</li>
+            <li><b>Detalles del pago:</b> elige <b>Completo</b> (usa el total de la OC, el IVA del 16% se calcula solo) o <b>Parcial</b> (capturas el subtotal, sin exceder el total de la OC).</li>
+            <li><b>Concepto:</b> descripción del pago, en texto libre.</li>
+            <li><b>Solicitante → Departamento:</b> lista buscable de Centros de Costo (CeCo) de NetSuite — ya no es texto libre.</li>
+            <li>Al enviar, la solicitud queda en estatus <b>Autorización</b> y recibes un correo de confirmación con el folio.</li>
+          </ol>
+        </div>
+
+        <div class="feature">
+          <h3>Mis solicitudes</h3>
+          <div class="shot"><span class="placeholder">[Captura — Mis Solicitudes, vista personal con tarjetas de resumen]</span></div>
+          <p>Vista personal de todo lo que has enviado, con un resumen en lenguaje sencillo de en qué va cada una (ej. "Tu jefe directo está revisando").</p>
+          <ol class="substeps">
+            <li>Cada solicitud muestra Concepto, monto, OC y "Pago programado" (si Finanzas ya definió fecha).</li>
+            <li>Al abrir una solicitud ves el rastreador de estatus completo (Borrador → Autorización → Decisión de Pagos → Pago Aprobado → Pagado).</li>
+            <li>Si una solicitud requiere <b>Aclaración</b>, aquí respondes: puedes "Solo responder y reenviar" (agregas un comentario y la regresas a autorización) o "Editar solicitud" (corriges Concepto, Departamento y/o Tipo de Pago — con el mismo cálculo de IVA del 16% — antes de reenviarla).</li>
+          </ol>
+        </div>
+
+        <div class="feature">
+          <h3>Aprobaciones (MAC-Dirección)</h3>
+          <div class="shot"><span class="placeholder">[Captura — Gestión de Aprobaciones, tabla de solicitudes pendientes]</span></div>
+          <p>Bandeja de solicitudes en estatus <b>Autorización</b> para mac/operaciones/ingeniería/servicios y superadmin. Es el primer filtro antes de que la solicitud llegue a Decisión de Pagos.</p>
+          <ol class="substeps">
+            <li>Selecciona una fila para ver el detalle completo (beneficiario, OC, concepto, montos, solicitante).</li>
+            <li>Acciones disponibles: <b>Aprobar</b> (pasa a Revisión Finanzas), <b>Aclaración</b> (regresa al solicitante con un comentario) o <b>Rechazar</b> (requiere motivo).</li>
+            <li>Selección múltiple con casillas para aprobar, pedir aclaración o rechazar varias solicitudes a la vez.</li>
+          </ol>
+        </div>
+
+        <div class="feature">
+          <h3>Decisión de Pagos (Admin / Superadmin)</h3>
+          <div class="shot"><span class="placeholder">[Captura — Decisión de Pagos, tarjetas expandibles con datos de NetSuite]</span></div>
+          <p>Segundo filtro: aquí Admin/Superadmin deciden las solicitudes que ya autorizó MAC-Dirección, con el cruce OC/factura/pronóstico de NetSuite visible en cada tarjeta. Analista contable la ve en modo solo lectura.</p>
+          <ol class="substeps">
+            <li>Cada tarjeta trae OC, factura, monto, tipo de cambio, banco, vencimiento y estatus — la lista pesada (cruce con NetSuite) se carga después de la tabla principal, con el indicador "Cruzando OC/pronóstico…".</li>
+            <li>Al expandir una tarjeta, si existe la factura ya subida en Recepción de Facturas, el campo "Factura" es un link directo al PDF real, no solo el número.</li>
+            <li>Acciones por tarjeta o en lote (con selección múltiple): <b>Aprobar</b> (pasa directo a la bandeja del analista contable, estatus Pago Aprobado), <b>Aclaración</b> (regresa al solicitante), <b>Rechazar</b>.</li>
+            <li>La lista se refresca sola cada 5 minutos y después de cada decisión.</li>
+          </ol>
+        </div>
+
+        <div class="feature">
+          <h3>Finanzas (Analista contable / Superadmin)</h3>
+          <div class="shot"><span class="placeholder">[Captura — Finanzas, bandeja Pago Aprobado con acciones Programar Pago / Marcar Pagado]</span></div>
+          <p>Bandeja operativa donde se procesa el pago. El analista contable solo trabaja el estatus <b>Pago Aprobado</b>; superadmin ve además pestañas de seguimiento de etapas anteriores.</p>
+          <ol class="substeps">
+            <li><b>Programar Pago:</b> define una fecha estimada de pago; se guarda en "Pago Programado" y se le avisa por correo al solicitante con esa fecha.</li>
+            <li><b>Marcar Pagado:</b> abre el modal de registro de pago descrito abajo — es el paso que cierra la solicitud como <b>Pagado</b>.</li>
+            <li>También puede regresar una solicitud a Aclaración o Rechazarla desde aquí si detecta un problema al momento de pagar.</li>
+          </ol>
+        </div>
+
+        <div class="feature">
+          <h3>Marcar Pagado (modal de registro de pago)</h3>
+          <div class="shot"><span class="placeholder">[Captura — Modal "Registrar Pago" con datos pre-llenados desde NetSuite]</span></div>
+          <p>El paso más controlado del portal: antes de dejar una solicitud como Pagada, el sistema busca en NetSuite el pago real que corresponde a esa OC (por monto, con tolerancia de redondeo/FX) y pre-llena los datos verificados. Todos los campos son obligatorios.</p>
+          <ol class="substeps">
+            <li><b>Individual:</b> si NetSuite encuentra un pago que coincide en monto, Monto Pagado, Tipo de Cambio, N° de Factura, Banco, Referencia de Operación y Comprobante de Pago (CEP/Banxico) se llenan solos y quedan de solo lectura, marcados con la etiqueta "NS". Si hay más de una factura/pago candidato, eliges cuál referenciar.</li>
+            <li>Link Factura se pre-llena con el PDF real de la factura (tomado de Recepción de Facturas) cuando existe, y Cliente con el cliente NetSuite real de la OC — ya no dependen de que la solicitud tuviera un proyecto capturado a mano.</li>
+            <li>Completas los campos que NetSuite no puede resolver por sí solo: Prestación del Bien o Servicio, Estatus OC, Tipo de Operación y Tipo de Gasto. La <b>Propuesta</b> (Autorizado/Aplazado) se calcula sola según si la solicitud pasó por Programar Pago.</li>
+            <li><b>En lote:</b> selecciona varias solicitudes con estatus Pago Aprobado y ábrelas juntas. Cada una tiene su propia tarjeta "Confirmación de Pago por Solicitud (NetSuite)" con su bill/pago de NetSuite, monto, tipo de cambio, banco y referencia — el sistema evita que dos solicitudes se liquiden con el mismo pago de NetSuite (si pasa, la tarjeta se marca en rojo como "Pago duplicado en el lote" y bloquea la confirmación).</li>
+            <li>Al confirmar, la(s) solicitud(es) pasan a estatus <b>Pagado</b>.</li>
+          </ol>
+        </div>
+
+        <div class="feature">
+          <h3>Explorador (Admin / Analista contable / Superadmin)</h3>
+          <div class="shot"><span class="placeholder">[Captura — Explorador de Solicitudes con filtros y búsqueda]</span></div>
+          <p>Buscador general de todas las solicitudes del portal, sin importar el estatus — útil para dar seguimiento puntual, auditar un folio o resolver una duda de un solicitante.</p>
+        </div>
+
+        <div class="feature">
+          <h3>Panel general (Dashboard)</h3>
+          <div class="shot"><span class="placeholder">[Captura — Panel general con KPIs de monto por procesar, pagado del mes y T/C]</span></div>
+          <p>Resumen ejecutivo visible para MAC-Dirección, Admin y Superadmin: monto total por procesar, monto pagado en el mes, tipo de cambio Banxico vigente, y conteos por etapa (En autorización, Revisión finanzas, Listas para pagar, Tasa de rechazo).</p>
+        </div>
+
+        <div class="feature">
+          <h3>Tipo de cambio</h3>
+          <div class="shot"><span class="placeholder">[Captura — Gráfica de tipo de cambio histórico]</span></div>
+          <p>Consulta libre para todos los roles del histórico de tipo de cambio usado por el portal para calcular montos en MXN de solicitudes en USD.</p>
+        </div>
+      </section>
+
+      <!-- ═══════════ ESTADOS ═══════════ -->
+      <section id="estados">
+        <div class="section-head">
+          <span class="section-num">4</span>
+          <h2 class="h2">Estados y seguimiento</h2>
+        </div>
+        <p class="section-lead">Los estatus que puede tomar una solicitud, en el orden en que normalmente avanzan. El detalle de quién aprueba cada paso y las rutas de aprobación está en la infografía del proceso (<code>infografia-portal-pagos.html</code>).</p>
+        <div class="states">
+          <div class="state">
+            <h4><span class="dot d-proc"></span>Borrador (Draft)</h4>
+            <p>Solicitud recién creada, o regresada por Aclaración a la espera de que el solicitante responda y reenvíe.</p>
+          </div>
+          <div class="state">
+            <h4><span class="dot d-pend"></span>En autorización</h4>
+            <p>MAC-Dirección (mac/operaciones/ingeniería/servicios) está revisándola en Aprobaciones.</p>
+          </div>
+          <div class="state">
+            <h4><span class="dot d-pend"></span>Revisión Finanzas</h4>
+            <p>Ya la autorizó MAC-Dirección; está en la bandeja de Admin/Superadmin en Decisión de Pagos.</p>
+          </div>
+          <div class="state">
+            <h4><span class="dot d-ok"></span>Pago Aprobado</h4>
+            <p>Admin/Superadmin la aprobó en Decisión de Pagos; está en la bandeja del analista contable en Finanzas, lista para programar o pagar.</p>
+          </div>
+          <div class="state">
+            <h4><span class="dot d-ok"></span>Pagada</h4>
+            <p>El analista contable la marcó como pagada tras confirmar el pago contra NetSuite. Estatus final.</p>
+          </div>
+          <div class="state">
+            <h4><span class="dot d-no"></span>Rechazada</h4>
+            <p>Cualquier revisor (MAC-Dirección, Admin o Finanzas) puede rechazarla con un motivo. Estatus final.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════ REQUISITOS Y TIPS ═══════════ -->
+      <section id="requisitos">
+        <div class="section-head">
+          <span class="section-num">5</span>
+          <h2 class="h2">Requisitos y tips</h2>
+        </div>
+        <div class="two-col">
+          <div class="panel">
+            <h3>Qué necesitas antes de empezar</h3>
+            <ul class="doclist">
+              <li>Cuenta de Google @enlight.mx con acceso al portal <span class="fmt">· sin ella no puedes iniciar sesión</span></li>
+              <li>Proyecto y OC ya creados en NetSuite <span class="fmt">· el portal no crea OCs, solo las consume</span></li>
+              <li>OC con saldo pendiente de pago <span class="fmt">· una OC totalmente pagada no admite nuevas solicitudes</span></li>
+              <li>Concepto y Departamento (CeCo) claros <span class="fmt">· Departamento se elige de una lista, no se escribe libre</span></li>
+            </ul>
+          </div>
+          <div class="panel">
+            <h3>Tips clave</h3>
+            <ul class="tips">
+              <li><b>"Estatus OC: Totalmente facturada" no es lo mismo que "ya pagada".</b> El badge amarillo "Ya pagada" en el dropdown de OC es la señal real de que ya no debes solicitar contra esa orden.</li>
+              <li><b>Los pagos parciales son válidos.</b> Si ves otras solicitudes abiertas contra la misma OC no es automáticamente un error — revisa que tu monto no sea idéntico a una ya existente.</li>
+              <li><b>"Editar solicitud" en Aclaración</b> te permite corregir Concepto, Departamento o Tipo de Pago sin tener que crear una solicitud nueva.</li>
+              <li><b>Los campos con "(NS)" en Marcar Pagado</b> vienen verificados de NetSuite y no se pueden editar — si algo se ve mal ahí, repórtalo a TECH en vez de forzarlo.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════ FAQ ═══════════ -->
+      <section id="preguntas">
+        <div class="section-head">
+          <span class="section-num">6</span>
+          <h2 class="h2">Preguntas frecuentes</h2>
+        </div>
+        <details class="faq-item">
+          <summary>¿Por qué no encuentro mi OC en el dropdown de Nueva Solicitud?</summary>
+          <div class="a">El listado solo muestra OCs abiertas del proyecto seleccionado (excluye rechazadas y cerradas en NetSuite). Verifica que elegiste el proyecto correcto y que la OC no esté ya totalmente facturada/cerrada en NetSuite.</div>
+        </details>
+        <details class="faq-item">
+          <summary>Seleccioné una OC y no puedo enviar la solicitud, ¿por qué?</summary>
+          <div class="a">Puede ser por dos motivos: (1) esa OC ya tiene un pago completo registrado en NetSuite ("Ya pagada"), o (2) ya existe otra solicitud abierta por el mismo monto sobre la misma OC (probable duplicado). El botón de envío queda deshabilitado en ambos casos hasta que se resuelva.</div>
+        </details>
+        <details class="faq-item">
+          <summary>¿Qué diferencia hay entre pago Completo y Parcial?</summary>
+          <div class="a">Completo usa el monto total de la OC (el IVA del 16% se calcula automáticamente). Parcial te pide capturar tú el subtotal, que no puede exceder el total de la OC — el sistema calcula el IVA y el monto total sobre ese subtotal.</div>
+        </details>
+        <details class="faq-item">
+          <summary>Me pidieron una aclaración, ¿qué hago?</summary>
+          <div class="a">Entra a "Mis solicitudes", abre la solicitud marcada y elige "Solo responder y reenviar" (si solo necesitas explicar algo) o "Editar solicitud" (si necesitas corregir Concepto, Departamento o Tipo de Pago). Al reenviar, vuelve a la cola de Autorización.</div>
+        </details>
+        <details class="faq-item">
+          <summary>¿Por qué algunos campos de "Marcar Pagado" no se pueden editar?</summary>
+          <div class="a">Cuando el portal encuentra en NetSuite el pago exacto que corresponde a esa OC, pre-llena y bloquea esos campos (marcados "NS") para garantizar que lo registrado coincida con lo que realmente pagó Contabilidad. Si NetSuite no tiene esa información (por ejemplo, un método de pago que no genera CEP), el campo queda editable.</div>
+        </details>
+        <details class="faq-item">
+          <summary>¿Quién puede publicar avisos en Inicio?</summary>
+          <div class="a">Solo analista contable, admin y superadmin pueden publicar. Todos los roles pueden leer los avisos y reaccionar con el ícono de rayo.</div>
+        </details>
+      </section>
+
+      <!-- ═══════════ SOLUCIÓN DE PROBLEMAS ═══════════ -->
+      <section id="problemas">
+        <div class="section-head">
+          <span class="section-num">7</span>
+          <h2 class="h2">Solución de problemas</h2>
+        </div>
+        <details class="faq-item">
+          <summary>Síntoma: "No se pudieron cargar los proyectos/OCs"</summary>
+          <div class="a"><b>Causa probable:</b> falla temporal de conexión con NetSuite al abrir Nueva Solicitud. <b>Qué hacer:</b> recarga la página; si persiste más de unos minutos, contacta a TECH — puede ser una caída puntual de la integración con NetSuite.</div>
+        </details>
+        <details class="faq-item">
+          <summary>Síntoma: el botón "Enviar Solicitud" está deshabilitado y no dice por qué a simple vista</summary>
+          <div class="a"><b>Causa probable:</b> el sistema sigue verificando en NetSuite si la OC ya tiene un pago registrado (mensaje "Verificando estado de pago en NetSuite…"), o encontró que ya está pagada o duplicada. <b>Qué hacer:</b> espera unos segundos a que termine la verificación; si el botón sigue bloqueado, lee el mensaje amarillo debajo del botón — ahí se explica el motivo exacto.</div>
+        </details>
+        <details class="faq-item">
+          <summary>Síntoma: en "Marcar Pagado" dice que ningún pago de NetSuite coincide con el monto</summary>
+          <div class="a"><b>Causa probable:</b> el monto de la solicitud no coincide (ni con tolerancia de ~1%) con ningún pago real registrado en NetSuite para esa OC — puede deberse a que la OC se pagó en varias parcialidades y el monto de tu solicitud no corresponde a ninguna de ellas, o a que el monto de la solicitud se capturó incorrectamente. <b>Qué hacer:</b> verifica en NetSuite el detalle de pagos de esa OC; si el monto de la solicitud es incorrecto, coordina con Finanzas para corregirlo antes de intentar pagar de nuevo.</div>
+        </details>
+        <details class="faq-item">
+          <summary>Síntoma: en un pago en lote, una tarjeta se marca en rojo como "Pago duplicado en el lote"</summary>
+          <div class="a"><b>Causa probable:</b> dos solicitudes seleccionadas en el mismo lote quedaron apuntando al mismo pago de NetSuite. <b>Qué hacer:</b> en la tarjeta correspondiente, usa el selector "Pago de NetSuite a aplicar" para elegir un pago distinto para una de las dos solicitudes antes de confirmar — el sistema no deja avanzar mientras haya un duplicado.</div>
+        </details>
+        <details class="faq-item">
+          <summary>Síntoma: no veo cierta sección en el menú (ej. Finanzas, Decisión de Pagos, Aprobaciones)</summary>
+          <div class="a"><b>Causa probable:</b> tu rol no tiene acceso a esa sección — es el comportamiento esperado, no un error (ver la matriz de roles en la sección "Acceso y roles"). <b>Qué hacer:</b> si crees que deberías tener acceso, contacta a TECH para confirmar tu rol asignado.</div>
+        </details>
+        <details class="faq-item">
+          <summary>Síntoma: la campana de notificaciones no baja el contador aunque ya leí los avisos</summary>
+          <div class="a"><b>Causa probable:</b> el contador se actualiza cada 90 segundos, no al instante. <b>Qué hacer:</b> espera un momento o vuelve a entrar a Inicio; si el contador sigue sin bajar después de un rato, contacta a TECH.</div>
+        </details>
+      </section>
+
+      <!-- ═══════════ FOOTER / CONTACTO ═══════════ -->
+      <footer id="contacto">
+        <span class="small">Enlight · Manual del Portal de Pagos · Documentado agosto 2026</span>
+        <span class="small">¿Dudas? Contacta a <b style="font-weight:700">TECH</b> — tech@enlight.mx</span>
+      </footer>
+
+    </div>
+  </div>
+</div>
+</body>
+</html>
