@@ -94,6 +94,15 @@ const FinanceManagement: React.FC<Props> = ({
     );
   };
 
+  // Fallback when nothing matches within tolerance: any unclaimed NS payment for
+  // the OC, regardless of amount. NetSuite bills routinely come in net of a
+  // retención (garantía, ISR, etc.) applied at billing time, which can put the
+  // real payment several points away from the requested amount — that's not a
+  // data error, so instead of blocking outright we surface these as candidates
+  // the analista must actively confirm (PaymentModal shows the $/% difference).
+  const findUnclaimedBills = (bills: NSBill[]): NSBill[] =>
+    bills.filter((b) => b.payment_id && !claimedPaymentIds.has(b.payment_id));
+
   // Filter logic — el analista solo trabaja la bandeja de pagos aprobados;
   // superadmin conserva las pestañas de seguimiento (incl. Pago Aprobado).
   const financeRequests = useMemo(() => {
@@ -233,15 +242,16 @@ const FinanceManagement: React.FC<Props> = ({
     setNsInvoiceLink(null);
     try {
       const data = await fetchBillsByOC(req.nsOcInternalId);
-      const matched = matchPaymentsForRequest(data.bills, req);
-      if (matched.length === 0) {
+      const exactMatch = matchPaymentsForRequest(data.bills, req);
+      const candidates = exactMatch.length > 0 ? exactMatch : findUnclaimedBills(data.bills);
+      if (candidates.length === 0) {
         setNsBlockMessage(
           data.bills.length > 0
-            ? "Hay pagos registrados en NetSuite para esta OC, pero ninguno coincide con el monto de esta solicitud (o ya fue usado por otra solicitud)."
+            ? "Hay pagos registrados en NetSuite para esta OC, pero ya fueron usados por otra solicitud."
             : "El pago aún no está registrado en NetSuite. Registra el pago en NS antes de marcar como pagado en el portal."
         );
       } else {
-        setNsPaidBills(matched);
+        setNsPaidBills(candidates);
         setNsPoStatus(data.po_status ?? null);
         // Cliente is resolved from the PO's linked project, not from the request's
         // own nsProjectId — that field is only set when the request was created with
@@ -289,12 +299,13 @@ const FinanceManagement: React.FC<Props> = ({
           fetchBillsByOC(req.nsOcInternalId),
           req.poNumber ? fetchInvoiceLinkByOC(req.poNumber) : Promise.resolve(null),
         ]);
-        const matched = matchPaymentsForRequest(data.bills, req);
-        if (matched.length === 0) {
+        const exactMatch = matchPaymentsForRequest(data.bills, req);
+        const candidates = exactMatch.length > 0 ? exactMatch : findUnclaimedBills(data.bills);
+        if (candidates.length === 0) {
           blocked.push(req.id);
         } else {
           eligible.push(req);
-          allPaidBillsMap[req.id] = matched;
+          allPaidBillsMap[req.id] = candidates;
           if (data.po_status) allOcStatusMap[req.id] = data.po_status;
           if (data.customer_code && data.customer_name) {
             allClientMap[req.id] = `${data.customer_code} — ${data.customer_name}`;
@@ -309,7 +320,7 @@ const FinanceManagement: React.FC<Props> = ({
       }
       if (eligible.length === 0) {
         setNsBlockMessage(
-          "Ninguna solicitud tiene un pago en NetSuite que coincida con su monto (o ya fue usado por otra solicitud). Registra los pagos en NS o revisa los montos."
+          "Ninguna solicitud tiene un pago disponible en NetSuite (no está registrado aún, o ya fue usado por otra solicitud)."
         );
       } else {
         setNsPaidBillsMap(allPaidBillsMap);

@@ -88,6 +88,17 @@ const PaymentModal: React.FC<Props> = ({
   const [selectedBillIdx, setSelectedBillIdx] = useState(0);
   const activeBill = hasNsBills ? nsPaidBills![selectedBillIdx] : null;
 
+  // NetSuite bills routinely settle net of a retención (garantía, ISR, etc.)
+  // applied at billing time, so a real NS payment can legitimately differ from
+  // the requested amount by more than rounding. FinanceManagement no longer
+  // filters these out — it's on the analista to see the gap and confirm.
+  const amountMismatch = (billAmount: number | null | undefined, reqAmount: number | undefined) => {
+    if (billAmount == null || reqAmount == null) return null;
+    const diff = billAmount - reqAmount;
+    if (Math.abs(diff) <= Math.max(1, reqAmount * 0.01)) return null;
+    return { diff, pct: (diff / reqAmount) * 100 };
+  };
+
   // Shared state
   const [bankName, setBankName] = useState("");
   const [paymentMode, setPaymentMode] = useState("Transferencia");
@@ -559,6 +570,26 @@ const PaymentModal: React.FC<Props> = ({
                     </div>
                   )}
 
+                  {/* Amount mismatch warning — real NS payment differs from the requested
+                      amount (typically a retención withheld at billing time), not blocked
+                      but must be seen and confirmed before continuing. */}
+                  {hasNsBills && (() => {
+                    const mismatch = amountMismatch(activeBill!.payment_amount ?? activeBill!.bill_total, request?.amount);
+                    if (!mismatch) return null;
+                    return (
+                      <div className="md:col-span-2">
+                        <div className="flex items-start gap-2 px-3 py-2 rounded-lg border border-yellow-500/40 bg-yellow-500/10 text-xs text-yellow-300">
+                          <span>⚠</span>
+                          <span>
+                            El pago en NetSuite ({(activeBill!.payment_amount ?? activeBill!.bill_total).toLocaleString("es-MX", { minimumFractionDigits: 2 })} {activeBill!.currency}) difiere del monto solicitado
+                            ({request?.amount.toLocaleString("es-MX", { minimumFractionDigits: 2 })} {request?.currency}) por {Math.abs(mismatch.diff).toLocaleString("es-MX", { minimumFractionDigits: 2 })} ({mismatch.pct.toFixed(1)}%) —
+                            posible retención u otro ajuste aplicado en NetSuite. Verifica en NetSuite antes de continuar.
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
                   <div>
                     <label className={labelClass}>
                       Monto Pagado ({activeBill?.currency ?? request?.currency})*
@@ -743,6 +774,19 @@ const PaymentModal: React.FC<Props> = ({
                             Factura NS: <span className="text-gray-300">{bill?.bill_number}</span> · Pagada {bill?.payment_date}
                           </p>
                         )}
+
+                        {(() => {
+                          const mismatch = amountMismatch(bill?.payment_amount ?? bill?.bill_total, r.amount);
+                          if (!mismatch) return null;
+                          return (
+                            <div className="flex items-start gap-1.5 px-2 py-1.5 rounded border border-yellow-500/40 bg-yellow-500/10 text-[10px] text-yellow-300">
+                              <span>⚠</span>
+                              <span>
+                                Difiere del monto solicitado por {Math.abs(mismatch.diff).toLocaleString("es-MX", { minimumFractionDigits: 2 })} ({mismatch.pct.toFixed(1)}%) — posible retención. Verifica en NetSuite.
+                              </span>
+                            </div>
+                          );
+                        })()}
 
                         <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
                           <div>

@@ -263,6 +263,8 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate, existingRequest
     else if (checkingPaidStatus) e.oc = "Verificando estado de pago en NetSuite, espera un momento";
     else if (selectedOcPaid !== false) e.oc = "Esta OC ya tiene un pago registrado en NetSuite (o no se pudo verificar)";
     else if (duplicateAmountMatch) e.oc = `Ya existe una solicitud abierta (${duplicateAmountMatch.id}) por el mismo monto en esta OC`;
+    else if (loadingVendor) e.oc = "Obteniendo el proveedor de NetSuite, espera un momento";
+    else if (!vendor?.name) e.oc = "No se pudo obtener el proveedor (beneficiario) de esta OC. Vuelve a seleccionarla.";
     if (!concept.trim()) e.concept = "Concepto requerido";
     if (!department.trim()) e.department = "Departamento requerido";
     if (paymentType === "Parcial") {
