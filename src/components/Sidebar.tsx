@@ -29,6 +29,7 @@ import {
   Home,
   ChevronLeft,
   ChevronRight,
+  HelpCircle,
 } from "lucide-react";
 
 const COLLAPSED_KEY = "sidebar-collapsed";
@@ -45,7 +46,7 @@ interface NavItem {
 // Matriz de visibilidad por rol (confirmada 2026-07-15, "Inicio" agregado 2026-08-20):
 //   Panel general → dirección + admin/superadmin · Aprobaciones → dirección + superadmin
 //   Finanzas → analista + superadmin · Decisión/Explorador → admin + analista + superadmin
-//   Inicio, Nueva/Mis solicitudes, Tipo de cambio y Configuración → todos
+//   Inicio, Nueva/Mis solicitudes, Tipo de cambio, Configuración y Ayuda → todos
 const navItems: NavItem[] = [
   { id: "inicio", label: "Inicio", roles: "all", icon: <Home size={17} />, group: "principal" },
   { id: "dashboard", label: "Panel general", roles: ["mac", "operaciones", "ingenieria", "servicios", "admin", "superadmin"], icon: <LayoutDashboard size={17} />, group: "principal" },
@@ -57,6 +58,7 @@ const navItems: NavItem[] = [
   { id: "explorador", label: "Explorador", roles: ["admin", "superadmin", "analista_contable"], icon: <Search size={17} />, group: "gestion" },
   { id: "tipo-de-cambio", label: "Tipo de cambio", roles: "all", icon: <TrendingUp size={17} />, group: "datos" },
   { id: "configuracion", label: "Configuración", roles: "all", icon: <Settings size={17} />, group: "datos" },
+  { id: "ayuda", label: "Ayuda", roles: "all", icon: <HelpCircle size={17} />, group: "datos" },
 ];
 
 interface Props {

@@ -13,6 +13,7 @@ import RequestExplorer from "./components/RequestExplorer";
 import ExchangeChart from "./components/ExchangeChart";
 import FinanceManagement from "./components/FinanceManagement";
 import DecisionPagos from "./components/DecisionPagos";
+import Help from "./components/Help";
 import type { Request, ExchangeRate } from "./data/mockData";
 import {
   fetchRequests,
@@ -27,7 +28,7 @@ import {
 // user's role can't see, so an inapplicable deep link just renders nothing.
 const VALID_VIEWS = new Set([
   "inicio", "dashboard", "nueva-solicitud", "mis-solicitudes", "aprobaciones",
-  "finanzas", "explorador", "decision-pagos", "tipo-de-cambio", "configuracion",
+  "finanzas", "explorador", "decision-pagos", "tipo-de-cambio", "configuracion", "ayuda",
 ]);
 const getInitialView = () => {
   const requested = new URLSearchParams(window.location.search).get("view");
@@ -199,6 +200,8 @@ function AppContent() {
             </p>
           </div>
         )}
+
+        {currentView === "ayuda" && <Help />}
         </main>
       </div>
     </div>

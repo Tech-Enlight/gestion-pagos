@@ -396,7 +396,7 @@ footer{
         <div class="feature">
           <h3>Inicio (avisos y notificaciones)</h3>
           <div class="shot"><span class="placeholder">[Captura — Feed de Inicio con avisos y botón de "like"]</span></div>
-          <p>Pantalla de aterrizaje con comunicados del equipo de Finanzas para todo el portal, en vez de correos o chats sueltos. Todos los roles la ven al entrar.</p>
+          <p>Pantalla de aterrizaje con comunicados del equipo de Finanzas para todo el portal, en vez de correos o chats sueltos. Todos los roles la ven al entrar. Cada correo de estatus del portal también incluye un botón "Ver en el Portal" que te lleva directo a la pantalla que corresponde (Mis solicitudes, Aprobaciones, Decisión de Pagos o Finanzas), en vez de tener que navegar manualmente.</p>
           <ol class="substeps">
             <li>Analista contable, admin y superadmin pueden redactar un aviso (texto + link opcional) y publicarlo con "Publicar".</li>
             <li>Cualquier usuario puede reaccionar a un aviso con el ícono de rayo (<i>like</i>); el contador de likes es visible para todos.</li>
@@ -416,6 +416,7 @@ footer{
             <li><b>Detalles del pago:</b> elige <b>Completo</b> (usa el total de la OC, el IVA del 16% se calcula solo) o <b>Parcial</b> (capturas el subtotal, sin exceder el total de la OC).</li>
             <li><b>Concepto:</b> descripción del pago, en texto libre.</li>
             <li><b>Solicitante → Departamento:</b> lista buscable de Centros de Costo (CeCo) de NetSuite — ya no es texto libre.</li>
+            <li>El formulario no deja enviar mientras el beneficiario (proveedor de la OC) siga cargando desde NetSuite o si no se pudo resolver, para evitar solicitudes con ese dato en blanco.</li>
             <li>Al enviar, la solicitud queda en estatus <b>Autorización</b> y recibes un correo de confirmación con el folio.</li>
           </ol>
         </div>
@@ -462,6 +463,7 @@ footer{
             <li><b>Programar Pago:</b> define una fecha estimada de pago; se guarda en "Pago Programado" y se le avisa por correo al solicitante con esa fecha.</li>
             <li><b>Marcar Pagado:</b> abre el modal de registro de pago descrito abajo — es el paso que cierra la solicitud como <b>Pagado</b>.</li>
             <li>También puede regresar una solicitud a Aclaración o Rechazarla desde aquí si detecta un problema al momento de pagar.</li>
+            <li>"Guardar nota" (Observaciones de Finanzas) está disponible en cualquier momento sin afectar el resto de los datos de la solicitud (fecha programada, estatus del pago, etc.).</li>
           </ol>
         </div>
 
@@ -470,10 +472,11 @@ footer{
           <div class="shot"><span class="placeholder">[Captura — Modal "Registrar Pago" con datos pre-llenados desde NetSuite]</span></div>
           <p>El paso más controlado del portal: antes de dejar una solicitud como Pagada, el sistema busca en NetSuite el pago real que corresponde a esa OC (por monto, con tolerancia de redondeo/FX) y pre-llena los datos verificados. Todos los campos son obligatorios.</p>
           <ol class="substeps">
-            <li><b>Individual:</b> si NetSuite encuentra un pago que coincide en monto, Monto Pagado, Tipo de Cambio, N° de Factura, Banco, Referencia de Operación y Comprobante de Pago (CEP/Banxico) se llenan solos y quedan de solo lectura, marcados con la etiqueta "NS". Si hay más de una factura/pago candidato, eliges cuál referenciar.</li>
+            <li><b>Individual:</b> si NetSuite encuentra un pago que coincide en monto (±1%), Monto Pagado, Tipo de Cambio, N° de Factura, Banco, Referencia de Operación y Comprobante de Pago (CEP/Banxico) se llenan solos y quedan de solo lectura, marcados con la etiqueta "NS". Si hay más de una factura/pago candidato, eliges cuál referenciar.</li>
+            <li><b>Si el monto no coincide con ningún pago (por ejemplo, por una retención contractual descontada al momento de facturar), el sistema ya no bloquea el proceso:</b> muestra el pago/factura de NetSuite sin reclamar más cercano y una banda amarilla de advertencia con la diferencia en $ y % contra el monto solicitado, para que confirmes conscientemente antes de continuar.</li>
             <li>Link Factura se pre-llena con el PDF real de la factura (tomado de Recepción de Facturas) cuando existe, y Cliente con el cliente NetSuite real de la OC — ya no dependen de que la solicitud tuviera un proyecto capturado a mano.</li>
             <li>Completas los campos que NetSuite no puede resolver por sí solo: Prestación del Bien o Servicio, Estatus OC, Tipo de Operación y Tipo de Gasto. La <b>Propuesta</b> (Autorizado/Aplazado) se calcula sola según si la solicitud pasó por Programar Pago.</li>
-            <li><b>En lote:</b> selecciona varias solicitudes con estatus Pago Aprobado y ábrelas juntas. Cada una tiene su propia tarjeta "Confirmación de Pago por Solicitud (NetSuite)" con su bill/pago de NetSuite, monto, tipo de cambio, banco y referencia — el sistema evita que dos solicitudes se liquiden con el mismo pago de NetSuite (si pasa, la tarjeta se marca en rojo como "Pago duplicado en el lote" y bloquea la confirmación).</li>
+            <li><b>En lote:</b> selecciona varias solicitudes con estatus Pago Aprobado y ábrelas juntas. Cada una tiene su propia tarjeta "Confirmación de Pago por Solicitud (NetSuite)" con su bill/pago de NetSuite, monto, tipo de cambio, banco y referencia — el mismo aviso amarillo de diferencia de monto aparece por tarjeta cuando aplica, y el sistema evita que dos solicitudes se liquiden con el mismo pago de NetSuite (si pasa, la tarjeta se marca en rojo como "Pago duplicado en el lote" y bloquea la confirmación).</li>
             <li>Al confirmar, la(s) solicitud(es) pasan a estatus <b>Pagado</b>.</li>
           </ol>
         </div>
@@ -555,6 +558,7 @@ footer{
               <li><b>Los pagos parciales son válidos.</b> Si ves otras solicitudes abiertas contra la misma OC no es automáticamente un error — revisa que tu monto no sea idéntico a una ya existente.</li>
               <li><b>"Editar solicitud" en Aclaración</b> te permite corregir Concepto, Departamento o Tipo de Pago sin tener que crear una solicitud nueva.</li>
               <li><b>Los campos con "(NS)" en Marcar Pagado</b> vienen verificados de NetSuite y no se pueden editar — si algo se ve mal ahí, repórtalo a TECH en vez de forzarlo.</li>
+              <li><b>Una banda amarilla en Marcar Pagado no es un error.</b> Indica que el pago real de NetSuite difiere del monto solicitado (por ejemplo, por una retención) — revisa la diferencia mostrada antes de confirmar, no la ignores.</li>
             </ul>
           </div>
         </div>
@@ -572,7 +576,7 @@ footer{
         </details>
         <details class="faq-item">
           <summary>Seleccioné una OC y no puedo enviar la solicitud, ¿por qué?</summary>
-          <div class="a">Puede ser por dos motivos: (1) esa OC ya tiene un pago completo registrado en NetSuite ("Ya pagada"), o (2) ya existe otra solicitud abierta por el mismo monto sobre la misma OC (probable duplicado). El botón de envío queda deshabilitado en ambos casos hasta que se resuelva.</div>
+          <div class="a">Puede ser por tres motivos: (1) esa OC ya tiene un pago completo registrado en NetSuite ("Ya pagada"), (2) ya existe otra solicitud abierta por el mismo monto sobre la misma OC (probable duplicado), o (3) el beneficiario (proveedor) todavía se está resolviendo desde NetSuite o no se pudo obtener. El botón de envío queda deshabilitado en los tres casos hasta que se resuelva.</div>
         </details>
         <details class="faq-item">
           <summary>¿Qué diferencia hay entre pago Completo y Parcial?</summary>
@@ -587,8 +591,16 @@ footer{
           <div class="a">Cuando el portal encuentra en NetSuite el pago exacto que corresponde a esa OC, pre-llena y bloquea esos campos (marcados "NS") para garantizar que lo registrado coincida con lo que realmente pagó Contabilidad. Si NetSuite no tiene esa información (por ejemplo, un método de pago que no genera CEP), el campo queda editable.</div>
         </details>
         <details class="faq-item">
+          <summary>El monto de la solicitud no coincide con el pago de NetSuite, ¿puedo marcarla como pagada de todas formas?</summary>
+          <div class="a">Sí. El sistema ya no bloquea el proceso cuando hay una diferencia (por ejemplo, por una retención contractual que NetSuite descontó al facturar) — te muestra el pago/factura más cercano y una banda amarilla con la diferencia en $ y %, y puedes confirmar de forma consciente después de verificar en NetSuite que la diferencia es legítima.</div>
+        </details>
+        <details class="faq-item">
           <summary>¿Quién puede publicar avisos en Inicio?</summary>
           <div class="a">Solo analista contable, admin y superadmin pueden publicar. Todos los roles pueden leer los avisos y reaccionar con el ícono de rayo.</div>
+        </details>
+        <details class="faq-item">
+          <summary>El correo que recibí trae un botón, ¿a dónde me lleva?</summary>
+          <div class="a">Te lleva directo a la pantalla del portal que corresponde a esa notificación (por ejemplo, "Mis solicitudes" si es una confirmación tuya, "Aprobaciones" si eres parte de MAC-Dirección, "Decisión de Pagos" o "Finanzas" según el paso). Si tu rol no tiene acceso a esa pantalla, simplemente no verás contenido ahí — no es un error.</div>
         </details>
       </section>
 
@@ -604,11 +616,11 @@ footer{
         </details>
         <details class="faq-item">
           <summary>Síntoma: el botón "Enviar Solicitud" está deshabilitado y no dice por qué a simple vista</summary>
-          <div class="a"><b>Causa probable:</b> el sistema sigue verificando en NetSuite si la OC ya tiene un pago registrado (mensaje "Verificando estado de pago en NetSuite…"), o encontró que ya está pagada o duplicada. <b>Qué hacer:</b> espera unos segundos a que termine la verificación; si el botón sigue bloqueado, lee el mensaje amarillo debajo del botón — ahí se explica el motivo exacto.</div>
+          <div class="a"><b>Causa probable:</b> el sistema sigue verificando en NetSuite si la OC ya tiene un pago registrado, o todavía está resolviendo el beneficiario (mensaje "Obteniendo el proveedor de NetSuite, espera un momento" o "Verificando estado de pago en NetSuite…"), o encontró que ya está pagada o duplicada. <b>Qué hacer:</b> espera unos segundos a que termine la verificación; si el botón sigue bloqueado, lee el mensaje amarillo debajo del botón — ahí se explica el motivo exacto.</div>
         </details>
         <details class="faq-item">
-          <summary>Síntoma: en "Marcar Pagado" dice que ningún pago de NetSuite coincide con el monto</summary>
-          <div class="a"><b>Causa probable:</b> el monto de la solicitud no coincide (ni con tolerancia de ~1%) con ningún pago real registrado en NetSuite para esa OC — puede deberse a que la OC se pagó en varias parcialidades y el monto de tu solicitud no corresponde a ninguna de ellas, o a que el monto de la solicitud se capturó incorrectamente. <b>Qué hacer:</b> verifica en NetSuite el detalle de pagos de esa OC; si el monto de la solicitud es incorrecto, coordina con Finanzas para corregirlo antes de intentar pagar de nuevo.</div>
+          <summary>Síntoma: en "Marcar Pagado" aparece una banda amarilla de advertencia con una diferencia de monto</summary>
+          <div class="a"><b>Causa probable:</b> el pago/factura real de NetSuite para esa OC no coincide exactamente con el monto solicitado — con frecuencia por una retención contractual descontada al momento de facturar (por ejemplo, ~4% del subtotal), no necesariamente un error. <b>Qué hacer:</b> revisa en NetSuite el detalle de la factura y el pago para confirmar que la diferencia es legítima antes de continuar; si el monto de la solicitud fue capturado incorrectamente, coordina con Finanzas para corregirlo antes de marcar como pagado.</div>
         </details>
         <details class="faq-item">
           <summary>Síntoma: en un pago en lote, una tarjeta se marca en rojo como "Pago duplicado en el lote"</summary>
