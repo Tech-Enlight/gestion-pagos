@@ -138,7 +138,12 @@ const MESES: Record<string, number> = {
 async function safeFetch(url: string): Promise<any> {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`HTTP ${res.status} — ${url}`);
-  return res.json();
+  // n8n returns a genuinely empty body (not "{}") when a Sheets-backed read
+  // resolves to zero rows — res.json() would throw on that, so parse text
+  // ourselves and treat empty as "no data" rather than a fetch failure.
+  const text = await res.text();
+  if (!text || !text.trim()) return null;
+  return JSON.parse(text);
 }
 
 function normalizeOcDates(ocData: Record<string, OcRecord>) {
@@ -171,12 +176,12 @@ export async function loadDecisionData(onPartial?: (d: DecisionData) => void): P
     safeFetch(`${BASE}/pagos-data`),
     safeFetch(`${BASE}/tipo-cambio`),
   ]);
-  if (onPartial) onPartial(assembleData(pagoRes, tcRes, {}, {}));
+  if (onPartial) onPartial(assembleData(pagoRes ?? {}, tcRes, {}, {}));
 
   const [ocRes, forecastRes] = await Promise.all([ocPromise, fcPromise]);
-  const ocData: Record<string, OcRecord> = ocRes;
+  const ocData: Record<string, OcRecord> = ocRes ?? {};
   normalizeOcDates(ocData);
-  return assembleData(pagoRes, tcRes, ocData, forecastRes as Record<string, ForecastRecord>);
+  return assembleData(pagoRes ?? {}, tcRes, ocData, (forecastRes ?? {}) as Record<string, ForecastRecord>);
 }
 
 function assembleData(
