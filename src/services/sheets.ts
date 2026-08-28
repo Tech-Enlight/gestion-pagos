@@ -2,6 +2,13 @@ import type { Role } from "../types/auth";
 import type { Request } from "../data/mockData";
 
 const BASE = import.meta.env.VITE_N8N_WEBHOOK_BASE;
+const PORTAL_SECRET = import.meta.env.VITE_PORTAL_SHARED_SECRET;
+
+// Minimum-viable gate on the write endpoints (POST /solicitudes, PATCH
+// /solicitudes/status, PATCH /solicitudes/finanzas) — an n8n IF node checks
+// this header before the sheet is touched. Doesn't stop someone reading the
+// bundle in devtools, but blocks casual/opportunistic direct calls.
+const AUTH_HEADERS = { "x-portal-secret": PORTAL_SECRET };
 
 async function safeJson(res: Response): Promise<any> {
   const text = await res.text();
@@ -47,7 +54,7 @@ export async function createRequest(data: Partial<Request>): Promise<Request> {
 
   const res = await fetch(`${BASE}/solicitudes`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...AUTH_HEADERS },
     body: JSON.stringify(payload),
   });
   if (!res.ok) throw new Error("Error al crear solicitud");
@@ -74,7 +81,7 @@ export async function updateRequestStatus(
 ): Promise<void> {
   const res = await fetch(`${BASE}/solicitudes/status`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...AUTH_HEADERS },
     body: JSON.stringify({ id, status, changedBy, ...extra }),
   });
   if (!res.ok) throw new Error("Error al actualizar status");
@@ -89,7 +96,7 @@ export async function updateFinanceFields(
 
   const res = await fetch(`${BASE}/solicitudes/finanzas`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...AUTH_HEADERS },
     body: JSON.stringify({ id, ...cleanedFields }),
   });
   if (!res.ok) throw new Error("Error al actualizar finanzas");

@@ -22,9 +22,21 @@ import {
   fetchExchangeRates,
 } from "./services/sheets";
 
+// Views deep-linkable via ?view=... (e.g. from an email CTA) — anything else
+// falls back to the default landing view. RoleGate still hides content the
+// user's role can't see, so an inapplicable deep link just renders nothing.
+const VALID_VIEWS = new Set([
+  "inicio", "dashboard", "nueva-solicitud", "mis-solicitudes", "aprobaciones",
+  "finanzas", "explorador", "decision-pagos", "tipo-de-cambio", "configuracion",
+]);
+const getInitialView = () => {
+  const requested = new URLSearchParams(window.location.search).get("view");
+  return requested && VALID_VIEWS.has(requested) ? requested : "nueva-solicitud";
+};
+
 function AppContent() {
   const { isAuthenticated, user } = useAuth();
-  const [currentView, setCurrentView] = useState("nueva-solicitud");
+  const [currentView, setCurrentView] = useState(getInitialView);
   const [requests, setRequests] = useState<Request[]>([]);
   const [lastExchangeRate, setLastExchangeRate] = useState<ExchangeRate>({
     date: "2023-10-30",
