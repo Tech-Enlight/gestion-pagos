@@ -1273,7 +1273,7 @@ const SelectionModal: React.FC<{ selected: Set<string>; pagos: PagoFlat[]; onClo
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead style={{ position: "sticky", top: 0, background: "#1a2738" }}>
               <tr>
-                {["#", "Tipo", "Proyecto", "Beneficiario", "OC / Factura", "Banco", "Vence", "Total MXN"].map((h) => (
+                {["#", "Tipo", "Proyecto", "Solicitante", "Beneficiario", "OC / Factura", "Banco", "Vence", "Total MXN"].map((h) => (
                   <th key={h} style={{ padding: "8px 12px", borderBottom: `1px solid ${T.cardBorder}`, fontSize: 11, fontWeight: 600, color: T.textMuted, fontFamily: T.fontAlt, textTransform: "uppercase", letterSpacing: "0.08em", textAlign: ["Total MXN"].includes(h) ? "right" : "left" }}>{h}</th>
                 ))}
               </tr>
@@ -1287,6 +1287,7 @@ const SelectionModal: React.FC<{ selected: Set<string>; pagos: PagoFlat[]; onClo
                     <td style={{ padding: "8px 12px", fontSize: 12, color: T.textMuted }}>{i + 1}.<span style={{ marginLeft: 4, padding: "1px 6px", background: tagBg, color: tagColor, borderRadius: 3, fontSize: 10, fontWeight: 700 }}>{p.propuesta || "—"}</span></td>
                     <td style={{ padding: "8px 12px", fontSize: 12, color: T.text, fontFamily: T.fontAlt }}>{p.tipo_op}<br /><span style={{ fontSize: 10, color: T.textMuted }}>{p.operacion_cat}</span></td>
                     <td style={{ padding: "8px 12px", fontSize: 12, color: T.text }}>{p.proj_id || "—"}<br /><span style={{ fontSize: 10, color: T.textMuted }}>{(p.proyecto || "").slice(0, 40)}</span></td>
+                    <td style={{ padding: "8px 12px", fontSize: 12, color: T.text }}>{p.solicitante || "—"}</td>
                     <td style={{ padding: "8px 12px", fontSize: 12, color: T.text }}>{(p.benef_clean || "").slice(0, 28)}<br /><span style={{ fontSize: 10, color: T.textMuted }}>{p.cliente || "—"}</span></td>
                     <td style={{ padding: "8px 12px", fontSize: 11, fontFamily: "monospace", color: T.text }}>{p.oc || "—"}<br /><span style={{ fontSize: 10, color: T.textMuted }}>{(p.factura || "").slice(0, 18)}</span></td>
                     <td style={{ padding: "8px 12px", fontSize: 12, color: T.textSub }}>{p.banco}</td>
@@ -1297,7 +1298,7 @@ const SelectionModal: React.FC<{ selected: Set<string>; pagos: PagoFlat[]; onClo
               })}
               <TotalRow cells={[
                 { value: `Total ${sel.length} pagos`, align: "left", bold: true },
-                { value: "" }, { value: "" }, { value: "" }, { value: "" }, { value: "" }, { value: "" },
+                { value: "" }, { value: "" }, { value: "" }, { value: "" }, { value: "" }, { value: "" }, { value: "" },
                 { value: fmtMXN(total), bold: true },
               ]} />
             </tbody>
@@ -1326,13 +1327,13 @@ function buildCSV(sel: PagoFlat[]): string {
     if (s.includes(",") || s.includes('"') || s.includes("\n")) return '"' + s.replace(/"/g, '""') + '"';
     return s;
   };
-  const headers = ["ID", "Propuesta", "Operación", "Tipo", "OC", "Proyecto", "Cliente", "Beneficiario", "Concepto", "Factura", "Vencimiento", "Monto", "Divisa", "TC", "Total MXN", "Banco", "Departamento", "Estatus"];
+  const headers = ["ID", "Propuesta", "Operación", "Tipo", "OC", "Proyecto", "Solicitante", "Cliente", "Beneficiario", "Concepto", "Factura", "Vencimiento", "Monto", "Divisa", "TC", "Total MXN", "Banco", "Departamento", "Estatus"];
   const sorted = [...sel].sort((a, b) => b.total_mxn - a.total_mxn);
   const rows = sorted.map((p) =>
-    [p.id, p.propuesta, p.operacion_cat, p.tipo_op, p.oc, p.proyecto, p.cliente, p.benef_clean, p.concepto, p.factura, p.venc, p.monto, p.divisa, p.tc, p.total_mxn, p.banco, p.departamento, p.estatus].map(esc).join(",")
+    [p.id, p.propuesta, p.operacion_cat, p.tipo_op, p.oc, p.proyecto, p.solicitante, p.cliente, p.benef_clean, p.concepto, p.factura, p.venc, p.monto, p.divisa, p.tc, p.total_mxn, p.banco, p.departamento, p.estatus].map(esc).join(",")
   );
   const total = sorted.reduce((s, p) => s + p.total_mxn, 0);
-  rows.push("", esc(`TOTAL ${sorted.length} pagos`) + ",,,,,,,,,,,,,," + total.toFixed(2) + ",,,");
+  rows.push("", esc(`TOTAL ${sorted.length} pagos`) + ",,,,,,,,,,,,,,," + total.toFixed(2) + ",,,");
   return headers.join(",") + "\n" + rows.join("\n");
 }
 
@@ -1351,11 +1352,11 @@ function downloadCSV(sel: PagoFlat[]) {
 }
 
 async function copyTSV(sel: PagoFlat[]): Promise<void> {
-  const headers = ["ID", "Propuesta", "Operación", "Tipo", "OC", "Proyecto", "Cliente", "Beneficiario", "Concepto", "Factura", "Vencimiento", "Monto", "Divisa", "TC", "Total MXN", "Banco", "Departamento"];
+  const headers = ["ID", "Propuesta", "Operación", "Tipo", "OC", "Proyecto", "Solicitante", "Cliente", "Beneficiario", "Concepto", "Factura", "Vencimiento", "Monto", "Divisa", "TC", "Total MXN", "Banco", "Departamento"];
   const sorted = [...sel].sort((a, b) => b.total_mxn - a.total_mxn);
   const clean = (v: any) => String(v ?? "").replace(/\t/g, " ").replace(/\n/g, " ");
   const rows = sorted.map((p) =>
-    [p.id, p.propuesta, p.operacion_cat, p.tipo_op, p.oc, p.proyecto, p.cliente, p.benef_clean, p.concepto, p.factura, p.venc, p.monto, p.divisa, p.tc, p.total_mxn, p.banco, p.departamento].map(clean).join("\t")
+    [p.id, p.propuesta, p.operacion_cat, p.tipo_op, p.oc, p.proyecto, p.solicitante, p.cliente, p.benef_clean, p.concepto, p.factura, p.venc, p.monto, p.divisa, p.tc, p.total_mxn, p.banco, p.departamento].map(clean).join("\t")
   );
   await navigator.clipboard.writeText(headers.join("\t") + "\n" + rows.join("\n"));
 }

@@ -158,7 +158,7 @@ section > p.section-lead{
 }
 .role-card .badge-nivel{
   display:inline-flex;align-items:center;justify-content:center;
-  width:30px;height:30px;border-radius:var(--radius-pill);
+  min-width:30px;height:30px;padding:0 10px;border-radius:var(--radius-pill);
   background:var(--enl-acero);color:var(--enl-white);
   font-family:var(--font-secondary);font-weight:700;font-size:13px;margin-bottom:10px;
 }
@@ -327,27 +327,27 @@ footer{
         <p class="section-lead">Entras con tu cuenta de Google de Enlight. Lo que ves en el menú lateral depende de tu rol — nadie ve pantallas que no le corresponden.</p>
         <div class="roles">
           <div class="role-card">
+            <span class="badge-nivel">Base</span>
+            <h4>Nivel base (todos los roles)</h4>
+            <p>Sin importar tu rol asignado, todo colaborador puede crear solicitudes de pago (<b>Nueva solicitud</b>), ver y dar seguimiento a las suyas (<b>Mis solicitudes</b>), consultar el <b>Tipo de cambio</b> y leer <b>Inicio</b>. Puede responder o editar una solicitud cuando le piden aclaración. Este nivel se suma al de cualquier otro rol de la lista — no es un rol aparte.</p>
+          </div>
+          <div class="role-card avanzado">
             <span class="badge-nivel">1</span>
-            <h4>Solicitante (todos los roles)</h4>
-            <p>Cualquier colaborador puede crear solicitudes de pago (<b>Nueva solicitud</b>), ver y dar seguimiento a las suyas (<b>Mis solicitudes</b>), consultar el <b>Tipo de cambio</b> y leer <b>Inicio</b>. Puede responder o editar una solicitud cuando le piden aclaración.</p>
+            <h4>MAC-Dirección — roles: mac, operaciones, ingeniería, servicios</h4>
+            <p>Cuatro roles independientes (uno por área) que, además del nivel base, autorizan en <b>Aprobaciones</b> las solicitudes de su equipo (Aprobar, Aclaración o Rechazar) antes de que pasen a Decisión de Pagos.</p>
           </div>
           <div class="role-card avanzado">
             <span class="badge-nivel">2</span>
-            <h4>MAC-Dirección (mac / operaciones / ingeniería / servicios)</h4>
-            <p>Además de lo anterior, autoriza en <b>Aprobaciones</b> las solicitudes de su equipo (Aprobar, Aclaración o Rechazar) antes de que pasen a Decisión de Pagos.</p>
-          </div>
-          <div class="role-card avanzado">
-            <span class="badge-nivel">3</span>
             <h4>Analista contable</h4>
             <p>Trabaja la bandeja de <b>Finanzas</b> (Programar Pago, Marcar Pagado con cruce contra NetSuite). Puede publicar avisos en <b>Inicio</b>. Ve <b>Decisión de Pagos</b> y <b>Explorador</b> solo en modo lectura.</p>
           </div>
           <div class="role-card admin">
-            <span class="badge-nivel">4</span>
+            <span class="badge-nivel">3</span>
             <h4>Admin</h4>
             <p>Decide las solicitudes en <b>Decisión de Pagos</b> (Aprobar → pasan directo a Finanzas, Aclaración, Rechazar) y consulta el <b>Explorador</b>. No ve Aprobaciones ni Finanzas.</p>
           </div>
           <div class="role-card admin" style="grid-column:1 / -1">
-            <span class="badge-nivel">5</span>
+            <span class="badge-nivel">4</span>
             <h4>Superadmin</h4>
             <p>Ve absolutamente todo: Panel general, Aprobaciones, Decisión de Pagos, Finanzas (con pestañas de seguimiento incluyendo "Pago Aprobado") y Explorador — pensado para dar soporte o cubrir cualquier paso del flujo.</p>
           </div>
