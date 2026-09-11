@@ -241,9 +241,20 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate, existingRequest
 
       // Only the selected OC is checked for an already-completed payment —
       // "Estatus OC: Totalmente facturada" means fully billed, not fully paid.
+      // NOTE: an OC is routinely billed/paid across many separate bills (each
+      // invoice its own line), so `bills.some(b => b.is_paid)` was wrong — it
+      // flagged the whole OC as paid the moment ANY one bill cleared, even
+      // with most of the OC's amount still open or not yet billed at all
+      // (found live on PO-00098183: 23/28 bills paid but $580.31 still open
+      // plus ~$13k never billed — a legitimate partial-payment request was
+      // being blocked). Only block when the OC's total paid amount already
+      // covers its full amount, within a small tolerance.
       setCheckingPaidStatus(true);
       fetchBillsByOC(oc.internal_id)
-        .then((billsData) => setSelectedOcPaid(billsData.bills.some((b) => b.is_paid)))
+        .then((billsData) => {
+          const tolerance = Math.max(1, oc.monto_total * 0.01);
+          setSelectedOcPaid(oc.monto_total - billsData.summary.paid_total <= tolerance);
+        })
         .catch((err) => {
           setSelectedOcPaid(null);
           console.error(err);
