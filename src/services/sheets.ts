@@ -102,6 +102,72 @@ export async function updateFinanceFields(
   if (!res.ok) throw new Error("Error al actualizar finanzas");
 }
 
+// Bulk variant of updateRequestStatus: one webhook call for N ids instead of
+// N separate calls, so n8n can send a single digest email per recipient
+// instead of one email per request. Same shared `status`/`extra` for every id
+// (bulk Aprobar/Aclaración/Rechazar apply the same transition to every
+// selected request).
+export async function updateRequestStatusBulk(
+  ids: string[],
+  status: string,
+  changedBy: string,
+  extra?: {
+    comment?: string;
+    rejectReason?: string;
+    clarificationRequest?: string;
+    clarificationResponse?: string;
+    concept?: string;
+    department?: string;
+    subtotal?: number;
+    iva?: number;
+    amount?: number;
+    paymentType?: string;
+  }
+): Promise<void> {
+  if (ids.length === 0) return;
+  const res = await fetch(`${BASE}/solicitudes/status`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...AUTH_HEADERS },
+    body: JSON.stringify({ ids, status, changedBy, ...extra }),
+  });
+  if (!res.ok) throw new Error("Error al actualizar status (bulk)");
+}
+
+// Bulk variant of updateFinanceFields for Programar Pago, where every
+// selected request gets the same fields (e.g. the same estimatedPaymentDate).
+export async function updateFinanceFieldsBulk(
+  ids: string[],
+  fields: Record<string, any>
+): Promise<void> {
+  if (ids.length === 0) return;
+  const cleanedFields = cleanPayload(fields);
+  const res = await fetch(`${BASE}/solicitudes/finanzas`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...AUTH_HEADERS },
+    body: JSON.stringify({ ids, ...cleanedFields }),
+  });
+  if (!res.ok) throw new Error("Error al actualizar finanzas (bulk)");
+}
+
+// Bulk variant for Marcar Pagado, where each request carries its own
+// NetSuite-matched fields (different bill/bank/reference per row) — still one
+// webhook call for the whole batch.
+export async function updateFinanceFieldsBulkPerRequest(
+  items: { id: string; fields: Record<string, any> }[]
+): Promise<void> {
+  if (items.length === 0) return;
+  const cleanedItems = items.map((item) => ({
+    id: item.id,
+    ...cleanPayload(item.fields),
+  }));
+  const res = await fetch(`${BASE}/solicitudes/finanzas`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...AUTH_HEADERS },
+    body: JSON.stringify({ items: cleanedItems }),
+  });
+  if (!res.ok) throw new Error("Error al actualizar finanzas (bulk)");
+}
+
 export async function fetchExchangeRates(): Promise<
   { date: string; rate: number }[]
 > {

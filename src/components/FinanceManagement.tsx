@@ -27,6 +27,9 @@ interface Props {
   lastExchangeRate: ExchangeRate;
   onUpdateRequest: (id: string, status: string, extra?: any) => void;
   onUpdateFinanceFields: (id: string, fields: Partial<Request>) => void;
+  onUpdateRequestBulk?: (ids: string[], status: string, extra?: any) => Promise<void>;
+  onUpdateFinanceFieldsBulk?: (ids: string[], fields: Partial<Request>) => Promise<void>;
+  onUpdateFinanceFieldsBulkPerRequest?: (items: { id: string; fields: Partial<Request> }[]) => Promise<void>;
 }
 
 type Filter = "all" | "pending" | "approved" | "paymentApproved";
@@ -36,6 +39,9 @@ const FinanceManagement: React.FC<Props> = ({
   lastExchangeRate,
   onUpdateRequest,
   onUpdateFinanceFields,
+  onUpdateRequestBulk,
+  onUpdateFinanceFieldsBulk,
+  onUpdateFinanceFieldsBulkPerRequest,
 }) => {
   const { user } = useAuth();
   const isAnalista = user?.role === "analista_contable";
@@ -164,7 +170,12 @@ const FinanceManagement: React.FC<Props> = ({
     // Must await the fields write before the status write — both PATCH the same
     // sheet row, and firing them concurrently races their read-modify-write cycles
     // (whichever lands last overwrites the other's columns with a stale snapshot).
+    // `status: STATUS.PAID` is included here (not just in the separate status
+    // PATCH below) because the "tu pago fue realizado" confirmation email is
+    // built from this /finanzas call's own body — without it, that email's
+    // trigger condition was never true, so it never fired (found 2026-09).
     await onUpdateFinanceFields(id, {
+      status: STATUS.PAID,
       amountPaid: paymentData.amountPaid,
       exchangeRateUsed: paymentData.exchangeRate,
       amountMXN: paymentData.amountMXN,
@@ -357,15 +368,25 @@ const FinanceManagement: React.FC<Props> = ({
     );
   };
 
+  // Cada handler bulk hace, como máximo, un llamado al webhook de finanzas y
+  // uno al de status para todo el lote (en vez de 2 por solicitud), para que
+  // n8n mande un digest por destinatario en lugar de un correo por solicitud.
   const handleBulkClarificationConfirm = async (_labelId: string, comment: string) => {
     if (!bulkClarifyTarget) return;
     setIsBulkOperating(true);
     try {
-      for (const id of bulkClarifyTarget) {
+      if (onUpdateFinanceFieldsBulk && onUpdateRequestBulk) {
         if (finObs.trim()) {
-          await onUpdateFinanceFields(id, { financeObservations: finObs.trim() });
+          await onUpdateFinanceFieldsBulk(bulkClarifyTarget, { financeObservations: finObs.trim() });
         }
-        await onUpdateRequest(id, STATUS.DRAFT, { clarificationRequest: comment });
+        await onUpdateRequestBulk(bulkClarifyTarget, STATUS.DRAFT, { clarificationRequest: comment });
+      } else {
+        for (const id of bulkClarifyTarget) {
+          if (finObs.trim()) {
+            await onUpdateFinanceFields(id, { financeObservations: finObs.trim() });
+          }
+          await onUpdateRequest(id, STATUS.DRAFT, { clarificationRequest: comment });
+        }
       }
       setSelectedIds([]);
       setBulkClarifyTarget(null);
@@ -381,11 +402,18 @@ const FinanceManagement: React.FC<Props> = ({
     if (!bulkRejectTarget) return;
     setIsBulkOperating(true);
     try {
-      for (const id of bulkRejectTarget) {
+      if (onUpdateFinanceFieldsBulk && onUpdateRequestBulk) {
         if (finObs.trim()) {
-          await onUpdateFinanceFields(id, { financeObservations: finObs.trim() });
+          await onUpdateFinanceFieldsBulk(bulkRejectTarget, { financeObservations: finObs.trim() });
         }
-        await onUpdateRequest(id, STATUS.REJECTED, { rejectReason: comment });
+        await onUpdateRequestBulk(bulkRejectTarget, STATUS.REJECTED, { rejectReason: comment });
+      } else {
+        for (const id of bulkRejectTarget) {
+          if (finObs.trim()) {
+            await onUpdateFinanceFields(id, { financeObservations: finObs.trim() });
+          }
+          await onUpdateRequest(id, STATUS.REJECTED, { rejectReason: comment });
+        }
       }
       setSelectedIds([]);
       setBulkRejectTarget(null);
@@ -401,11 +429,18 @@ const FinanceManagement: React.FC<Props> = ({
     if (!bulkEstimatedDateTarget) return;
     setIsBulkOperating(true);
     try {
-      for (const id of bulkEstimatedDateTarget) {
-        await onUpdateFinanceFields(id, {
+      if (onUpdateFinanceFieldsBulk) {
+        await onUpdateFinanceFieldsBulk(bulkEstimatedDateTarget, {
           estimatedPaymentDate: date,
           financeObservations: finObs.trim() || undefined,
         });
+      } else {
+        for (const id of bulkEstimatedDateTarget) {
+          await onUpdateFinanceFields(id, {
+            estimatedPaymentDate: date,
+            financeObservations: finObs.trim() || undefined,
+          });
+        }
       }
       setSelectedIds([]);
       setBulkEstimatedDateTarget(null);
@@ -420,12 +455,27 @@ const FinanceManagement: React.FC<Props> = ({
     setIsBulkOperating(true);
     setIsBulkPaying(false);
     try {
-      for (const item of data) {
-        await onUpdateFinanceFields(item.id, {
-          ...item.paymentData,
-          financeObservations: finObs.trim() || undefined,
-        });
-        await onUpdateRequest(item.id, STATUS.PAID);
+      // status: STATUS.PAID is included in the /finanzas fields (not just the
+      // separate status call below) so the "tu pago fue realizado" digest
+      // email — built from this PATCH's own body — actually triggers. See
+      // handleMarkPaid for the single-item version of the same fix.
+      if (onUpdateFinanceFieldsBulkPerRequest && onUpdateRequestBulk) {
+        await onUpdateFinanceFieldsBulkPerRequest(
+          data.map((item) => ({
+            id: item.id,
+            fields: { ...item.paymentData, status: STATUS.PAID, financeObservations: finObs.trim() || undefined },
+          }))
+        );
+        await onUpdateRequestBulk(data.map((item) => item.id), STATUS.PAID);
+      } else {
+        for (const item of data) {
+          await onUpdateFinanceFields(item.id, {
+            ...item.paymentData,
+            status: STATUS.PAID,
+            financeObservations: finObs.trim() || undefined,
+          });
+          await onUpdateRequest(item.id, STATUS.PAID);
+        }
       }
       setSelectedIds([]);
       setSelectedId(null);

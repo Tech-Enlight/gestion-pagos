@@ -1378,9 +1378,10 @@ type Tab = "lista" | "resumen" | "proveedores" | "clientes" | "vencimientos";
 // ─── Main component ──────────────────────────────────────────
 interface DecisionPagosProps {
   onUpdateRequest?: (id: string, status: string, extra?: any) => Promise<void>;
+  onUpdateRequestBulk?: (ids: string[], status: string, extra?: any) => Promise<void>;
 }
 
-const DecisionPagos: React.FC<DecisionPagosProps> = ({ onUpdateRequest }) => {
+const DecisionPagos: React.FC<DecisionPagosProps> = ({ onUpdateRequest, onUpdateRequestBulk }) => {
   const { user } = useAuth();
   // Aquí decide el admin; el analista contable solo consulta (su flujo vive en Finanzas)
   const canDecide = !!onUpdateRequest && (user?.role === "admin" || user?.role === "superadmin");
@@ -1439,8 +1440,14 @@ const DecisionPagos: React.FC<DecisionPagosProps> = ({ onUpdateRequest }) => {
     if (!onUpdateRequest || ids.length === 0) return;
     setActionBusy(true);
     try {
-      // Secuencial: el backend hace appendOrUpdate sobre la misma hoja
-      for (const id of ids) await onUpdateRequest(id, status, extra);
+      // Un solo llamado al webhook para todo el lote: n8n manda un digest por
+      // destinatario en vez de un correo por solicitud (evita el spam de N
+      // correos en decisiones masivas).
+      if (onUpdateRequestBulk) {
+        await onUpdateRequestBulk(ids, status, extra);
+      } else {
+        for (const id of ids) await onUpdateRequest(id, status, extra);
+      }
       setActionMsg(`✓ ${ids.length} solicitud${ids.length !== 1 ? "es" : ""} → ${status}`);
       setTimeout(() => setActionMsg(null), 3000);
       setSelected((prev) => { const n = new Set(prev); ids.forEach((i) => n.delete(i)); return n; });
@@ -1450,7 +1457,7 @@ const DecisionPagos: React.FC<DecisionPagosProps> = ({ onUpdateRequest }) => {
     } finally {
       setActionBusy(false);
     }
-  }, [onUpdateRequest, load]);
+  }, [onUpdateRequest, onUpdateRequestBulk, load]);
 
   // Un solo paso de decisión: directo a Payment Approved (bandeja del analista)
   const handleApproveIds = (ids: string[]) => applyStatus(ids, STATUS.PAYMENT_APPROVED);

@@ -19,7 +19,10 @@ import {
   fetchRequests,
   createRequest,
   updateRequestStatus,
+  updateRequestStatusBulk,
   updateFinanceFields,
+  updateFinanceFieldsBulk,
+  updateFinanceFieldsBulkPerRequest,
   fetchExchangeRates,
 } from "./services/sheets";
 
@@ -97,6 +100,53 @@ function AppContent() {
     );
   };
 
+  // Bulk variants: one n8n webhook call for the whole batch instead of one
+  // per request, so a single digest email goes out per recipient instead of
+  // one email per request (see CLAUDE.md § bulk-action email digest).
+  const handleUpdateRequestBulk = async (
+    ids: string[],
+    status: string,
+    extra?: {
+      comment?: string;
+      rejectReason?: string;
+      clarificationRequest?: string;
+      clarificationResponse?: string;
+      concept?: string;
+      department?: string;
+      subtotal?: number;
+      iva?: number;
+      amount?: number;
+      paymentType?: string;
+    }
+  ) => {
+    await updateRequestStatusBulk(ids, status, user?.email || "unknown@enlight.mx", extra);
+    setRequests((prev) =>
+      prev.map((r) => (ids.includes(r.id) ? { ...r, status, ...extra } : r))
+    );
+  };
+
+  const handleUpdateFinanceFieldsBulk = async (
+    ids: string[],
+    fields: Partial<Request>
+  ) => {
+    await updateFinanceFieldsBulk(ids, fields);
+    setRequests((prev) =>
+      prev.map((r) => (ids.includes(r.id) ? { ...r, ...fields } : r))
+    );
+  };
+
+  const handleUpdateFinanceFieldsBulkPerRequest = async (
+    items: { id: string; fields: Partial<Request> }[]
+  ) => {
+    await updateFinanceFieldsBulkPerRequest(items);
+    const fieldsById = new Map(items.map((item) => [item.id, item.fields]));
+    setRequests((prev) =>
+      prev.map((r) =>
+        fieldsById.has(r.id) ? { ...r, ...fieldsById.get(r.id) } : r
+      )
+    );
+  };
+
   if (!isAuthenticated) return <LoginScreen />;
 
   return (
@@ -161,6 +211,7 @@ function AppContent() {
             <ApprovalManagement
               requests={requests}
               onUpdateRequest={handleUpdateRequest}
+              onUpdateRequestBulk={handleUpdateRequestBulk}
             />
           )}
         </RoleGate>
@@ -172,6 +223,9 @@ function AppContent() {
               lastExchangeRate={lastExchangeRate}
               onUpdateRequest={handleUpdateRequest}
               onUpdateFinanceFields={handleUpdateFinanceFields}
+              onUpdateRequestBulk={handleUpdateRequestBulk}
+              onUpdateFinanceFieldsBulk={handleUpdateFinanceFieldsBulk}
+              onUpdateFinanceFieldsBulkPerRequest={handleUpdateFinanceFieldsBulkPerRequest}
             />
           )}
         </RoleGate>
@@ -184,7 +238,10 @@ function AppContent() {
             />
           )}
           {currentView === "decision-pagos" && (
-            <DecisionPagos onUpdateRequest={handleUpdateRequest} />
+            <DecisionPagos
+              onUpdateRequest={handleUpdateRequest}
+              onUpdateRequestBulk={handleUpdateRequestBulk}
+            />
           )}
         </RoleGate>
 

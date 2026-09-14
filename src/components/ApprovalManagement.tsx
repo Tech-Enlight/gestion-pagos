@@ -14,9 +14,10 @@ import type { Request } from "../data/mockData";
 interface Props {
   requests: Request[];
   onUpdateRequest: (id: string, status: string, extra?: any) => void;
+  onUpdateRequestBulk?: (ids: string[], status: string, extra?: any) => Promise<void>;
 }
 
-const ApprovalManagement: React.FC<Props> = ({ requests, onUpdateRequest }) => {
+const ApprovalManagement: React.FC<Props> = ({ requests, onUpdateRequest, onUpdateRequestBulk }) => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [rejectTarget, setRejectTarget] = useState<string | null>(null);
   const [clarifyTarget, setClarifyTarget] = useState<string | null>(null);
@@ -83,8 +84,14 @@ const ApprovalManagement: React.FC<Props> = ({ requests, onUpdateRequest }) => {
     if (!window.confirm(`¿Aprobar las ${selectedIds.length} solicitudes seleccionadas?`)) return;
     setIsBulkOperating(true);
     try {
-      for (const id of selectedIds) {
-        await onUpdateRequest(id, STATUS.PENDING_FIN);
+      // Un solo llamado al webhook para todo el lote (digest de correos en
+      // vez de uno por solicitud) cuando el batch endpoint está disponible.
+      if (onUpdateRequestBulk) {
+        await onUpdateRequestBulk(selectedIds, STATUS.PENDING_FIN);
+      } else {
+        for (const id of selectedIds) {
+          await onUpdateRequest(id, STATUS.PENDING_FIN);
+        }
       }
       setSelectedIds([]);
       setSelectedId(null);
@@ -99,8 +106,12 @@ const ApprovalManagement: React.FC<Props> = ({ requests, onUpdateRequest }) => {
     if (!bulkClarifyTarget) return;
     setIsBulkOperating(true);
     try {
-      for (const id of bulkClarifyTarget) {
-        await onUpdateRequest(id, STATUS.DRAFT, { clarificationRequest: comment });
+      if (onUpdateRequestBulk) {
+        await onUpdateRequestBulk(bulkClarifyTarget, STATUS.DRAFT, { clarificationRequest: comment });
+      } else {
+        for (const id of bulkClarifyTarget) {
+          await onUpdateRequest(id, STATUS.DRAFT, { clarificationRequest: comment });
+        }
       }
       setSelectedIds([]);
       setBulkClarifyTarget(null);
@@ -116,8 +127,12 @@ const ApprovalManagement: React.FC<Props> = ({ requests, onUpdateRequest }) => {
     if (!bulkRejectTarget) return;
     setIsBulkOperating(true);
     try {
-      for (const id of bulkRejectTarget) {
-        await onUpdateRequest(id, STATUS.REJECTED, { rejectReason: comment });
+      if (onUpdateRequestBulk) {
+        await onUpdateRequestBulk(bulkRejectTarget, STATUS.REJECTED, { rejectReason: comment });
+      } else {
+        for (const id of bulkRejectTarget) {
+          await onUpdateRequest(id, STATUS.REJECTED, { rejectReason: comment });
+        }
       }
       setSelectedIds([]);
       setBulkRejectTarget(null);
