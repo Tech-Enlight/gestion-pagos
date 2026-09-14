@@ -21,6 +21,12 @@ export interface OcRecord {
   comentarios_req: string;
   item_revisado?: string;
   budget_item?: string;
+  // NetSuite customer, resolved via purchaseOrder -> job -> customer (added
+  // 2026-09, same join pattern as pagos-por-oc in the other workflow) — used
+  // to backfill PagoFlat.cliente, which the sheet's own "Cliente" column
+  // never gets populated with.
+  customer_code?: string;
+  customer_name?: string;
 }
 
 // ─── Forecast ────────────────────────────────────────────────
@@ -213,6 +219,9 @@ function assembleData(
       const proj_match = (p.proyecto || "").match(/(PROJ-\d+)/);
       const proj_id = proj_match ? proj_match[1] : "";
       const tc: number = p.tc || TC_HOY;
+      // The sheet's own "Cliente" column is never populated — fall back to
+      // the NetSuite customer resolved per-OC in oc-data (see OcRecord).
+      const cliente = p.cliente || (ocKey !== "_sin_oc" ? ocData[ocKey]?.customer_name : "") || "";
 
       pagosFlat.push({
         id: p.id,
@@ -221,7 +230,7 @@ function assembleData(
         oc: ocKey === "_sin_oc" ? "" : ocKey,
         proyecto: p.proyecto || "",
         proj_id,
-        cliente: p.cliente || "",
+        cliente,
         beneficiario: p.beneficiario || "",
         benef_clean,
         concepto: p.concepto || "",
