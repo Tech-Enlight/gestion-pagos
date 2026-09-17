@@ -178,7 +178,7 @@ export async function fetchExchangeRates(): Promise<
 }
 
 export async function fetchProjects(): Promise<any[]> {
-  const res = await fetch(`${BASE}/lista-proyectos-completos`);
+  const res = await fetch(`${BASE}/lista-proyectos-pp`);
   if (!res.ok) throw new Error("Error al cargar proyectos");
   const data = await safeJson(res);
   return data?.proj_list ?? [];
