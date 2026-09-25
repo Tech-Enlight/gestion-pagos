@@ -6,6 +6,7 @@ import {
   AlertTriangle,
   Clock,
   TrendingUp,
+  TrendingDown,
 } from "lucide-react";
 import { STATUS } from "../data/mockData";
 import type { Request, ExchangeRate } from "../data/mockData";
@@ -32,6 +33,44 @@ const fmtMXN = (n: number) =>
 const fmtDate = (iso: string) => {
   const d = new Date(iso);
   return d.toLocaleDateString("es-MX", { day: "2-digit", month: "short" });
+};
+
+/* --- Trend label derived from a real time series, not hardcoded -- */
+interface TrendLabelProps {
+  series: number[];
+  /** How many positions back from the last point to compare against
+   *  (7 = "hace 7 días" on a daily series, 1 = "mes anterior" on a monthly one). */
+  stepsBack: number;
+  comparedTo: string;
+  color: string;
+}
+const TrendLabel: React.FC<TrendLabelProps> = ({ series, stepsBack, comparedTo, color }) => {
+  const current = series[series.length - 1] ?? 0;
+  const previous = series[series.length - 1 - stepsBack];
+  if (previous == null || previous === 0) {
+    return (
+      <>
+        <Clock size={12} color={color} />
+        <span style={{ color: "rgba(255,255,255,0.5)" }}>Sin datos previos</span>
+      </>
+    );
+  }
+  const pct = ((current - previous) / previous) * 100;
+  const isDown = pct < 0;
+  const Icon = isDown ? TrendingDown : TrendingUp;
+  const trendColor = isDown ? "#ef4444" : color;
+  return (
+    <>
+      <Icon size={12} color={trendColor} />
+      <span>
+        <strong className="text-white">
+          {pct > 0 ? "+" : ""}
+          {pct.toFixed(0)}%
+        </strong>{" "}
+        {comparedTo}
+      </span>
+    </>
+  );
 };
 
 /* --- Small compact KPI for the secondary strip ------------------ */
@@ -160,7 +199,9 @@ const DeptBreakdown: React.FC<DeptBreakdownProps> = ({ requests, rate }) => {
                 <div
                   style={{
                     height: "100%",
-                    width: `${pct}%`,
+                    width: "100%",
+                    transform: `scaleX(${pct / 100})`,
+                    transformOrigin: "left",
                     background:
                       i === 0
                         ? "var(--enl-jade)"
@@ -168,7 +209,7 @@ const DeptBreakdown: React.FC<DeptBreakdownProps> = ({ requests, rate }) => {
                           ? "var(--enl-cerceta)"
                           : "rgba(255,255,255,0.25)",
                     borderRadius: 999,
-                    transition: "width 600ms cubic-bezier(.4,0,.2,1)",
+                    transition: "transform 600ms cubic-bezier(.4,0,.2,1)",
                   }}
                 />
               </div>
@@ -283,12 +324,12 @@ const Dashboard: React.FC<DashboardProps> = ({
           accent="var(--enl-jade)"
           sparkData={queueTrend}
           trend={
-            <>
-              <TrendingUp size={12} color="var(--enl-jade)" />
-              <span>
-                <strong className="text-white">+12%</strong> vs. semana anterior
-              </span>
-            </>
+            <TrendLabel
+              series={queueTrend}
+              stepsBack={7}
+              comparedTo="vs. hace 7 días"
+              color="var(--enl-jade)"
+            />
           }
         />
         <HeroKPI
@@ -298,12 +339,12 @@ const Dashboard: React.FC<DashboardProps> = ({
           accent="#a855f7"
           sparkData={paidTrend}
           trend={
-            <>
-              <TrendingUp size={12} color="#a855f7" />
-              <span>
-                <strong className="text-white">+22%</strong> vs. mes anterior
-              </span>
-            </>
+            <TrendLabel
+              series={paidTrend}
+              stepsBack={1}
+              comparedTo="vs. mes anterior"
+              color="#a855f7"
+            />
           }
         />
         <HeroKPI

@@ -195,6 +195,7 @@ function AppContent() {
                 : r.submittedBy === user?.name
             )}
             onUpdateRequest={handleUpdateRequest}
+            onCreateRequest={() => setCurrentView("nueva-solicitud")}
           />
         )}
 
