@@ -16,7 +16,7 @@ import { STATUS } from "../data/mockData";
 import RejectModal from "./RejectModal";
 import { T } from "./decision/tokens";
 import { fmtMXNk, fmtFecha, fmtPct, ratio } from "./decision/format";
-import { evalDecision, defaultFilters, normOcKey, type Filters } from "./decision/logic";
+import { evalDecision, defaultFilters, normOcKey, ocApproval, type Filters } from "./decision/logic";
 import { MultiSelect } from "./decision/MultiSelect";
 import { PaymentCard } from "./decision/PaymentCard";
 import { KPICard, PillBtn } from "./decision/ui";
@@ -207,10 +207,11 @@ const DecisionPagos: React.FC<DecisionPagosProps> = ({ onUpdateRequest, onUpdate
       if (filters.oc) {
         const key = normOcKey(p.oc);
         const oc = key ? data.oc_data[key] : null;
-        const est = oc ? (oc.estatus || "").toLowerCase() : "";
-        if (filters.oc === "aprobada" && est !== "aprobada") return false;
-        if (filters.oc === "rechazada" && est !== "rechazada") return false;
-        if (filters.oc === "pendiente" && (!oc || est === "aprobada" || est === "rechazada")) return false;
+        const state = oc ? ocApproval(oc).state : null;
+        if (filters.oc === "aprobada" && state !== "aprobada") return false;
+        if (filters.oc === "rechazada" && state !== "rechazada") return false;
+        // "Pendiente" agrupa todo lo que existe pero no está aprobada ni rechazada de forma clara.
+        if (filters.oc === "pendiente" && (!oc || state === "aprobada" || state === "rechazada")) return false;
         if (filters.oc === "sin" && oc) return false;
       }
       if (filters.propuesta.size > 0 && !filters.propuesta.has(p.propuesta_bucket)) return false;

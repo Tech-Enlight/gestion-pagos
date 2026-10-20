@@ -5,6 +5,62 @@ import type { PagoFlat, OcRecord, ForecastRecord, Decision } from "../../service
 export const normOcKey = (oc: string | null | undefined): string | null =>
   oc ? String(oc).replace(/\s+/g, "").toUpperCase() : null;
 
+// ─── Estado de aprobación de una OC ──────────────────────────
+// Dos fuentes: la columna `estatus` de la hoja de control ("Aprobada"/"Rechazada") y la
+// aprobación en NetSuite (`approval_ns`). La hoja manda cuando opina, pero NetSuite cubre lo
+// que la hoja deja vacío (pasó con TODAS las OCs cuando se borró el encabezado de la columna).
+// Si las dos se contradicen no se adivina: queda "conflicto" y decide una persona.
+export type OcApprovalState = "aprobada" | "rechazada" | "pendiente" | "conflicto" | "sin_dato";
+
+export interface OcApproval {
+  state: OcApprovalState;
+  /** Lo que dice cada fuente, para mostrarlo cuando hay contradicción. */
+  sheet: string;
+  ns: string;
+}
+
+type Signal = "aprobada" | "rechazada" | "pendiente" | null;
+
+const sheetSignal = (est: string | undefined): Signal => {
+  const e = (est || "").trim().toLowerCase();
+  if (e === "aprobada") return "aprobada";
+  if (e === "rechazada") return "rechazada";
+  return e ? "pendiente" : null;
+};
+
+const nsSignal = (ns: string | undefined): Signal => {
+  const e = (ns || "").trim().toLowerCase();
+  if (e === "aprobado") return "aprobada";
+  if (e === "rechazado") return "rechazada";
+  return e ? "pendiente" : null; // "Aprobación pendiente" u otro valor sin aprobar
+};
+
+export function ocApproval(oc: OcRecord | null | undefined): OcApproval {
+  const sheet = oc?.estatus || "";
+  const ns = oc?.approval_ns || "";
+  const signals = [sheetSignal(sheet), nsSignal(ns)].filter((s): s is Exclude<Signal, null> => s !== null);
+  const unique = [...new Set(signals)];
+
+  let state: OcApprovalState;
+  if (unique.length === 0) state = "sin_dato";
+  else if (unique.length === 1) state = unique[0];
+  // Hay desacuerdo: si ninguna fuente aprueba, las dos son negativas y gana la más severa;
+  // si una aprueba y otra no, es una contradicción real.
+  else if (!unique.includes("aprobada")) state = "rechazada";
+  else state = "conflicto";
+
+  return { state, sheet, ns };
+}
+
+/** Etiqueta corta para chips e insignias. */
+export const OC_STATE_LABEL: Record<OcApprovalState, string> = {
+  aprobada: "Aprobada",
+  rechazada: "Rechazada",
+  pendiente: "Pendiente",
+  conflicto: "Contradictoria",
+  sin_dato: "Sin estatus",
+};
+
 // ─── Decision logic ──────────────────────────────────────────
 export function evalDecision(
   p: PagoFlat,
@@ -27,16 +83,23 @@ export function evalDecision(
     ocCheck = "faltante";
     oc_reason = `OC ${p.oc || "—"} sin registro de aprobación`;
   } else {
-    const est = (oc.estatus || "").toLowerCase();
-    if (est === "aprobada") {
+    const ap = ocApproval(oc);
+    if (ap.state === "aprobada") {
       ocCheck = "ok";
-      oc_reason = `OC aprobada el ${oc.fecha_apb || "—"}`;
-    } else if (est === "rechazada") {
+      oc_reason = `OC aprobada${oc.fecha_apb ? ` el ${oc.fecha_apb}` : ""}${ap.sheet ? "" : " (según NetSuite)"}`;
+    } else if (ap.state === "rechazada") {
       ocCheck = "negativo";
       oc_reason = "OC rechazada" + (oc.coment_oc ? ": " + oc.coment_oc.substring(0, 80) : "");
-    } else {
+    } else if (ap.state === "pendiente") {
       ocCheck = "negativo";
-      oc_reason = `OC sin aprobar (${oc.estatus || "pendiente"})`;
+      oc_reason = `OC sin aprobar (${ap.sheet || ap.ns || "pendiente"})`;
+    } else if (ap.state === "conflicto") {
+      // No se puede confirmar ni descartar: pasa a revisión humana mostrando las dos versiones.
+      ocCheck = "faltante";
+      oc_reason = `OC con estatus contradictorio: hoja de control "${ap.sheet || "—"}" vs NetSuite "${ap.ns || "—"}"`;
+    } else {
+      ocCheck = "faltante";
+      oc_reason = `OC ${p.oc || "—"} registrada pero sin estatus de aprobación`;
     }
   }
 

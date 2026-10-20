@@ -4,7 +4,7 @@ import type { PagoFlat, OcRecord, ForecastRecord, Decision, DecisionColor } from
 import { fetchInvoiceLinkByOC } from "../../services/sheets";
 import { T, NUM, DECISION_COLORS } from "./tokens";
 import { fmtN, fmtMXN, fmtFecha, fmtMoney } from "./format";
-import { canDecideOn, normOcKey } from "./logic";
+import { canDecideOn, normOcKey, ocApproval, OC_STATE_LABEL } from "./logic";
 import { Chip, ActionBtn, ExpBlock, ExpField, StatusBadge, CrossBlock } from "./ui";
 
 // ─── Urgency label ───────────────────────────────────────────
@@ -24,10 +24,13 @@ export function OcChip({ p, ocData }: { p: PagoFlat; ocData: Record<string, OcRe
   const key = normOcKey(p.oc)!;
   const oc = ocData[key];
   if (!oc) return <Chip label="OC s/reg." color={T.textMuted} bg="rgba(255,255,255,0.08)" title={`OC ${p.oc} no encontrada`} />;
-  const est = (oc.estatus || "").toLowerCase();
-  if (est === "aprobada") return <Chip label="OC ✓" color={T.jade} bg={T.jadeFaint} title={`Aprobada el ${fmtFecha(oc.fecha_apb)}`} />;
-  if (est === "rechazada") return <Chip label="OC ✗" color={T.red} bg={T.redFaint} />;
-  return <Chip label={`OC ${oc.estatus || "Pend."}`} color={T.amber} bg={T.amberFaint} />;
+  const ap = ocApproval(oc);
+  const src = `hoja: ${ap.sheet || "—"} · NetSuite: ${ap.ns || "—"}`;
+  if (ap.state === "aprobada") return <Chip label="OC ✓" color={T.jade} bg={T.jadeFaint} title={`Aprobada${oc.fecha_apb ? ` el ${fmtFecha(oc.fecha_apb)}` : ""} (${src})`} />;
+  if (ap.state === "rechazada") return <Chip label="OC ✗" color={T.red} bg={T.redFaint} title={src} />;
+  if (ap.state === "conflicto") return <Chip label="OC ⚠" color={T.amber} bg={T.amberFaint} title={`Estatus contradictorio — ${src}`} />;
+  if (ap.state === "sin_dato") return <Chip label="OC s/estatus" color={T.textMuted} bg="rgba(255,255,255,0.08)" title="La OC existe pero no tiene estatus de aprobación" />;
+  return <Chip label="OC Pend." color={T.amber} bg={T.amberFaint} title={src} />;
 }
 
 // ─── Payment card ────────────────────────────────────────────
@@ -326,7 +329,7 @@ export const OcBlock: React.FC<{ oc: OcRecord | null; p: PagoFlat }> = ({ oc, p 
   const diffColor = oc.diferencia == null ? T.textMuted : oc.diferencia >= 0 ? T.jade : T.red;
 
   return (
-    <CrossBlock title="Aprobación de OC" badge={<StatusBadge estatus={oc.estatus} />}>
+    <CrossBlock title="Aprobación de OC" badge={<StatusBadge estatus={OC_STATE_LABEL[ocApproval(oc).state]} />}>
       {[
         ["OC", oc.oc],
         ["Solicitud", fmtFecha(oc.fecha_sol)],

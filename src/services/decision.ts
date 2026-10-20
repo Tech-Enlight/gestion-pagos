@@ -21,6 +21,12 @@ export interface OcRecord {
   comentarios_req: string;
   item_revisado?: string;
   budget_item?: string;
+  // Aprobación de la OC en NetSuite ("Aprobado" | "Rechazado" | "Aprobación pendiente" | ""). Es el
+  // respaldo cuando la columna `estatus` de la hoja de control está vacía (ya pasó: alguien borró
+  // el encabezado de esa columna y las 1,526 OCs llegaron sin estatus).
+  approval_ns?: string;
+  estatus_ns?: string;
+  estatus_sol?: string;
   // NetSuite customer, resolved via purchaseOrder -> job -> customer (added
   // 2026-09, same join pattern as pagos-por-oc in the other workflow) — used
   // to backfill PagoFlat.cliente, which the sheet's own "Cliente" column
