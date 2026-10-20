@@ -1,7 +1,6 @@
 import React from "react";
-import { STATUS_LABEL } from "../../data/mockData";
+import { STATUS_LABEL, STATUS_HEX } from "../../data/mockData";
 import type { Request } from "../../data/mockData";
-import { STATUS_HEX } from "./PipelineFunnel";
 
 /**
  * Vertical timeline of the latest status changes across all requests.
@@ -119,7 +118,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ requests }) => {
                     <span
                       className="text-[11px] whitespace-nowrap"
                       style={{
-                        color: "rgba(255,255,255,0.4)",
+                        color: "rgba(255,255,255,0.6)",
                         fontFamily: "var(--font-secondary)",
                       }}
                     >
@@ -128,7 +127,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ requests }) => {
                   </div>
                   <div
                     className="text-xs mt-0.5"
-                    style={{ color: "rgba(255,255,255,0.55)" }}
+                    style={{ color: "rgba(255,255,255,0.65)" }}
                   >
                     {ev.beneficiary} · por {ev.changedBy}
                   </div>

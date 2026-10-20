@@ -1,6 +1,6 @@
 import React from "react";
 import { AlertTriangle } from "lucide-react";
-import { STATUS } from "../../data/mockData";
+import { STATUS, STATUS_HEX } from "../../data/mockData";
 import type { Request } from "../../data/mockData";
 
 /**
@@ -18,31 +18,25 @@ import type { Request } from "../../data/mockData";
 interface PipelineFunnelProps {
   requests: Request[];
   onStageClick?: (status: string) => void;
+  /** Si la etapa lleva a una vista a la que el rol tiene acceso; si no, se muestra sin acción. */
+  isClickable?: (status: string) => boolean;
 }
 
-const STAGES = [
-  { status: STATUS.DRAFT,        label: "Borrador",        desc: "Pendiente de envío" },
-  { status: STATUS.AUTORIZACION, label: "En autorización", desc: "Tu jefe directo revisa" },
-  { status: STATUS.PENDING_FIN,  label: "Revisión Finanzas", desc: "Finanzas valida" },
-  { status: STATUS.APPROVED,     label: "Lista para pago", desc: "Pendiente de ejecución" },
-  { status: STATUS.PAID,         label: "Pagada",          desc: "Ciclo cerrado" },
+// Etapas del flujo confirmado el 2026-07-15. `Approved` es legacy y cuenta
+// como "Lista para pago" (igual que WorkflowTracker).
+const STAGES: { status: string; statuses: string[]; label: string; desc: string }[] = [
+  { status: STATUS.DRAFT,            statuses: [STATUS.DRAFT],            label: "Borrador",           desc: "Pendiente de envío" },
+  { status: STATUS.AUTORIZACION,     statuses: [STATUS.AUTORIZACION],     label: "En autorización",    desc: "Dirección autoriza" },
+  { status: STATUS.PENDING_FIN,      statuses: [STATUS.PENDING_FIN],      label: "Decisión de pagos",  desc: "Admin decide el pago" },
+  { status: STATUS.PAYMENT_APPROVED, statuses: [STATUS.PAYMENT_APPROVED, STATUS.APPROVED], label: "Lista para pago", desc: "Contabilidad programa y paga" },
+  { status: STATUS.PAID,             statuses: [STATUS.PAID],             label: "Pagada",             desc: "Ciclo cerrado" },
 ];
 
-// Hex equivalents of statusColors (Tailwind classes) — used by charts.
-export const STATUS_HEX: Record<string, string> = {
-  Draft:           "#828080",
-  "Autorización":  "#eab308",
-  "Pending Fin":   "#3D7D80",
-  Approved:        "#00AA85",
-  Paid:            "#a855f7",
-  Rejected:        "#ef4444",
-};
-
-const PipelineFunnel: React.FC<PipelineFunnelProps> = ({ requests, onStageClick }) => {
+const PipelineFunnel: React.FC<PipelineFunnelProps> = ({ requests, onStageClick, isClickable }) => {
   const stages = STAGES.map((s) => ({
     ...s,
-    count: requests.filter((r) => r.status === s.status).length,
-    color: STATUS_HEX[s.status] || "#828080",
+    count: requests.filter((r) => s.statuses.includes(r.status)).length,
+    color: STATUS_HEX[s.status] || STATUS_HEX.Draft,
   }));
   const max = Math.max(...stages.map((s) => s.count), 1);
   const total = requests.length;
@@ -54,14 +48,14 @@ const PipelineFunnel: React.FC<PipelineFunnelProps> = ({ requests, onStageClick 
         const widthPct = 22 + (s.count / max) * 78;
         const pctOfTotal = total > 0 ? (s.count / total) * 100 : 0;
         const isLast = i === stages.length - 1;
-        const clickable = !!onStageClick;
+        const clickable = !!onStageClick && (isClickable ? isClickable(s.status) : true);
         return (
           <div key={s.status}>
             <button
               type="button"
               onClick={() => onStageClick?.(s.status)}
               disabled={!clickable}
-              className="w-full block bg-transparent border-0 text-left font-inherit rounded transition-colors"
+              className="w-full block bg-transparent border-0 text-left font-inherit rounded transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--enl-jade)]"
               style={{
                 padding: "6px 0",
                 cursor: clickable ? "pointer" : "default",
@@ -94,7 +88,7 @@ const PipelineFunnel: React.FC<PipelineFunnelProps> = ({ requests, onStageClick 
                   <span
                     className="text-[11px] tabular-nums"
                     style={{
-                      color: "rgba(255,255,255,0.4)",
+                      color: "rgba(255,255,255,0.6)",
                       fontFamily: "var(--font-secondary)",
                     }}
                   >
@@ -112,14 +106,13 @@ const PipelineFunnel: React.FC<PipelineFunnelProps> = ({ requests, onStageClick 
               {/* Bar */}
               <div className="relative" style={{ height: 22, marginLeft: 17 }}>
                 <div
-                  className="absolute left-0 top-0 bottom-0 flex items-center"
+                  className="absolute left-0 top-0 bottom-0 flex items-center transition-[width] duration-[600ms] ease-out motion-reduce:transition-none"
                   style={{
                     width: `${widthPct}%`,
                     background: `linear-gradient(90deg, ${s.color} 0%, color-mix(in oklab, ${s.color} 70%, transparent) 100%)`,
                     borderRadius: 4,
                     paddingLeft: 10,
                     opacity: s.count > 0 ? 1 : 0.25,
-                    transition: "width 600ms cubic-bezier(.4,0,.2,1)",
                   }}
                 >
                   <span

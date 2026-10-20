@@ -2,11 +2,13 @@ import { useState, useEffect } from "react";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { LoginScreen } from "./components/LoginScreen";
-import { Sidebar } from "./components/Sidebar";
+import { Sidebar, canAccessView } from "./components/Sidebar";
+import { NoAccess } from "./components/NoAccess";
 import { RoleGate } from "./components/RoleGate";
 import TopBar from "./components/TopBar";
 import Feed from "./components/Feed";
 import Dashboard from "./components/Dashboard";
+import type { DashboardDataState } from "./components/Dashboard";
 import NewRequest from "./components/NewRequest";
 import ApprovalManagement from "./components/ApprovalManagement";
 import RequestExplorer from "./components/RequestExplorer";
@@ -42,20 +44,41 @@ function AppContent() {
   const { isAuthenticated, user } = useAuth();
   const [currentView, setCurrentView] = useState(getInitialView);
   const [requests, setRequests] = useState<Request[]>([]);
+  // Placeholder solo para que los consumidores tengan un número mientras llega el
+  // real; el Panel general usa `exchangeRateReady` para no mostrarlo como dato.
   const [lastExchangeRate, setLastExchangeRate] = useState<ExchangeRate>({
     date: "2023-10-30",
     rate: 17.72,
   });
+  const [previousExchangeRate, setPreviousExchangeRate] = useState<number | null>(null);
+  const [exchangeRateReady, setExchangeRateReady] = useState(false);
+  const [requestsState, setRequestsState] = useState<DashboardDataState>("loading");
+
+  const loadRequests = () => {
+    setRequestsState("loading");
+    fetchRequests()
+      .then((data) => {
+        setRequests(data);
+        setRequestsState("ready");
+      })
+      .catch((err) => {
+        console.error(err);
+        setRequestsState("error");
+      });
+  };
 
   useEffect(() => {
-    fetchRequests()
-      .then(setRequests)
-      .catch(console.error);
+    loadRequests();
 
     fetchExchangeRates()
       .then((rates) => {
         if (rates && rates.length > 0) {
-          setLastExchangeRate(rates[rates.length - 1]);
+          const last = rates[rates.length - 1];
+          setLastExchangeRate(last);
+          // El endpoint repite cierres (el 16/10 viene 3 veces): "anterior" es el último de OTRO día.
+          const prev = [...rates].reverse().find((r) => r.date !== last.date);
+          setPreviousExchangeRate(prev ? prev.rate : null);
+          setExchangeRateReady(true);
         }
       })
       .catch(console.error);
@@ -157,6 +180,10 @@ function AppContent() {
         <main style={{ flex: 1, overflow: "auto", padding: "2rem" }}>
         {/* Los gates replican la matriz de visibilidad del Sidebar (2026-07-15).
             "inicio" queda intencionalmente sin RoleGate: todos los roles la leen (2026-08-20). */}
+        {!canAccessView(currentView, user?.role) && (
+          <NoAccess onGoHome={() => setCurrentView("mis-solicitudes")} />
+        )}
+
         {currentView === "inicio" && <Feed />}
 
         <RoleGate
@@ -173,6 +200,10 @@ function AppContent() {
             <Dashboard
               requests={requests}
               lastExchangeRate={lastExchangeRate}
+              previousExchangeRate={previousExchangeRate}
+              exchangeRateReady={exchangeRateReady}
+              dataState={requestsState}
+              onRetry={loadRequests}
               onNavigate={setCurrentView}
             />
           )}
@@ -236,6 +267,7 @@ function AppContent() {
             <RequestExplorer
               requests={requests}
               onUpdateRequest={handleUpdateRequest}
+              exchangeRate={exchangeRateReady ? lastExchangeRate.rate : undefined}
             />
           )}
           {currentView === "decision-pagos" && (

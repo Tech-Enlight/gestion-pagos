@@ -61,6 +61,14 @@ const navItems: NavItem[] = [
   { id: "ayuda", label: "Ayuda", roles: "all", icon: <HelpCircle size={17} />, group: "datos" },
 ];
 
+// Fuente única de la matriz de visibilidad: App.tsx la usa para no renderizar
+// una pantalla vacía cuando el rol no tiene acceso a la vista pedida.
+export const canAccessView = (viewId: string, role: Role | undefined): boolean => {
+  const item = navItems.find((n) => n.id === viewId);
+  if (!item) return false;
+  return item.roles === "all" || (!!role && item.roles.includes(role));
+};
+
 interface Props {
   currentView: string;
   setCurrentView: (v: string) => void;

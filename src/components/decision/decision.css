@@ -1,0 +1,193 @@
+/* Decisión de Pagos — estados interactivos (hover / focus / disabled) y layout responsive.
+   Los estilos estáticos siguen inline en los componentes; aquí va lo que inline no puede
+   expresar. `--dp-c` es el color de acento que pasa cada componente. */
+
+.dp-btn,
+.dp-barbtn,
+.dp-pill,
+.dp-tab,
+.dp-trigger {
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s, filter 0.15s;
+}
+
+.dp-btn:focus-visible,
+.dp-barbtn:focus-visible,
+.dp-pill:focus-visible,
+.dp-tab:focus-visible,
+.dp-trigger:focus-visible,
+.dp-icon-btn:focus-visible,
+.dp-card:focus-within {
+  outline: 2px solid var(--enl-jade);
+  outline-offset: 2px;
+}
+.dp-card:focus-within { outline-offset: -2px; outline-width: 1px; }
+
+/* Acciones de decisión (Aprobar / Aclaración / Rechazar) */
+.dp-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: var(--font-primary);
+  font-weight: 700;
+  color: var(--dp-c);
+  background: color-mix(in oklab, var(--dp-c) 13%, transparent);
+  border: 1px solid color-mix(in oklab, var(--dp-c) 38%, transparent);
+}
+.dp-btn:hover:not(:disabled) { background: color-mix(in oklab, var(--dp-c) 22%, transparent); }
+.dp-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Botones de la barra de selección y modales */
+.dp-barbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: var(--font-primary);
+  font-weight: 600;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+}
+.dp-barbtn:hover { background: rgba(255, 255, 255, 0.16); }
+.dp-barbtn--icon { padding: 7px 10px; }
+.dp-barbtn--primary { color: #000; background: var(--enl-jade); }
+.dp-barbtn--primary:hover { background: var(--enl-jade); filter: brightness(1.12); }
+
+/* Chips de filtro (activos vía aria-pressed) */
+.dp-pill {
+  --dp-c: var(--enl-jade);
+  padding: 5px 12px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-family: var(--font-secondary);
+  font-weight: 400;
+  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.7);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.dp-pill:hover { border-color: rgba(255, 255, 255, 0.24); color: #fff; }
+.dp-pill[aria-pressed="true"] {
+  color: var(--dp-c);
+  font-weight: 600;
+  border-color: var(--dp-c);
+  background: color-mix(in oklab, var(--dp-c) 14%, transparent);
+}
+
+/* Pestañas */
+.dp-tab {
+  padding: 10px 18px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  background: transparent;
+  font-size: 13px;
+  font-family: var(--font-primary);
+  font-weight: 400;
+  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.7);
+}
+.dp-tab:hover { color: #fff; }
+.dp-tab[aria-selected="true"] { color: var(--enl-jade); font-weight: 700; border-bottom-color: var(--enl-jade); }
+
+/* Disparador del MultiSelect */
+.dp-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: var(--font-primary);
+  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.dp-trigger:hover { border-color: rgba(255, 255, 255, 0.24); }
+.dp-trigger[data-active="true"] {
+  color: var(--enl-jade);
+  border-color: var(--enl-jade);
+  background: rgba(0, 170, 133, 0.14);
+}
+
+/* Campo de búsqueda: el outline nativo estaba apagado, así que el foco no se veía */
+.dp-input:focus-visible { border-color: var(--enl-jade) !important; box-shadow: var(--focus-ring); }
+
+/* Botón de icono sin borde (cerrar, expandir) */
+.dp-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  min-height: 28px;
+  padding: 4px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+}
+.dp-icon-btn:hover { color: #fff; background: rgba(255, 255, 255, 0.08); }
+
+/* Tarjeta de pago */
+.dp-card { transition: border-color 0.15s, background-color 0.15s; }
+.dp-card:hover { border-color: rgba(255, 255, 255, 0.2); }
+
+/* Rejillas: colapsan en pantallas angostas en vez de desbordar */
+.dp-grid-2,
+.dp-grid-3,
+.dp-grid-4 { display: grid; gap: 12px; }
+.dp-grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.dp-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.dp-grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 1000px) {
+  .dp-grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dp-grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .dp-grid-2,
+  .dp-grid-3,
+  .dp-grid-4 { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* La fila de la tarjeta (tag · info · beneficiario · factura · monto) baja a varias líneas */
+.dp-card-row { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px 10px; flex-wrap: wrap; }
+.dp-card-main { flex: 1 1 280px; min-width: 0; }
+
+/* Barra de selección flotante */
+.dp-selbar {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+  width: min(960px, calc(100vw - 32px));
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  padding: 14px 20px;
+  border-radius: 12px;
+  background: #1a2738;
+  border: 1px solid rgba(0, 170, 133, 0.25);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+/* Barras de avance: se escalan con transform (no con width) para no recalcular layout */
+.dp-bar-fill { transform-origin: left; transition: transform 0.6s cubic-bezier(.4, 0, .2, 1); }
+@media (prefers-reduced-motion: reduce) {
+  .dp-bar-fill { transition: none; }
+}
+
+@keyframes dp-spin { to { transform: rotate(360deg); } }
+.dp-spin { animation: dp-spin 0.8s linear infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .dp-spin { animation-duration: 3s; }
+}

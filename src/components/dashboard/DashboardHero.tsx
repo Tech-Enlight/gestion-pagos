@@ -1,5 +1,5 @@
 import React from "react";
-import { Shield, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 
 /**
  * Editorial hero card for the top of the dashboard.
@@ -15,24 +15,32 @@ import { Shield, Plus } from "lucide-react";
  * main migration guide).
  */
 
+/** Acción principal del hero; depende del rol (qué cola le toca trabajar). */
+export interface HeroPrimaryAction {
+  label: string;
+  count: number;
+  icon: React.ReactNode;
+  onClick: () => void;
+}
+
 interface DashboardHeroProps {
   userFirstName: string;
-  pendingAuth: number;
-  pendingFin: number;
-  approved: number;
-  onGoToApprovals: () => void;
+  loading: boolean;
+  /** Solicitudes que esperan una acción de ESTE rol. */
+  totalWaiting: number;
+  summary: string;
+  primary: HeroPrimaryAction;
   onNewRequest: () => void;
 }
 
 const DashboardHero: React.FC<DashboardHeroProps> = ({
   userFirstName,
-  pendingAuth,
-  pendingFin,
-  approved,
-  onGoToApprovals,
+  loading,
+  totalWaiting,
+  summary,
+  primary,
   onNewRequest,
 }) => {
-  const totalWaiting = pendingAuth + pendingFin;
   const today = new Date();
   const dayName = today.toLocaleDateString("es-MX", {
     weekday: "long",
@@ -40,6 +48,8 @@ const DashboardHero: React.FC<DashboardHeroProps> = ({
     month: "long",
   });
   const dayCapitalized = dayName.charAt(0).toUpperCase() + dayName.slice(1);
+  const hour = today.getHours();
+  const greeting = hour < 12 ? "Buenos días" : hour < 19 ? "Buenas tardes" : "Buenas noches";
 
   return (
     <div
@@ -48,7 +58,7 @@ const DashboardHero: React.FC<DashboardHeroProps> = ({
         background:
           "linear-gradient(120deg, var(--enl-marino) 0%, var(--enl-acero) 65%, var(--enl-cerceta) 130%)",
         border: "1px solid var(--border-on-dark)",
-        padding: "32px 36px",
+        padding: "clamp(20px, 4vw, 32px) clamp(20px, 4vw, 36px)",
         minHeight: 188,
       }}
     >
@@ -80,7 +90,7 @@ const DashboardHero: React.FC<DashboardHeroProps> = ({
         }}
       />
 
-      <div className="relative" style={{ maxWidth: "65%" }}>
+      <div className="relative md:max-w-[65%]">
         <p
           className="m-0 mb-3.5 text-[11px] font-medium uppercase"
           style={{
@@ -102,58 +112,60 @@ const DashboardHero: React.FC<DashboardHeroProps> = ({
             lineHeight: 1.1,
           }}
         >
-          Buen día, {userFirstName}.{" "}
-          <span
-            style={{
-              background: "var(--grad-jade-to-white)",
-              WebkitBackgroundClip: "text",
-              backgroundClip: "text",
-              color: "transparent",
-              fontWeight: 400,
-            }}
-          >
-            {totalWaiting}
-          </span>{" "}
-          <span style={{ fontWeight: 300 }}>
-            {totalWaiting === 1
-              ? "solicitud espera"
-              : "solicitudes esperan"}{" "}
-            tu atención.
-          </span>
+          {greeting}
+          {userFirstName ? `, ${userFirstName}` : ""}.{" "}
+          {!loading &&
+            (totalWaiting > 0 ? (
+              <>
+                <span
+                  style={{
+                    background: "var(--grad-jade-to-white)",
+                    WebkitBackgroundClip: "text",
+                    backgroundClip: "text",
+                    color: "transparent",
+                    fontWeight: 400,
+                  }}
+                >
+                  {totalWaiting}
+                </span>{" "}
+                <span style={{ fontWeight: 300 }}>
+                  {totalWaiting === 1 ? "solicitud espera" : "solicitudes esperan"} tu atención.
+                </span>
+              </>
+            ) : (
+              <span style={{ fontWeight: 300 }}>Estás al día.</span>
+            ))}
         </h1>
 
         <p
           className="mt-3.5 mb-5"
           style={{
-            color: "rgba(255,255,255,0.65)",
+            color: "rgba(255,255,255,0.75)",
             fontSize: 15,
             lineHeight: 1.5,
             fontWeight: 300,
             maxWidth: 600,
           }}
         >
-          {pendingAuth > 0
-            ? `${pendingAuth} ${pendingAuth === 1 ? "está en" : "están en"
-            } autorización y ${pendingFin} en revisión por Finanzas. Tu ciclo promedio es de 2.1 días.`
-            : `Todo está al corriente. Aprovecha para revisar las ${approved} solicitudes listas para pagar.`}
+          {summary}
         </p>
 
         <div className="flex gap-2.5 flex-wrap">
           <button
             type="button"
-            onClick={onGoToApprovals}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-white font-medium text-sm transition-colors"
+            onClick={primary.onClick}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-white font-medium text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
             style={{ background: "var(--enl-jade)" }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = "#009577";
+              e.currentTarget.style.background = "color-mix(in oklab, var(--enl-jade) 85%, black)";
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.background = "var(--enl-jade)";
             }}
           >
-            <Shield size={14} />
-            Ir a aprobaciones
-            {pendingAuth > 0 && (
+            {primary.icon}
+            {primary.label}
+            {primary.count > 0 && (
               <span
                 className="text-[11px] ml-1"
                 style={{
@@ -162,14 +174,14 @@ const DashboardHero: React.FC<DashboardHeroProps> = ({
                   borderRadius: 999,
                 }}
               >
-                {pendingAuth}
+                {primary.count}
               </span>
             )}
           </button>
           <button
             type="button"
             onClick={onNewRequest}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
             style={{
               background: "transparent",
               color: "white",

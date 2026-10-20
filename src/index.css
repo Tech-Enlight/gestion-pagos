@@ -65,6 +65,16 @@
   --radius-lg: 16px;
   --radius-pill: 999px;
 
+  /* Ink (texto chico) y bordes sobre fondo oscuro — valores canónicos del DS.
+     Estaban referenciados por los componentes pero sin definir: las tarjetas
+     del Panel general se pintaban sin borde. */
+  --ink-muted: #5B6770;
+  --ink-jade: #00785E;
+  --ink-error: #B42318;
+  --ink-warn: #8A5300;
+  --border-on-dark: rgba(255, 255, 255, .14);
+  --fg-on-dark-muted: rgba(255, 255, 255, .70);
+
   /* Motion */
   --ease-standard: cubic-bezier(.4, 0, .2, 1);
   --dur-fast: 120ms;

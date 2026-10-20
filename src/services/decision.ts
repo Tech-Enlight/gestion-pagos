@@ -71,6 +71,8 @@ export interface PagoFlat {
   departamento: string;
   solicitante: string;
   tc: number;
+  /** Moneda extranjera sin T/C ni monto MXN: `total_mxn` es 0 y no debe leerse como dato. */
+  sin_tc: boolean;
   total_mxn: number;
   estatus: string;
   propuesta: string;
@@ -133,7 +135,8 @@ export interface DecisionData {
   monto_venc: Record<string, number>;
   oc_data: Record<string, OcRecord>;
   forecast_data: Record<string, ForecastRecord>;
-  meta: { fecha_hoy: string; fecha_corte: string; total_pagos: number };
+  /** `cross_at`: cuándo se obtuvo el cruce OC/pronóstico (ms epoch); null si aún no hay. */
+  meta: { fecha_hoy: string; fecha_corte: string; total_pagos: number; cross_at: number | null };
 }
 
 const MESES: Record<string, number> = {
@@ -168,36 +171,108 @@ function normalizeOcDates(ocData: Record<string, OcRecord>) {
   }
 }
 
-// `onPartial` recibe los pagos apenas llegan de Sheets; el cruce OC/pronóstico
-// (oc-data pega a NetSuite y es el endpoint lento) se completa después sin
-// bloquear la primera pintura de la vista.
-export async function loadDecisionData(onPartial?: (d: DecisionData) => void): Promise<DecisionData> {
-  const ocPromise = safeFetch(`${BASE}/oc-data`);
-  const fcPromise = safeFetch(`${BASE}/forecast-data`);
-  // Si pagos-data falla primero, estas promesas quedarían sin handler
-  ocPromise.catch(() => {});
-  fcPromise.catch(() => {});
+// ─── Caché del cruce OC / pronóstico ─────────────────────────
+// oc-data pega a NetSuite (~1.2 MB, ~6 s) y forecast-data tarda ~3 s, pero ambos cambian
+// poco; lo que sí cambia con cada decisión es pagos-data. Se cachea a nivel de módulo (sobrevive
+// a salir y volver a la vista) para que decidir y refrescar solo pidan pagos-data.
+const CROSS_TTL_MS = 20 * 60 * 1000;
+
+interface CrossCache {
+  oc: Record<string, OcRecord>;
+  fc: Record<string, ForecastRecord>;
+  at: number;
+}
+let crossCache: CrossCache | null = null;
+let crossInflight: Promise<CrossCache> | null = null;
+
+const crossIsFresh = () => !!crossCache && Date.now() - crossCache.at < CROSS_TTL_MS;
+
+// Una sola petición en vuelo aunque se disparen varias cargas a la vez (refresco + acción).
+function fetchCross(): Promise<CrossCache> {
+  if (crossInflight) return crossInflight;
+  crossInflight = Promise.all([safeFetch(`${BASE}/oc-data`), safeFetch(`${BASE}/forecast-data`)])
+    .then(([ocRes, fcRes]) => {
+      const oc: Record<string, OcRecord> = ocRes ?? {};
+      normalizeOcDates(oc);
+      crossCache = { oc, fc: (fcRes ?? {}) as Record<string, ForecastRecord>, at: Date.now() };
+      return crossCache;
+    })
+    .finally(() => { crossInflight = null; });
+  return crossInflight;
+}
+
+export interface LoadOptions {
+  /** Recibe los pagos apenas llegan de Sheets, antes de que termine el cruce con OC/pronóstico. */
+  onPartial?: (d: DecisionData) => void;
+  /** Ignora la caché del cruce (botón Actualizar). Si falla, el error se propaga en vez de usar datos viejos. */
+  force?: boolean;
+}
+
+export async function loadDecisionData(opts: LoadOptions = {}): Promise<DecisionData> {
+  const { onPartial, force } = opts;
+  const needsCross = force || !crossIsFresh();
+  const crossPromise = needsCross ? fetchCross() : null;
+  // Si pagos-data falla primero, esta promesa quedaría sin handler
+  crossPromise?.catch(() => {});
 
   const [pagoRes, tcRes] = await Promise.all([
     safeFetch(`${BASE}/pagos-data`),
     safeFetch(`${BASE}/tipo-cambio`),
   ]);
-  if (onPartial) onPartial(assembleData(pagoRes ?? {}, tcRes, {}, {}));
 
-  const [ocRes, forecastRes] = await Promise.all([ocPromise, fcPromise]);
-  const ocData: Record<string, OcRecord> = ocRes ?? {};
-  normalizeOcDates(ocData);
-  return assembleData(pagoRes ?? {}, tcRes, ocData, (forecastRes ?? {}) as Record<string, ForecastRecord>);
+  if (!crossPromise) return assembleData(pagoRes ?? {}, tcRes, crossCache!.oc, crossCache!.fc, crossCache!.at);
+
+  if (onPartial) onPartial(assembleData(pagoRes ?? {}, tcRes, {}, {}, null));
+  try {
+    const cross = await crossPromise;
+    return assembleData(pagoRes ?? {}, tcRes, cross.oc, cross.fc, cross.at);
+  } catch (e) {
+    // Refresco automático con caché vencida: mejor un cruce de hace unos minutos que ninguno.
+    // En un refresco forzado el usuario pidió datos nuevos, así que el fallo se muestra.
+    if (!force && crossCache) return assembleData(pagoRes ?? {}, tcRes, crossCache.oc, crossCache.fc, crossCache.at);
+    throw e;
+  }
+}
+
+// "YYYY-MM-DD" → medianoche LOCAL de ese día. new Date("2026-10-20") lo interpreta como
+// UTC (= 18:00 del día anterior en México) y desfasaba todos los vencimientos un día.
+function localDayStart(iso: string): Date | null {
+  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  const d = m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(iso);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+const localISODate = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+/** Días de calendario entre hoy y `venc` (negativo = vencido); null si la fecha no se puede leer. */
+export function diasParaVencer(venc: string, hoy: Date = new Date()): number | null {
+  const target = localDayStart(venc);
+  if (!target) return null;
+  const today0 = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+  // round (no floor): un cambio de horario deja días de 23/25 h.
+  return Math.round((target.getTime() - today0.getTime()) / 86400000);
+}
+
+export function bucketVencimiento(diff: number): VencBucket {
+  if (diff < 0) return "vencido";
+  if (diff === 0) return "hoy";
+  if (diff <= 7) return "semana";
+  if (diff <= 14) return "prox";
+  return "futuro";
 }
 
 function assembleData(
   pagoRes: any,
   tcRes: any,
   ocData: Record<string, OcRecord>,
-  forecastData: Record<string, ForecastRecord>
+  forecastData: Record<string, ForecastRecord>,
+  crossAt: number | null
 ): DecisionData {
   const hoy = new Date();
-  const TC_HOY: number = (Array.isArray(tcRes) && tcRes.length > 0 ? tcRes[tcRes.length - 1]?.rate : null) ?? 17.5;
+  // Sin T/C real no se inventa uno: los pagos en moneda extranjera sin monto MXN
+  // quedan marcados `sin_tc` en vez de calcularse con un número fijo.
+  const TC_HOY: number | null = (Array.isArray(tcRes) && tcRes.length > 0 ? tcRes[tcRes.length - 1]?.rate : null) ?? null;
   const pagosFlat: PagoFlat[] = [];
 
   for (const [ocKey, bucket] of Object.entries(pagoRes as Record<string, any>)) {
@@ -207,18 +282,18 @@ function assembleData(
       let venc_dias: number | null = null;
       let venc_bucket: VencBucket = "sin_fecha";
       if (venc) {
-        const diff = Math.round((new Date(venc).getTime() - hoy.getTime()) / 86400000);
-        venc_dias = diff;
-        if (diff < 0) venc_bucket = "vencido";
-        else if (diff === 0) venc_bucket = "hoy";
-        else if (diff <= 7) venc_bucket = "semana";
-        else if (diff <= 15) venc_bucket = "prox";
-        else venc_bucket = "futuro";
+        venc_dias = diasParaVencer(venc, hoy);
+        if (venc_dias != null) venc_bucket = bucketVencimiento(venc_dias);
       }
       const benef_clean = (p.beneficiario || "").replace(/^VEN-\d+\s+/, "");
       const proj_match = (p.proyecto || "").match(/(PROJ-\d+)/);
       const proj_id = proj_match ? proj_match[1] : "";
-      const tc: number = p.tc || TC_HOY;
+      const divisa: string = p.divisa || "MXN";
+      const monto: number = p.monto_solicitado || 0;
+      // MXN no se convierte: antes un pago en pesos sin `monto_mxn` se multiplicaba por el T/C.
+      const tc: number = divisa === "MXN" ? 1 : p.tc || TC_HOY || 0;
+      const sin_tc = divisa !== "MXN" && !p.monto_mxn && !tc;
+      const total_mxn: number = divisa === "MXN" ? p.monto_mxn || monto : p.monto_mxn || monto * tc;
       // The sheet's own "Cliente" column is never populated — fall back to
       // the NetSuite customer resolved per-OC in oc-data (see OcRecord).
       const cliente = p.cliente || (ocKey !== "_sin_oc" ? ocData[ocKey]?.customer_name : "") || "";
@@ -238,13 +313,14 @@ function assembleData(
         venc_dias,
         venc_bucket,
         factura: p.factura || "",
-        monto: p.monto_solicitado || 0,
-        divisa: p.divisa || "MXN",
+        monto,
+        divisa,
         banco: p.banco || "",
         departamento: p.departamento || "",
         solicitante: p.solicitante || "",
         tc,
-        total_mxn: p.monto_mxn || ((p.monto_solicitado || 0) * tc) || 0,
+        sin_tc,
+        total_mxn,
         estatus: p.estatus || "",
         propuesta: p.propuesta || "Sin categoría",
         propuesta_bucket: p.propuesta === "Aplazado" ? "Aplazado" : p.propuesta ? "Propuesta" : "",
@@ -309,9 +385,10 @@ function assembleData(
     oc_data: ocData,
     forecast_data: forecastData,
     meta: {
-      fecha_hoy: hoy.toISOString().split("T")[0],
+      fecha_hoy: localISODate(hoy),
       fecha_corte: (pagoRes as any)._meta?.generado?.split("T")[0] || "",
       total_pagos: pagosFlat.length,
+      cross_at: crossAt,
     },
   };
 }

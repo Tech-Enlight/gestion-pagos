@@ -9,6 +9,7 @@ interface SparklineProps {
   color?: string;
   width?: number;
   height?: number;
+  label?: string;
 }
 
 export const Sparkline: React.FC<SparklineProps> = ({
@@ -16,6 +17,7 @@ export const Sparkline: React.FC<SparklineProps> = ({
   color = "var(--enl-jade)",
   width = 80,
   height = 32,
+  label,
 }) => {
   if (!data.length) return null;
   const min = Math.min(...data);
@@ -31,7 +33,14 @@ export const Sparkline: React.FC<SparklineProps> = ({
     .join(" ");
   const last = points[points.length - 1];
   return (
-    <svg width={width} height={height} style={{ display: "block" }}>
+    <svg
+      width={width}
+      height={height}
+      style={{ display: "block", flexShrink: 0 }}
+      role={label ? "img" : undefined}
+      aria-label={label}
+      aria-hidden={label ? undefined : true}
+    >
       <path
         d={path}
         stroke={color}
@@ -62,6 +71,8 @@ interface HeroKPIProps {
   sub: string;
   trend?: React.ReactNode;
   sparkData?: number[];
+  /** Qué representa la línea; se expone a lectores de pantalla. */
+  sparkLabel?: string;
   accent?: string;
 }
 
@@ -71,6 +82,7 @@ const HeroKPI: React.FC<HeroKPIProps> = ({
   sub,
   trend,
   sparkData,
+  sparkLabel,
   accent = "var(--enl-jade)",
 }) => (
   <div
@@ -90,7 +102,7 @@ const HeroKPI: React.FC<HeroKPIProps> = ({
       style={{
         fontFamily: "var(--font-secondary)",
         letterSpacing: "0.14em",
-        color: "rgba(255,255,255,0.5)",
+        color: "rgba(255,255,255,0.6)",
       }}
     >
       {label}
@@ -111,19 +123,19 @@ const HeroKPI: React.FC<HeroKPIProps> = ({
         </p>
         <p
           className="mt-2 text-xs m-0"
-          style={{ color: "rgba(255,255,255,0.5)" }}
+          style={{ color: "rgba(255,255,255,0.6)" }}
         >
           {sub}
         </p>
       </div>
-      {sparkData && (
-        <Sparkline data={sparkData} color={accent} width={80} height={32} />
+      {sparkData && sparkData.length > 1 && (
+        <Sparkline data={sparkData} color={accent} width={80} height={32} label={sparkLabel} />
       )}
     </div>
     {trend && (
       <p
         className="mt-3.5 mb-0 text-xs flex items-center gap-1.5"
-        style={{ color: "rgba(255,255,255,0.6)" }}
+        style={{ color: "rgba(255,255,255,0.75)" }}
       >
         {trend}
       </p>

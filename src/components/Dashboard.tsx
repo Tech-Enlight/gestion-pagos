@@ -1,28 +1,50 @@
 import React, { useMemo } from "react";
 import {
   Shield,
+  ClipboardCheck,
   Wallet,
-  CheckCircle2,
   AlertTriangle,
   Clock,
   TrendingUp,
   TrendingDown,
+  RefreshCw,
 } from "lucide-react";
-import { STATUS } from "../data/mockData";
+import { STATUS, STATUS_HEX } from "../data/mockData";
 import type { Request, ExchangeRate } from "../data/mockData";
 import { useAuth } from "../context/AuthContext";
+import { canAccessView } from "./Sidebar";
 import ExchangeChart from "../components/ExchangeChart";
 import DashboardHero from "../components/dashboard/DashboardHero";
 import HeroKPI from "../components/dashboard/HeroKPI";
-import PipelineFunnel, { STATUS_HEX } from "../components/dashboard/PipelineFunnel";
+import PipelineFunnel from "../components/dashboard/PipelineFunnel";
 import PriorityQueue from "../components/dashboard/PriorityQueue";
 import ActivityFeed from "../components/dashboard/ActivityFeed";
+import {
+  UNPAID_AFTER_AUTH,
+  avgCycleDays,
+  paidMXN,
+  paidThisMonth,
+  queueAmountSeries,
+  rejectionRate,
+  toMXN,
+} from "../components/dashboard/metrics";
+
+export type DashboardDataState = "loading" | "ready" | "error";
 
 interface DashboardProps {
   requests: Request[];
   lastExchangeRate: ExchangeRate;
+  /** Cierre inmediato anterior, para mostrar la variación del T/C. */
+  previousExchangeRate: number | null;
+  /** false mientras el T/C real no ha llegado (el estado inicial es un placeholder). */
+  exchangeRateReady: boolean;
+  dataState: DashboardDataState;
+  onRetry: () => void;
   onNavigate: (view: string) => void;
 }
+
+const DASH = "—";
+const MONTHS_ES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 
 const fmtMXN = (n: number) =>
   `$${n.toLocaleString("es-MX", {
@@ -30,42 +52,56 @@ const fmtMXN = (n: number) =>
     maximumFractionDigits: 0,
   })}`;
 
-const fmtDate = (iso: string) => {
-  const d = new Date(iso);
-  return d.toLocaleDateString("es-MX", { day: "2-digit", month: "short" });
+// /tipo-cambio entrega "19/10/2026" (DD/MM/YYYY), que Date() no entiende (mes 19 → Invalid Date);
+// otras fuentes entregan ISO. Se aceptan ambos como día local.
+const parseDay = (s: string): Date | null => {
+  const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return new Date(+iso[1], +iso[2] - 1, +iso[3]);
+  const dmy = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (dmy) return new Date(+dmy[3], +dmy[2] - 1, +dmy[1]);
+  return null;
 };
 
-/* --- Trend label derived from a real time series, not hardcoded -- */
+const fmtDate = (s: string) => {
+  const d = parseDay(s);
+  return d ? d.toLocaleDateString("es-MX", { day: "2-digit", month: "short" }) : "—";
+};
+
+/** Vista a la que lleva cada estado; null si el rol no tiene acceso. */
+const viewForStatus = (status: string): string => {
+  if (status === STATUS.AUTORIZACION) return "aprobaciones";
+  if (status === STATUS.PENDING_FIN || status === STATUS.APPROVED) return "decision-pagos";
+  if (status === STATUS.PAYMENT_APPROVED) return "finanzas";
+  return "explorador";
+};
+
+/* --- Variación entre dos valores reales ------------------------- */
 interface TrendLabelProps {
-  series: number[];
-  /** How many positions back from the last point to compare against
-   *  (7 = "hace 7 días" on a daily series, 1 = "mes anterior" on a monthly one). */
-  stepsBack: number;
+  current: number;
+  previous: number | null;
   comparedTo: string;
   color: string;
 }
-const TrendLabel: React.FC<TrendLabelProps> = ({ series, stepsBack, comparedTo, color }) => {
-  const current = series[series.length - 1] ?? 0;
-  const previous = series[series.length - 1 - stepsBack];
+const TrendLabel: React.FC<TrendLabelProps> = ({ current, previous, comparedTo, color }) => {
+  // Sin base de comparación (0 o inexistente) un % no significa nada.
   if (previous == null || previous === 0) {
     return (
       <>
-        <Clock size={12} color={color} />
-        <span style={{ color: "rgba(255,255,255,0.5)" }}>Sin datos previos</span>
+        <Clock size={12} color={color} aria-hidden />
+        <span style={{ color: "rgba(255,255,255,0.6)" }}>Sin base de comparación</span>
       </>
     );
   }
   const pct = ((current - previous) / previous) * 100;
   const isDown = pct < 0;
   const Icon = isDown ? TrendingDown : TrendingUp;
-  const trendColor = isDown ? "#ef4444" : color;
   return (
     <>
-      <Icon size={12} color={trendColor} />
+      <Icon size={12} color={isDown ? STATUS_HEX.Rejected : color} aria-hidden />
       <span>
         <strong className="text-white">
           {pct > 0 ? "+" : ""}
-          {pct.toFixed(0)}%
+          {pct.toFixed(Math.abs(pct) < 10 ? 1 : 0)}%
         </strong>{" "}
         {comparedTo}
       </span>
@@ -111,7 +147,7 @@ const SecondaryKPI: React.FC<SecondaryKPIProps> = ({
         style={{
           fontFamily: "var(--font-secondary)",
           letterSpacing: "0.14em",
-          color: "rgba(255,255,255,0.5)",
+          color: "rgba(255,255,255,0.6)",
         }}
       >
         {label}
@@ -134,20 +170,28 @@ const SecondaryKPI: React.FC<SecondaryKPIProps> = ({
 interface DeptBreakdownProps {
   requests: Request[];
   rate: number;
+  loading: boolean;
 }
-const DeptBreakdown: React.FC<DeptBreakdownProps> = ({ requests, rate }) => {
-  const toMXN = (r: Request) => (r.currency === "USD" ? r.amount * rate : r.amount);
-  const data = useMemo(() => {
+const TOP_DEPTS = 6;
+const DeptBreakdown: React.FC<DeptBreakdownProps> = ({ requests, rate, loading }) => {
+  const { data, hidden } = useMemo(() => {
     const map: Record<string, number> = {};
     requests.forEach((r) => {
-      map[r.department] = (map[r.department] || 0) + toMXN(r);
+      // Borradores y rechazadas no son gasto: ni comprometido ni ejecutado.
+      if (r.status === STATUS.DRAFT || r.status === STATUS.REJECTED) return;
+      const name = r.department?.trim() || "Sin departamento";
+      const amount = r.status === STATUS.PAID ? paidMXN(r, rate) : toMXN(r, rate);
+      map[name] = (map[name] || 0) + amount;
     });
-    return Object.entries(map)
+    const all = Object.entries(map)
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return { data: all.slice(0, TOP_DEPTS), hidden: Math.max(all.length - TOP_DEPTS, 0) };
   }, [requests, rate]);
   const max = Math.max(...data.map((d) => d.value), 1);
+  // Sin una escala de colores por categoría (los departamentos son nominales):
+  // el líder destaca en jade y el resto queda neutro.
+  const barColor = (i: number) => (i === 0 ? "var(--enl-jade)" : "rgba(255,255,255,0.3)");
 
   return (
     <div
@@ -164,199 +208,247 @@ const DeptBreakdown: React.FC<DeptBreakdownProps> = ({ requests, rate }) => {
         >
           Top departamentos
         </h3>
-        <p
-          className="m-0 mt-0.5 text-xs"
-          style={{ color: "rgba(255,255,255,0.5)" }}
-        >
-          Gasto acumulado en MXN equivalente
+        <p className="m-0 mt-0.5 text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>
+          Solicitudes en flujo y pagadas · MXN equivalente
         </p>
       </div>
       <div style={{ padding: "16px 20px 20px" }}>
+        {data.length === 0 && (
+          <p className="m-0 text-center text-xs" style={{ padding: "16px 0", color: "rgba(255,255,255,0.6)" }}>
+            {loading ? "Cargando…" : "Aún no hay gasto para mostrar."}
+          </p>
+        )}
         {data.map((d, i) => {
           const pct = (d.value / max) * 100;
           const isLast = i === data.length - 1;
           return (
             <div key={d.name} style={{ marginBottom: isLast ? 0 : 16 }}>
-              <div className="flex justify-between mb-1.5">
-                <span className="text-white text-[13.5px] font-medium">
-                  {d.name}
-                </span>
+              <div className="flex justify-between gap-3 mb-1.5">
+                <span className="text-white text-[13.5px] font-medium truncate">{d.name}</span>
                 <span
-                  className="text-[13px] tabular-nums"
-                  style={{ color: "rgba(255,255,255,0.65)" }}
+                  className="text-[13px] tabular-nums flex-shrink-0"
+                  style={{ color: "rgba(255,255,255,0.7)" }}
                 >
                   {fmtMXN(d.value)}
                 </span>
               </div>
               <div
                 className="overflow-hidden"
-                style={{
-                  height: 4,
-                  background: "rgba(255,255,255,0.05)",
-                  borderRadius: 999,
-                }}
+                style={{ height: 4, background: "rgba(255,255,255,0.05)", borderRadius: 999 }}
               >
                 <div
+                  className="transition-transform duration-[600ms] ease-out motion-reduce:transition-none"
                   style={{
                     height: "100%",
                     width: "100%",
                     transform: `scaleX(${pct / 100})`,
                     transformOrigin: "left",
-                    background:
-                      i === 0
-                        ? "var(--enl-jade)"
-                        : i === 1
-                          ? "var(--enl-cerceta)"
-                          : "rgba(255,255,255,0.25)",
+                    background: barColor(i),
                     borderRadius: 999,
-                    transition: "transform 600ms cubic-bezier(.4,0,.2,1)",
                   }}
                 />
               </div>
             </div>
           );
         })}
+        {hidden > 0 && (
+          <p className="m-0 mt-4 text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>
+            +{hidden} {hidden === 1 ? "departamento más" : "departamentos más"}
+          </p>
+        )}
       </div>
     </div>
   );
 };
 
 /* --- Dashboard ------------------------------------------------- */
+const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
+
 const Dashboard: React.FC<DashboardProps> = ({
   requests,
   lastExchangeRate,
+  previousExchangeRate,
+  exchangeRateReady,
+  dataState,
+  onRetry,
   onNavigate,
 }) => {
   const { user } = useAuth();
+  const role = user?.role;
   const firstName = user?.name?.split(" ")[0] || "";
+  const loading = dataState === "loading";
   const rate = lastExchangeRate.rate;
-  const toMXN = (r: Request) => (r.currency === "USD" ? r.amount * rate : r.amount);
+  // Sin T/C real, cualquier monto USD→MXN sería inventado: mejor no mostrarlo.
+  const moneyReady = !loading && exchangeRateReady;
+
+  // Cola que le toca trabajar a cada rol (matriz 2026-07-15): dirección autoriza,
+  // admin decide en Decisión de Pagos, superadmin ve ambas.
+  const queueStatuses = useMemo<string[]>(() => {
+    if (role === "admin") return [STATUS.PENDING_FIN, STATUS.APPROVED];
+    if (role === "superadmin") return [STATUS.AUTORIZACION, STATUS.PENDING_FIN, STATUS.APPROVED];
+    return [STATUS.AUTORIZACION];
+  }, [role]);
+  const primaryView = role === "admin" ? "decision-pagos" : "aprobaciones";
+
+  const go = (view: string) => {
+    if (canAccessView(view, role)) onNavigate(view);
+  };
 
   const m = useMemo(() => {
-    const pending = requests.filter(
-      (r) => r.status === STATUS.PENDING_FIN || r.status === STATUS.APPROVED
-    );
-    const totalPending = pending.reduce((s, r) => s + toMXN(r), 0);
-
-    const paid = requests.filter((r) => r.status === STATUS.PAID);
-    const totalPaid = paid.reduce(
-      (s, r) => s + (r.amountMXN ?? toMXN(r)),
-      0
-    );
-
-    const pendingAuth = requests.filter(
-      (r) => r.status === STATUS.AUTORIZACION
-    ).length;
-    const pendingFin = requests.filter(
-      (r) => r.status === STATUS.PENDING_FIN
-    ).length;
-    const approved = requests.filter((r) => r.status === STATUS.APPROVED).length;
-    const total = requests.length;
-    const rejected = requests.filter((r) => r.status === STATUS.REJECTED).length;
-    const rejectRate =
-      total > 0 ? ((rejected / total) * 100).toFixed(1) : "0";
-
+    const count = (...s: string[]) => requests.filter((r) => s.includes(r.status)).length;
+    const unpaid = requests.filter((r) => UNPAID_AFTER_AUTH.includes(r.status));
     return {
-      totalPending,
-      totalPaid,
-      pendingAuth,
-      pendingFin,
-      approved,
-      rejectRate,
-      total,
+      pendingAmount: unpaid.reduce((s, r) => s + toMXN(r, rate), 0),
+      pendingCount: unpaid.length,
+      pendingAuth: count(STATUS.AUTORIZACION),
+      pendingDecision: count(STATUS.PENDING_FIN),
+      readyToPay: count(STATUS.APPROVED, STATUS.PAYMENT_APPROVED),
+      rejectRate: rejectionRate(requests),
+      total: requests.length,
+      queueCount: count(...queueStatuses),
+    };
+  }, [requests, rate, queueStatuses]);
+
+  const paid = useMemo(() => paidThisMonth(requests, rate), [requests, rate]);
+  const unpaidSeries = useMemo(
+    () => queueAmountSeries(requests, UNPAID_AFTER_AUTH, rate, 12),
+    [requests, rate]
+  );
+  const cycleDays = useMemo(() => avgCycleDays(requests), [requests]);
+
+  const hero = useMemo(() => {
+    const cycle =
+      cycleDays != null
+        ? ` Ciclo promedio de pago (últimos 30 días): ${cycleDays.toFixed(1)} días.`
+        : "";
+    let summary: string;
+    if (loading) {
+      summary = "Cargando solicitudes…";
+    } else if (dataState === "error") {
+      summary = "No pudimos cargar las solicitudes; los números de abajo pueden estar incompletos.";
+    } else if (m.queueCount === 0) {
+      summary = `Todo está al corriente. No hay solicitudes pendientes de tu ${
+        role === "admin" ? "decisión" : "autorización"
+      }.${cycle}`;
+    } else if (role === "admin") {
+      summary = `${m.queueCount} ${plural(m.queueCount, "solicitud está", "solicitudes están")} en Decisión de Pagos esperando tu aprobación.${cycle}`;
+    } else if (role === "superadmin") {
+      summary = `${m.pendingAuth} en autorización y ${m.pendingDecision} en decisión de pagos.${cycle}`;
+    } else {
+      summary = `${m.queueCount} ${plural(m.queueCount, "solicitud está", "solicitudes están")} en autorización esperando tu revisión.${cycle}`;
+    }
+    const isAdmin = role === "admin";
+    return {
+      summary,
+      primary: {
+        label: isAdmin ? "Ir a decisión de pagos" : "Ir a aprobaciones",
+        count: loading ? 0 : m.queueCount,
+        icon: isAdmin ? <ClipboardCheck size={14} /> : <Shield size={14} />,
+        onClick: () => go(primaryView),
+      },
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [requests, rate]);
+  }, [role, m, cycleDays, loading, dataState, primaryView]);
 
-  // Tiny mock sparkline series. Replace with real time-series when available.
-  const queueTrend = useMemo(() => {
-    // Conteo de pendientes en cada uno de los últimos 12 días.
-    const days = Array.from({ length: 12 }, (_, i) => {
-      const d = new Date();
-      d.setDate(d.getDate() - (11 - i));
-      return d.toISOString().slice(0, 10);
-    });
-    return days.map((day) =>
-      requests.filter(
-        (r) =>
-          r.date <= day &&
-          (r.status === STATUS.PENDING_FIN || r.status === STATUS.AUTORIZACION)
-      ).length
-    );
-  }, [requests]);
-
-  // Mock pagados: monto acumulado en MXN por mes durante los últimos 12 meses.
-  const paidTrend = useMemo(() => {
-    const months = Array.from({ length: 12 }, (_, i) => {
-      const d = new Date();
-      d.setMonth(d.getMonth() - (11 - i));
-      return d.toISOString().slice(0, 7); // "YYYY-MM"
-    });
-    return months.map((month) =>
+  const queue = useMemo(
+    () =>
       requests
-        .filter(
-          (r) =>
-            r.status === STATUS.PAID &&
-            r.date.startsWith(month)
-        )
-        .reduce((s, r) => s + (r.amountMXN ?? toMXN(r)), 0)
-    );
-  }, [requests, rate]);
+        .filter((r) => queueStatuses.includes(r.status))
+        .sort((a, b) => a.date.localeCompare(b.date)),
+    [requests, queueStatuses]
+  );
 
+  const now = new Date();
+  const stageClickable = (status: string) => canAccessView(viewForStatus(status), role);
 
   return (
     <div className="space-y-6">
+      {dataState === "error" && (
+        <div
+          role="alert"
+          className="flex items-center justify-between gap-3 rounded-lg text-sm"
+          style={{
+            padding: "10px 14px",
+            background: "rgba(239,68,68,0.08)",
+            border: "1px solid rgba(239,68,68,0.3)",
+            color: "rgba(255,255,255,0.9)",
+          }}
+        >
+          <span className="flex items-center gap-2">
+            <AlertTriangle size={14} aria-hidden /> No se pudieron cargar las solicitudes.
+          </span>
+          <button
+            type="button"
+            onClick={onRetry}
+            className="inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--enl-jade)]"
+            style={{ border: "1px solid var(--border-on-dark)", background: "transparent" }}
+          >
+            <RefreshCw size={12} aria-hidden /> Reintentar
+          </button>
+        </div>
+      )}
+
       <DashboardHero
-        userFirstName={firstName || "Juan"}
-        pendingAuth={m.pendingAuth}
-        pendingFin={m.pendingFin}
-        approved={m.approved}
-        onGoToApprovals={() => onNavigate("aprobaciones")}
-        onNewRequest={() => onNavigate("nueva-solicitud")}
+        userFirstName={firstName}
+        loading={loading}
+        totalWaiting={m.queueCount}
+        summary={hero.summary}
+        primary={hero.primary}
+        onNewRequest={() => go("nueva-solicitud")}
       />
 
       {/* Hero KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <HeroKPI
           label="Por procesar"
-          value={fmtMXN(m.totalPending)}
-          sub={`${m.pendingFin + m.approved} solicitudes · al T/C actual`}
+          value={moneyReady ? fmtMXN(m.pendingAmount) : DASH}
+          sub={`${loading ? DASH : m.pendingCount} ${plural(m.pendingCount, "solicitud", "solicitudes")} sin pagar · al T/C actual`}
           accent="var(--enl-jade)"
-          sparkData={queueTrend}
+          sparkData={moneyReady ? unpaidSeries : undefined}
+          sparkLabel="Monto por procesar, últimos 12 días"
           trend={
-            <TrendLabel
-              series={queueTrend}
-              stepsBack={7}
-              comparedTo="vs. hace 7 días"
-              color="var(--enl-jade)"
-            />
+            moneyReady ? (
+              <TrendLabel
+                current={unpaidSeries[unpaidSeries.length - 1] ?? 0}
+                previous={unpaidSeries[unpaidSeries.length - 1 - 7] ?? null}
+                comparedTo="vs. hace 7 días"
+                color="var(--enl-jade)"
+              />
+            ) : undefined
           }
         />
         <HeroKPI
           label="Pagado este mes"
-          value={fmtMXN(m.totalPaid)}
-          sub="Acumulado a la fecha · MXN"
-          accent="#a855f7"
-          sparkData={paidTrend}
+          value={moneyReady ? fmtMXN(paid.current) : DASH}
+          sub={`Del 1 al ${now.getDate()} de ${MONTHS_ES[now.getMonth()]} · MXN`}
+          accent={STATUS_HEX.Paid}
+          sparkData={moneyReady ? paid.cumulativeByDay : undefined}
+          sparkLabel="Pagado acumulado en el mes"
           trend={
-            <TrendLabel
-              series={paidTrend}
-              stepsBack={1}
-              comparedTo="vs. mes anterior"
-              color="#a855f7"
-            />
+            moneyReady ? (
+              <TrendLabel
+                current={paid.current}
+                previous={paid.previousSamePeriod}
+                comparedTo="vs. mismo periodo del mes anterior"
+                color={STATUS_HEX.Paid}
+              />
+            ) : undefined
           }
         />
         <HeroKPI
           label="T/C Banxico"
-          value={`$${rate.toFixed(4)}`}
-          sub={`Cierre ${fmtDate(lastExchangeRate.date)} · 1 USD → MXN`}
+          value={exchangeRateReady ? `$${rate.toFixed(4)}` : DASH}
+          sub={exchangeRateReady ? `Cierre ${fmtDate(lastExchangeRate.date)} · 1 USD → MXN` : "Cargando tipo de cambio…"}
           accent="var(--enl-cerceta)"
           trend={
-            <>
-              <Clock size={12} color="var(--enl-cerceta)" />
-              <span>Último cierre disponible</span>
-            </>
+            exchangeRateReady ? (
+              <TrendLabel
+                current={rate}
+                previous={previousExchangeRate}
+                comparedTo="vs. cierre anterior"
+                color="var(--enl-cerceta)"
+              />
+            ) : undefined
           }
         />
       </div>
@@ -365,25 +457,25 @@ const Dashboard: React.FC<DashboardProps> = ({
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <SecondaryKPI
           label="En autorización"
-          value={String(m.pendingAuth)}
+          value={loading ? DASH : String(m.pendingAuth)}
           icon={<Shield size={16} />}
           color={STATUS_HEX["Autorización"]}
         />
         <SecondaryKPI
-          label="Revisión finanzas"
-          value={String(m.pendingFin)}
-          icon={<Wallet size={16} />}
+          label="Decisión de pagos"
+          value={loading ? DASH : String(m.pendingDecision)}
+          icon={<ClipboardCheck size={16} />}
           color={STATUS_HEX["Pending Fin"]}
         />
         <SecondaryKPI
           label="Listas para pagar"
-          value={String(m.approved)}
-          icon={<CheckCircle2 size={16} />}
-          color={STATUS_HEX.Approved}
+          value={loading ? DASH : String(m.readyToPay)}
+          icon={<Wallet size={16} />}
+          color={STATUS_HEX["Payment Approved"]}
         />
         <SecondaryKPI
           label="Tasa de rechazo"
-          value={`${m.rejectRate}%`}
+          value={loading || m.rejectRate == null ? DASH : `${m.rejectRate.toFixed(1)}%`}
           icon={<AlertTriangle size={16} />}
           color={STATUS_HEX.Rejected}
         />
@@ -391,7 +483,13 @@ const Dashboard: React.FC<DashboardProps> = ({
 
       {/* Priority queue + Funnel */}
       <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-4">
-        <PriorityQueue requests={requests} onView={onNavigate} />
+        <PriorityQueue
+          queue={queue}
+          loading={loading}
+          viewAllLabel={role === "admin" ? "Ir a Decisión de Pagos" : "Ver todas"}
+          onViewAll={() => go(primaryView)}
+          onOpen={(status) => go(viewForStatus(status))}
+        />
         <div
           className="rounded-xl"
           style={{
@@ -399,10 +497,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             border: "1px solid var(--border-on-dark)",
           }}
         >
-          <div
-            className="flex items-start justify-between"
-            style={{ padding: "16px 20px 8px" }}
-          >
+          <div className="flex items-start justify-between" style={{ padding: "16px 20px 8px" }}>
             <div>
               <h3
                 className="m-0 text-white font-semibold"
@@ -410,10 +505,7 @@ const Dashboard: React.FC<DashboardProps> = ({
               >
                 Pipeline
               </h3>
-              <p
-                className="m-0 mt-0.5 text-xs"
-                style={{ color: "rgba(255,255,255,0.5)" }}
-              >
+              <p className="m-0 mt-0.5 text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>
                 Cómo avanzan las solicitudes
               </p>
             </div>
@@ -422,24 +514,17 @@ const Dashboard: React.FC<DashboardProps> = ({
               style={{
                 fontFamily: "var(--font-secondary)",
                 letterSpacing: "0.14em",
-                color: "rgba(255,255,255,0.5)",
+                color: "rgba(255,255,255,0.6)",
               }}
             >
-              {m.total} totales
+              {loading ? DASH : m.total} totales
             </div>
           </div>
           <div style={{ padding: "12px 20px 20px" }}>
             <PipelineFunnel
               requests={requests}
-              onStageClick={(status) => {
-                if (status === STATUS.AUTORIZACION) onNavigate("aprobaciones");
-                else if (
-                  status === STATUS.PENDING_FIN ||
-                  status === STATUS.APPROVED
-                )
-                  onNavigate("finanzas");
-                else onNavigate("explorador");
-              }}
+              isClickable={stageClickable}
+              onStageClick={(status) => go(viewForStatus(status))}
             />
           </div>
         </div>
@@ -451,7 +536,7 @@ const Dashboard: React.FC<DashboardProps> = ({
       {/* Activity + Departments */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <ActivityFeed requests={requests} />
-        <DeptBreakdown requests={requests} rate={rate} />
+        <DeptBreakdown requests={requests} rate={rate} loading={loading} />
       </div>
     </div>
   );
