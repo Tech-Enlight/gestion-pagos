@@ -3,7 +3,7 @@
 // Decisión de Pagos — orquestación (estado, carga, acciones).
 // La UI vive en ./decision/*: PaymentCard, Tabs, SelectionBar, Modals, ui (primitivos).
 // ============================================================
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { RefreshCw, X, CheckCircle2, Loader2 } from "lucide-react";
 import {
   loadDecisionData,
@@ -61,6 +61,8 @@ const DecisionPagos: React.FC<DecisionPagosProps> = ({ onUpdateRequest, onUpdate
   const [clarifyIds, setClarifyIds] = useState<string[] | null>(null);
   const [approveIds, setApproveIds] = useState<string[] | null>(null);
 
+  const lastUpdatedRef = useRef(0);
+
   // `force` salta la caché del cruce OC/pronóstico (solo el botón Actualizar y Reintentar);
   // el resto de las cargas reutiliza lo que ya se trajo y solo pide pagos-data.
   const load = useCallback(async (opts?: { silent?: boolean; force?: boolean }) => {
@@ -82,6 +84,7 @@ const DecisionPagos: React.FC<DecisionPagosProps> = ({ onUpdateRequest, onUpdate
       setData(d);
       setCrossReady(true);
       setLastUpdated(new Date());
+      lastUpdatedRef.current = Date.now();
       setError(null);
     } catch (e: any) {
       setError(e.message || "Error al cargar datos");
@@ -93,11 +96,20 @@ const DecisionPagos: React.FC<DecisionPagosProps> = ({ onUpdateRequest, onUpdate
 
   useEffect(() => { load(); }, [load]);
 
-  // Refresco silencioso periódico para que la vista nunca se quede con datos viejos
+  // Refresco "por uso, no por reloj": cada carga son varias ejecuciones de n8n facturadas
+  // (pagos-data + tipo-cambio, y el cruce OC/pronóstico al vencer su caché), y un
+  // intervalo fijo en una pestaña olvidada abierta multiplica eso todo el día — fue el
+  // patrón que disparó el regaño en la campana de TopBar (oct-2026). Solo se refresca al
+  // volver a la pestaña con datos de más de STALE_AFTER_MS; Actualizar sigue disponible.
   useEffect(() => {
-    // Sin sentido pedir datos (y pegarle a NetSuite) si nadie está mirando la pestaña.
-    const t = setInterval(() => { if (!document.hidden) load({ silent: true }); }, 5 * 60 * 1000);
-    return () => clearInterval(t);
+    const STALE_AFTER_MS = 10 * 60 * 1000;
+    const onVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      if (lastUpdatedRef.current && Date.now() - lastUpdatedRef.current < STALE_AFTER_MS) return;
+      load({ silent: true });
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
   }, [load]);
 
   // ── Decisiones (aprobar / rechazar) ────────────────────────

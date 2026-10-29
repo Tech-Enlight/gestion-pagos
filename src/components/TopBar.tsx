@@ -4,7 +4,11 @@ import { fetchPosts, fetchUnreadCount, markNotificationsRead } from "../services
 import type { Post } from "../types/posts";
 import { Bell } from "lucide-react";
 
-const POLL_MS = 90 * 1000;
+// Each unread-count call is a billed n8n execution; a fixed 90s poll from tabs left
+// open all day was ~76% of the Portal de Pagos workflow's executions (Oct 2026).
+// Posts are rare, so refresh only when the user comes back to the tab and the count
+// is older than this.
+const STALE_AFTER_MS = 10 * 60 * 1000;
 
 interface Props {
   onNavigate: (view: string) => void;
@@ -16,9 +20,11 @@ const TopBar: React.FC<Props> = ({ onNavigate }) => {
   const [open, setOpen] = useState(false);
   const [recent, setRecent] = useState<Post[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
+  const lastLoadedAt = useRef(0);
 
   const loadCount = useCallback((opts?: { silent?: boolean }) => {
     if (!user) return;
+    lastLoadedAt.current = Date.now();
     fetchUnreadCount(user.email)
       .then(setUnread)
       .catch(() => {
@@ -28,8 +34,13 @@ const TopBar: React.FC<Props> = ({ onNavigate }) => {
 
   useEffect(() => {
     loadCount();
-    const t = setInterval(() => loadCount({ silent: true }), POLL_MS);
-    return () => clearInterval(t);
+    const onVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      if (Date.now() - lastLoadedAt.current < STALE_AFTER_MS) return;
+      loadCount({ silent: true });
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
   }, [loadCount]);
 
   useEffect(() => {
