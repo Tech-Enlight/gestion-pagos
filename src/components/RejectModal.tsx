@@ -1,47 +1,61 @@
 import React, { useState } from 'react';
+import { XCircle } from 'lucide-react';
+import { T } from './decision/tokens';
+import { ActionBtn, BarBtn, useEscape } from './decision/ui';
 
 interface Props {
+  /** "PAY-123", "3 solicitudes" o (legacy) "de 3 solicitudes" — se normaliza para el título. */
   requestId: string;
   onConfirm: (id: string, comment: string) => void;
   onCancel: () => void;
 }
 
+// Mismo lenguaje que ClarifyModal (decision/Modals): diálogo accesible, Esc cierra, foco en el campo.
 const RejectModal: React.FC<Props> = ({ requestId, onConfirm, onCancel }) => {
   const [comment, setComment] = useState('');
   const [error, setError] = useState('');
+  useEscape(onCancel);
+
+  // Los llamadores pasan "de N solicitudes"; el título leía "Rechazar Solicitud de N solicitudes".
+  const label = requestId.replace(/^de /, '');
 
   const handleConfirm = () => {
-    if (!comment.trim()) { setError('Por favor, proporciona un motivo de rechazo.'); return; }
+    if (!comment.trim()) { setError('Escribe el motivo del rechazo.'); return; }
     onConfirm(requestId, comment.trim());
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
-      <div className="rounded-xl p-6 border border-red-700 shadow-2xl max-w-md w-full mx-4" style={{ backgroundColor: '#1e2d3d' }}>
-        <h3 className="text-white text-lg font-bold mb-2" style={{ fontFamily: 'Alexandria, sans-serif' }}>Rechazar Solicitud {requestId}</h3>
-        <p className="text-gray-400 text-sm mb-4">Proporciona el motivo del rechazo. El solicitante será notificado.</p>
+    <div
+      role="dialog" aria-modal="true" aria-labelledby="reject-title"
+      onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+    >
+      <div style={{ background: T.modalBg, borderRadius: 12, border: `1px solid ${T.red}70`, boxShadow: '0 16px 60px rgba(0,0,0,0.5)', padding: 24, width: 'min(440px, 100%)' }}>
+        <div id="reject-title" style={{ fontSize: 16, fontWeight: 700, color: T.text, fontFamily: T.font, marginBottom: 6 }}>
+          Rechazar {label}
+        </div>
+        <p style={{ fontSize: 13, color: T.textSub, fontFamily: T.fontAlt, margin: '0 0 14px' }}>
+          El rechazo es definitivo y el solicitante recibe el motivo por correo.
+        </p>
         <textarea
+          autoFocus
+          aria-label="Motivo del rechazo"
+          aria-invalid={!!error}
           value={comment}
-          onChange={e => { setComment(e.target.value); setError(''); }}
-          placeholder="Describe el motivo del rechazo..."
+          onChange={(e) => { setComment(e.target.value); setError(''); }}
+          placeholder="Describe el motivo del rechazo…"
           rows={4}
-          className="w-full px-3 py-2 rounded-lg text-white text-sm outline-none border border-gray-600 focus:border-red-500 resize-none"
-          style={{ backgroundColor: '#293C47', fontFamily: 'Alexandria, sans-serif' }}
+          className="dp-input"
+          style={{
+            width: '100%', boxSizing: 'border-box', padding: '8px 12px', borderRadius: 8,
+            background: T.ink, color: T.text, fontSize: 13, fontFamily: T.font,
+            border: `1px solid ${error ? T.red : T.cardBorder}`, outline: 'none', resize: 'none',
+          }}
         />
-        {error && <p className="text-red-400 text-xs mt-1">{error}</p>}
-        <div className="flex gap-3 mt-4 justify-end">
-          <button
-            onClick={onCancel}
-            className="px-4 py-2 rounded-lg text-gray-300 text-sm font-medium border border-gray-600 hover:border-gray-400 transition-colors"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={handleConfirm}
-            className="px-4 py-2 rounded-lg text-white text-sm font-semibold bg-red-600 hover:bg-red-700 transition-colors"
-          >
-            Confirmar Rechazo
-          </button>
+        {error && <p role="alert" style={{ color: T.red, fontSize: 12, fontFamily: T.fontAlt, margin: '6px 0 0' }}>{error}</p>}
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 16 }}>
+          <BarBtn label="Cancelar" onClick={onCancel} />
+          <ActionBtn label="Confirmar rechazo" color={T.red} icon={<XCircle size={14} />} onClick={handleConfirm} />
         </div>
       </div>
     </div>

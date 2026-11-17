@@ -21,8 +21,9 @@ export const Chip = ({ label, color, bg, title }: { label: string; color: string
   }}>{label}</span>
 );
 
-export const ActionBtn: React.FC<{ label: string; color: string; onClick: () => void; disabled?: boolean; icon?: React.ReactNode; title?: string }> = ({ label, color, onClick, disabled, icon, title }) => (
-  <button type="button" className="dp-btn" onClick={onClick} disabled={disabled} title={title} style={accent(color)}>
+// solid: la acción principal de la pantalla (relleno); large: objetivo táctil de 44px.
+export const ActionBtn: React.FC<{ label: string; color: string; onClick: () => void; disabled?: boolean; icon?: React.ReactNode; title?: string; solid?: boolean; large?: boolean }> = ({ label, color, onClick, disabled, icon, title, solid, large }) => (
+  <button type="button" className={`dp-btn${solid ? " dp-btn--solid" : ""}${large ? " dp-btn--lg" : ""}`} onClick={onClick} disabled={disabled} title={title} style={accent(color)}>
     {icon}{label}
   </button>
 );

@@ -39,6 +39,10 @@
 }
 .dp-btn:hover:not(:disabled) { background: color-mix(in oklab, var(--dp-c) 22%, transparent); }
 .dp-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+/* Acción principal: relleno con el acento. Texto Marino (no blanco): sobre Jade el blanco da 3:1. */
+.dp-btn--solid { color: var(--enl-marino); background: var(--dp-c); border-color: var(--dp-c); }
+.dp-btn--solid:hover:not(:disabled) { background: var(--dp-c); filter: brightness(1.1); }
+.dp-btn--lg { min-height: 44px; padding: 10px 18px; font-size: 13px; justify-content: center; }
 
 /* Botones de la barra de selección y modales */
 .dp-barbtn {

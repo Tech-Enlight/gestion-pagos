@@ -1,0 +1,68 @@
+/* Aprobaciones — layout lista + panel de revisión. Lo interactivo vive aquí (hover/focus/responsive);
+   lo estático sigue inline con los tokens T de decision/tokens para hablar el mismo idioma que Decisión de Pagos. */
+
+.ap-layout { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); align-items: start; }
+@media (min-width: 1100px) {
+  .ap-layout--split { grid-template-columns: minmax(0, 1fr) 400px; }
+}
+/* El panel acompaña el scroll de la lista: se revisa y se decide sin volver arriba. */
+.ap-panel { position: sticky; top: 16px; }
+@media (max-width: 1099px) { .ap-panel { position: static; } }
+
+/* Fila de la cola. El botón interno es el control real (teclado/lector); el clic en la fila es solo comodidad. */
+.ap-row {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  gap: 4px 12px;
+  align-items: start;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+.ap-row:last-child { border-bottom: none; }
+.ap-row:hover { background: rgba(255, 255, 255, 0.04); }
+.ap-row[aria-current="true"] { background: rgba(0, 170, 133, 0.1); box-shadow: inset 0 0 0 1px rgba(0, 170, 133, 0.35); }
+.ap-row:focus-within { outline: 2px solid var(--enl-jade); outline-offset: -2px; }
+
+.ap-rowbtn {
+  all: unset;
+  display: block;
+  min-width: 0;
+  cursor: pointer;
+  text-align: left;
+}
+.ap-rowbtn:focus-visible { outline: none; } /* el foco lo pinta la fila (:focus-within) */
+
+/* Casilla temática: la nativa pinta un cuadro blanco que domina la fila sobre fondo oscuro */
+.ap-check {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  margin: 2px 0 0;
+  border-radius: 4px;
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  background: transparent center / 12px no-repeat;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+.ap-check:hover:not(:disabled) { border-color: rgba(255, 255, 255, 0.7); }
+.ap-check:checked {
+  background-color: var(--enl-jade);
+  border-color: var(--enl-jade);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%23121926' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 6.2l2.4 2.4 4.6-5'/%3E%3C/svg%3E");
+}
+.ap-check:focus-visible { outline: 2px solid var(--enl-jade); outline-offset: 2px; }
+.ap-check:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Con panel abierto la proyección baja bajo el beneficiario en vez de comprimir el monto */
+.ap-meta { grid-column: 2 / 4; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .ap-panel-in { animation: ap-in 0.22s cubic-bezier(.4, 0, .2, 1); }
+}
+@keyframes ap-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* Aviso de acción realizada: aparece sin mover el layout y se retira solo */
+.ap-notice { transition: opacity 0.2s; }
