@@ -1,0 +1,68 @@
+/* Planeación de pagos — layout y estados interactivos. Lo estático va inline con los tokens T de decision/tokens. */
+
+.pl-layout { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); align-items: start; }
+@media (min-width: 1100px) {
+  .pl-layout { grid-template-columns: minmax(0, 1fr) 420px; }
+  /* La propuesta acompaña el scroll de la lista de solicitudes: se arma sin perder de vista el total */
+  .pl-panel { position: sticky; top: 16px; }
+}
+
+.pl-row {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  gap: 4px 12px;
+  align-items: start;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+.pl-row:last-child { border-bottom: none; }
+.pl-row:hover { background: var(--wa-04); }
+.pl-row[data-checked="true"] { background: rgba(0, 170, 133, 0.08); }
+.pl-row:focus-within { outline: 2px solid var(--enl-jade); outline-offset: -2px; }
+.pl-meta { grid-column: 2 / 4; }
+
+/* Casilla temática (la nativa pinta un cuadro blanco que domina la fila sobre fondo oscuro) */
+.pl-check {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  margin: 2px 0 0;
+  border-radius: 4px;
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  background: transparent center / 12px no-repeat;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+.pl-check:hover:not(:disabled) { border-color: var(--wa-70); }
+.pl-check:checked {
+  background-color: var(--enl-jade);
+  border-color: var(--enl-jade);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%23121926' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 6.2l2.4 2.4 4.6-5'/%3E%3C/svg%3E");
+}
+.pl-check:focus-visible { outline: 2px solid var(--enl-jade); outline-offset: 2px; }
+.pl-check:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Selector de propuesta y fecha por pago: campos oscuros coherentes con el resto de la app */
+.pl-select,
+.pl-date {
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: var(--enl-acero);
+  color: var(--wa-90);
+  font-size: 12px;
+  font-family: var(--font-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color-scheme: dark;
+}
+.pl-select { min-height: 36px; max-width: 100%; }
+.pl-select:focus-visible,
+.pl-date:focus-visible { outline: none; border-color: var(--enl-jade); box-shadow: var(--focus-ring); }
+.pl-date:disabled { opacity: 0.5; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .pl-panel { animation: pl-in 0.22s cubic-bezier(.4, 0, .2, 1); }
+}
+@keyframes pl-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }

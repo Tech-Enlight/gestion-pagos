@@ -138,7 +138,7 @@ function AccordionItem({ q, a }: { q: string; a: React.ReactNode }) {
           size={16}
           style={{
             flexShrink: 0,
-            color: "#00AA85",
+            color: "var(--enl-jade)",
             transform: open ? "rotate(180deg)" : "rotate(0deg)",
             transition: "transform 0.15s",
           }}
@@ -148,7 +148,7 @@ function AccordionItem({ q, a }: { q: string; a: React.ReactNode }) {
         <div
           style={{
             padding: "0 16px 16px",
-            color: "#94a3b8",
+            color: "var(--wa-60)",
             fontSize: 13,
             fontFamily: "Albert Sans, sans-serif",
             lineHeight: 1.6,
@@ -165,7 +165,7 @@ export default function Help() {
   return (
     <div style={{ color: "#fff", fontFamily: "Alexandria, sans-serif", maxWidth: 820 }}>
       <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>Ayuda</h2>
-      <p style={{ color: "#94a3b8", fontSize: 13.5, marginBottom: 28, fontFamily: "Albert Sans, sans-serif" }}>
+      <p style={{ color: "var(--wa-60)", fontSize: 13.5, marginBottom: 28, fontFamily: "Albert Sans, sans-serif" }}>
         Guía rápida del Portal de Pagos: qué hace cada sección y respuestas a las dudas más comunes.
       </p>
 
@@ -175,7 +175,7 @@ export default function Help() {
           fontWeight: 500,
           letterSpacing: "0.12em",
           textTransform: "uppercase",
-          color: "rgba(255,255,255,0.5)",
+          color: "var(--wa-60)",
           fontFamily: "Albert Sans, sans-serif",
           marginBottom: 14,
         }}
@@ -187,16 +187,16 @@ export default function Help() {
           <div
             key={s.title}
             style={{
-              border: "1px solid rgba(255,255,255,0.08)",
+              border: "1px solid var(--wa-08)",
               borderRadius: 12,
               padding: "16px 18px",
               background: "rgba(255,255,255,0.02)",
             }}
           >
-            <div style={{ fontSize: 14.5, fontWeight: 600, marginBottom: 8, color: "#00AA85" }}>
+            <div style={{ fontSize: 14.5, fontWeight: 600, marginBottom: 8, color: "var(--enl-jade)" }}>
               {s.title}
             </div>
-            <div style={{ color: "#94a3b8", fontSize: 13, fontFamily: "Albert Sans, sans-serif", lineHeight: 1.6 }}>
+            <div style={{ color: "var(--wa-60)", fontSize: 13, fontFamily: "Albert Sans, sans-serif", lineHeight: 1.6 }}>
               {s.body}
             </div>
           </div>
@@ -209,7 +209,7 @@ export default function Help() {
           fontWeight: 500,
           letterSpacing: "0.12em",
           textTransform: "uppercase",
-          color: "rgba(255,255,255,0.5)",
+          color: "var(--wa-60)",
           fontFamily: "Albert Sans, sans-serif",
           marginBottom: 14,
         }}

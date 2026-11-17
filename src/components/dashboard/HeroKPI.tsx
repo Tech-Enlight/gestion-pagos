@@ -102,7 +102,7 @@ const HeroKPI: React.FC<HeroKPIProps> = ({
       style={{
         fontFamily: "var(--font-secondary)",
         letterSpacing: "0.14em",
-        color: "rgba(255,255,255,0.6)",
+        color: "var(--wa-60)",
       }}
     >
       {label}
@@ -123,7 +123,7 @@ const HeroKPI: React.FC<HeroKPIProps> = ({
         </p>
         <p
           className="mt-2 text-xs m-0"
-          style={{ color: "rgba(255,255,255,0.6)" }}
+          style={{ color: "var(--wa-60)" }}
         >
           {sub}
         </p>
@@ -135,7 +135,7 @@ const HeroKPI: React.FC<HeroKPIProps> = ({
     {trend && (
       <p
         className="mt-3.5 mb-0 text-xs flex items-center gap-1.5"
-        style={{ color: "rgba(255,255,255,0.75)" }}
+        style={{ color: "var(--wa-70)" }}
       >
         {trend}
       </p>

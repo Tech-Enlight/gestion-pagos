@@ -1,5 +1,6 @@
 import type { Role } from "../types/auth";
 import type { Request } from "../data/mockData";
+import type { Propuesta, PropuestaEvento } from "../types/propuestas";
 
 const BASE = import.meta.env.VITE_N8N_WEBHOOK_BASE;
 const PORTAL_SECRET = import.meta.env.VITE_PORTAL_SHARED_SECRET;
@@ -35,10 +36,40 @@ export async function getRoleByEmail(email: string): Promise<Role> {
     const res = await fetch(`${BASE}/role?email=${encodeURIComponent(email)}`);
     if (!res.ok) return "solicitante";
     const data = await res.json();
-    return (data.role as Role) ?? "solicitante";
+    // La hoja puede traer "PMO" o espacios; el resto del código compara en minúsculas
+    const role = String(data?.role ?? "").trim().toLowerCase();
+    return (role as Role) || "solicitante";
   } catch {
     return "solicitante";
   }
+}
+
+// ─── Propuestas de pago (planeación semanal) ───────────────────
+export async function fetchPropuestas(): Promise<Propuesta[]> {
+  const res = await fetch(`${BASE}/propuestas`);
+  if (!res.ok) throw new Error("Error al cargar propuestas");
+  const data = await safeJson(res);
+  return data?.propuestas ?? [];
+}
+
+/**
+ * Manda uno o varios eventos de una propuesta en una sola llamada (un webhook = una ejecución de n8n).
+ * `propuestaId` es null cuando el primer evento es "crear": el servidor genera el id y lo devuelve.
+ * Lanza Error con el mensaje del servidor cuando rechaza el lote (rol, estado, solicitud ya ocupada…).
+ */
+export async function enviarEventosPropuesta(
+  actor: { email: string; name: string; role: string },
+  propuestaId: string | null,
+  eventos: PropuestaEvento[]
+): Promise<{ propuestaId: string; eventos: number }> {
+  const res = await fetch(`${BASE}/propuestas/evento`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...AUTH_HEADERS },
+    body: JSON.stringify({ actor, propuestaId, eventos }),
+  });
+  const data = await safeJson(res).catch(() => null);
+  if (!res.ok || data?.ok === false) throw new Error(data?.error || "No se pudo guardar la propuesta");
+  return data;
 }
 
 export async function fetchRequests(): Promise<Request[]> {

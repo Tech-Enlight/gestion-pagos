@@ -210,19 +210,21 @@ function fetchCross(): Promise<CrossCache> {
 export interface LoadOptions {
   /** Recibe los pagos apenas llegan de Sheets, antes de que termine el cruce con OC/pronóstico. */
   onPartial?: (d: DecisionData) => void;
+  /** "abiertas": todas las solicitudes sin pagar (Planeación). Sin valor: solo lo que espera decisión de admin. */
+  scope?: "abiertas";
   /** Ignora la caché del cruce (botón Actualizar). Si falla, el error se propaga en vez de usar datos viejos. */
   force?: boolean;
 }
 
 export async function loadDecisionData(opts: LoadOptions = {}): Promise<DecisionData> {
-  const { onPartial, force } = opts;
+  const { onPartial, force, scope } = opts;
   const needsCross = force || !crossIsFresh();
   const crossPromise = needsCross ? fetchCross() : null;
   // Si pagos-data falla primero, esta promesa quedaría sin handler
   crossPromise?.catch(() => {});
 
   const [pagoRes, tcRes] = await Promise.all([
-    safeFetch(`${BASE}/pagos-data`),
+    safeFetch(`${BASE}/pagos-data${scope ? `?scope=${scope}` : ""}`),
     safeFetch(`${BASE}/tipo-cambio`),
   ]);
 

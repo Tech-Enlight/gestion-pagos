@@ -51,7 +51,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ requests }) => {
         </h3>
         <p
           className="m-0 mt-0.5 text-xs"
-          style={{ color: "rgba(255,255,255,0.5)" }}
+          style={{ color: "var(--wa-60)" }}
         >
           Lo último que ha pasado en el portal
         </p>
@@ -63,7 +63,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ requests }) => {
             className="m-0 text-center text-xs"
             style={{
               padding: "24px 16px",
-              color: "rgba(255,255,255,0.5)",
+              color: "var(--wa-60)",
             }}
           >
             Aún no hay actividad para mostrar.
@@ -86,7 +86,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ requests }) => {
                       top: 36,
                       bottom: -10,
                       width: 1.5,
-                      background: "rgba(255,255,255,0.08)",
+                      background: "var(--wa-08)",
                     }}
                   />
                 )}
@@ -118,7 +118,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ requests }) => {
                     <span
                       className="text-[11px] whitespace-nowrap"
                       style={{
-                        color: "rgba(255,255,255,0.6)",
+                        color: "var(--wa-60)",
                         fontFamily: "var(--font-secondary)",
                       }}
                     >
@@ -127,7 +127,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ requests }) => {
                   </div>
                   <div
                     className="text-xs mt-0.5"
-                    style={{ color: "rgba(255,255,255,0.65)" }}
+                    style={{ color: "var(--wa-70)" }}
                   >
                     {ev.beneficiary} · por {ev.changedBy}
                   </div>

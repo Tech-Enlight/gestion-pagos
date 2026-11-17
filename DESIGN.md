@@ -11,6 +11,14 @@ colors:
   mist: "#E6EAEC"
   fog: "#C5CCD0"
   white: "#FFFFFF"
+  surface-panel: "#1A2738"
+  surface-modal: "#1E2D3D"
+  surface-hover: "#243545"
+  surface-warn: "#2A2A1A"
+  surface-error: "#2A1A1A"
+  signal-red: "#EF4444"
+  signal-amber: "#F59E0B"
+  signal-yellow: "#EAB308"
 typography:
   display:
     fontFamily: "Alexandria, Inter, system-ui, sans-serif"
@@ -179,3 +187,12 @@ Soft-organic radii throughout: 2px (xs, hairline elements) to 16px (lg, cards/pa
 - **Don't** use sharp corners (0 radius) anywhere in the UI — the brand is soft-organic throughout.
 - **Don't** use bouncy/elastic easing — motion is measured (cubic-bezier(.4,0,.2,1)), 120–320ms.
 - **Don't** stretch the 999px pill radius onto rectangular buttons or cards — reserve it for tags/toggles/true pill controls.
+
+## Dark UI surfaces, alpha scale and signals (app tokens)
+
+The product UI is dark, so the brand palette needs a small set of derived tokens. They live in one place, `src/index.css` (`:root`), and are mirrored in `src/components/decision/tokens.ts` (`T`) only where alpha must be concatenated (`npm run check:tokens` guards the copy).
+
+- **Surfaces:** `--surface-panel` (#1A2738, side panels), `--surface-modal` (#1E2D3D, modals and legacy cards), `--surface-hover` (#243545, hovered/selected rows), `--surface-warn` / `--surface-error` (tinted notice backgrounds). Page background is Marino.
+- **White-alpha scale:** text `--wa-90` (primary), `--wa-70` (secondary), `--wa-60` (tertiary; the floor for small text on a surface, ~6:1); lines `--wa-14` (border), `--wa-08` (divider); fills `--wa-06`, `--wa-04`; `--wa-80` / `--wa-40` for legacy neutrals. Never use pure grays for text on dark.
+- **Signals:** `--signal-red`, `--signal-amber`, `--signal-yellow` only for state and validation, never decorative. Tailwind's red/yellow/green/blue/purple classes remain as the signal palette in legacy screens.
+- **Tailwind utilities:** `bg-jade`, `text-jade`, `border-jade/30`, `bg-surface-modal`, `bg-surface-hover`, `text-white/60` … resolve to these tokens; do not write `bg-[#1e2d3d]`.

@@ -276,6 +276,7 @@ export const poNumbers = [
 export const statusColors: Record<string, string> = {
   Draft: "bg-gray-500",
   Autorización: "bg-yellow-500",
+  Solicitada: "bg-yellow-500",
   "Pending Fin": "bg-blue-500",
   Approved: "bg-green-500",
   "Payment Approved": "bg-blue-600",
@@ -287,6 +288,7 @@ export const statusColors: Record<string, string> = {
 export const STATUS = {
   DRAFT: "Draft",
   AUTORIZACION: "Autorizaci\u00f3n",
+  SOLICITADA: "Solicitada",
   PENDING_FIN: "Pending Fin",
   APPROVED: "Approved",
   PAYMENT_APPROVED: "Payment Approved",
@@ -297,6 +299,7 @@ export const STATUS = {
 export const STATUS_LABEL: Record<string, string> = {
   Draft: "Borrador",
   "Autorización": "En autorización",
+  Solicitada: "Solicitada",
   "Pending Fin": "Revisión Finanzas",
   Approved: "Aprobada",
   "Payment Approved": "Pago Aprobado",
@@ -307,6 +310,7 @@ export const STATUS_LABEL: Record<string, string> = {
 export const STATUS_DESC: Record<string, string> = {
   Draft: "Pendiente de envío",
   "Autorización": "Tu jefe directo está revisando",
+  Solicitada: "Finanzas la incluirá en una propuesta de pagos",
   "Pending Fin": "El equipo de Finanzas la está revisando",
   Approved: "Lista para programar el pago",
   "Payment Approved": "Pago aprobado, pendiente de procesar por Contabilidad",
@@ -318,6 +322,7 @@ export const STATUS_DESC: Record<string, string> = {
 export const STATUS_HEX: Record<string, string> = {
   Draft: "#828080",
   "Autorización": "#eab308",
+  Solicitada: "#eab308",
   "Pending Fin": "#3D7D80",
   Approved: "#00AA85",
   "Payment Approved": "#2563eb",

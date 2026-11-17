@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { FLUJO_PROPUESTAS } from "../config/flujo";
 import StatusPill from "./StatusPill";
 import WorkflowTracker from "./WorkflowTracker";
 import { Combobox } from "./Combobox";
@@ -86,6 +87,7 @@ interface Props {
 const statuses = [
   "Todos",
   "Draft",
+  "Solicitada",
   "Autorización",
   "Pending Fin",
   "Approved",
@@ -95,7 +97,10 @@ const statuses = [
 ];
 
 // Estados "vivos" — la solicitud sigue avanzando en el flujo
-const IN_PROGRESS = ["Autorización", "Pending Fin", "Approved", "Payment Approved"];
+const IN_PROGRESS = ["Solicitada", "Autorización", "Pending Fin", "Approved", "Payment Approved"];
+
+// Al responder una aclaración la solicitud vuelve al inicio del flujo vigente
+const RESUBMIT_STATUS = FLUJO_PROPUESTAS ? STATUS.SOLICITADA : STATUS.AUTORIZACION;
 
 const isClarification = (r: Request): boolean =>
   r.status === "Draft" && !!r.clarificationRequest;
@@ -257,7 +262,7 @@ const RequestExplorer: React.FC<Props> = ({
   const handleResubmit = () => {
     if (!selected) return;
     const note = clarificationNote.trim();
-    onUpdateRequest(selected.id, STATUS.AUTORIZACION, { clarificationResponse: note || undefined });
+    onUpdateRequest(selected.id, RESUBMIT_STATUS, { clarificationResponse: note || undefined });
     setSelected(null);
     setClarificationNote("");
   };
@@ -304,7 +309,7 @@ const RequestExplorer: React.FC<Props> = ({
     }
 
     const note = clarificationNote.trim();
-    onUpdateRequest(selected.id, STATUS.AUTORIZACION, {
+    onUpdateRequest(selected.id, RESUBMIT_STATUS, {
       clarificationResponse: note || undefined,
       concept: editConcept.trim(),
       department: editDepartment.trim(),
@@ -327,7 +332,7 @@ const RequestExplorer: React.FC<Props> = ({
     colorScheme: "dark",
   };
   const thBase = "px-4 py-3 font-semibold whitespace-nowrap sticky top-0 z-10";
-  const thStyle: React.CSSProperties = { color: "rgba(255,255,255,0.75)", backgroundColor: "var(--enl-acero)" };
+  const thStyle: React.CSSProperties = { color: "var(--wa-70)", backgroundColor: "var(--enl-acero)" };
 
   return (
     <div className="space-y-4">
@@ -340,7 +345,7 @@ const RequestExplorer: React.FC<Props> = ({
           >
             {isMine ? "Mis Solicitudes" : "Explorador de Solicitudes"}
           </h2>
-          <p className="text-sm" style={{ color: "rgba(255,255,255,0.65)" }}>
+          <p className="text-sm" style={{ color: "var(--wa-70)" }}>
             {isMine
               ? "Da seguimiento a tus solicitudes de pago: en qué paso van, quién las tiene y cuándo se pagan."
               : "Busca, filtra y exporta el historial completo de solicitudes de pago."}
@@ -385,7 +390,7 @@ const RequestExplorer: React.FC<Props> = ({
               size={16}
               aria-hidden
               className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
-              style={{ color: "rgba(255,255,255,0.55)" }}
+              style={{ color: "var(--wa-60)" }}
             />
             <input
               type="text"
@@ -444,7 +449,7 @@ const RequestExplorer: React.FC<Props> = ({
                   className={`${filterInput} px-2.5 min-h-10`}
                   style={filterInputStyle}
                 />
-                <span aria-hidden style={{ color: "rgba(255,255,255,0.55)" }}>–</span>
+                <span aria-hidden style={{ color: "var(--wa-60)" }}>–</span>
                 <input
                   type="date"
                   aria-label="Solicitudes hasta"
@@ -494,7 +499,7 @@ const RequestExplorer: React.FC<Props> = ({
       </div>
 
       {/* Resultados + totales */}
-      <div className="flex flex-wrap items-center justify-between gap-2 text-xs" style={{ color: "rgba(255,255,255,0.7)" }} aria-live="polite">
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs" style={{ color: "var(--wa-70)" }} aria-live="polite">
         <p className="m-0">
           <strong className="text-white font-semibold">{filtered.length}</strong>{" "}
           {filtered.length === 1 ? "solicitud" : "solicitudes"}
@@ -593,7 +598,7 @@ const RequestExplorer: React.FC<Props> = ({
                               width: 48,
                               height: 48,
                               background: "rgba(255,255,255,0.05)",
-                              color: "rgba(255,255,255,0.55)",
+                              color: "var(--wa-60)",
                             }}
                           >
                             <Inbox size={24} aria-hidden />
@@ -601,7 +606,7 @@ const RequestExplorer: React.FC<Props> = ({
                           <p className="m-0 text-white font-medium text-sm">
                             {isMine && requests.length === 0 ? "Aún no tienes solicitudes" : "No se encontraron solicitudes"}
                           </p>
-                          <p className="m-0 text-xs" style={{ color: "rgba(255,255,255,0.65)" }}>
+                          <p className="m-0 text-xs" style={{ color: "var(--wa-70)" }}>
                             {isMine && requests.length === 0
                               ? "Crea tu primera solicitud de pago para empezar a darle seguimiento."
                               : "Ajusta la búsqueda o los filtros."}
@@ -657,7 +662,7 @@ const RequestExplorer: React.FC<Props> = ({
                             {r.id}
                             {isClarification(r) && (
                               <span
-                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold text-yellow-300 border border-yellow-600"
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-semibold text-yellow-300 border border-yellow-600"
                                 style={{ backgroundColor: "rgba(234, 179, 8, 0.12)" }}
                                 title="Requiere aclaración"
                               >
@@ -669,36 +674,36 @@ const RequestExplorer: React.FC<Props> = ({
                         </td>
                         {isMine && (
                           <>
-                            <td className="px-4 py-3 font-mono text-xs whitespace-nowrap" style={{ color: "rgba(255,255,255,0.65)" }}>
+                            <td className="px-4 py-3 font-mono text-xs whitespace-nowrap" style={{ color: "var(--wa-70)" }}>
                               {r.poNumber || "—"}
                             </td>
-                            <td className="px-4 py-3 whitespace-nowrap" style={{ color: "rgba(255,255,255,0.65)" }} title={r.projectNumber}>
+                            <td className="px-4 py-3 whitespace-nowrap" style={{ color: "var(--wa-70)" }} title={r.projectNumber}>
                               {shortProjId(r.projectNumber)}
                             </td>
                           </>
                         )}
                         <td className="px-4 py-3 max-w-[240px]" title={r.beneficiary}>
-                          <div className="truncate" style={{ color: "rgba(255,255,255,0.9)" }}>{r.beneficiary}</div>
+                          <div className="truncate" style={{ color: "var(--wa-90)" }}>{r.beneficiary}</div>
                           {!isMine && r.concept && (
-                            <div className="truncate text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.6)" }} title={r.concept}>
+                            <div className="truncate text-xs mt-0.5" style={{ color: "var(--wa-60)" }} title={r.concept}>
                               {r.concept}
                             </div>
                           )}
                         </td>
                         {isMine ? (
-                          <td className="px-4 py-3 max-w-[220px] truncate" style={{ color: "rgba(255,255,255,0.7)" }} title={r.concept}>
+                          <td className="px-4 py-3 max-w-[220px] truncate" style={{ color: "var(--wa-70)" }} title={r.concept}>
                             {r.concept}
                           </td>
                         ) : (
                           <>
                             <td className="px-4 py-3 whitespace-nowrap" title={r.projectNumber}>
-                              <div style={{ color: "rgba(255,255,255,0.8)" }}>{shortProjId(r.projectNumber)}</div>
-                              <div className="text-xs mt-0.5 font-mono" style={{ color: "rgba(255,255,255,0.6)" }}>{r.poNumber || "—"}</div>
+                              <div style={{ color: "var(--wa-80)" }}>{shortProjId(r.projectNumber)}</div>
+                              <div className="text-xs mt-0.5 font-mono" style={{ color: "var(--wa-60)" }}>{r.poNumber || "—"}</div>
                             </td>
-                            <td className="px-4 py-3 max-w-[160px] truncate hidden xl:table-cell" style={{ color: "rgba(255,255,255,0.7)" }} title={r.department}>
+                            <td className="px-4 py-3 max-w-[160px] truncate hidden xl:table-cell" style={{ color: "var(--wa-70)" }} title={r.department}>
                               {r.department || "—"}
                             </td>
-                            <td className="px-4 py-3 max-w-[180px] truncate hidden 2xl:table-cell" style={{ color: "rgba(255,255,255,0.7)" }} title={r.submittedBy}>
+                            <td className="px-4 py-3 max-w-[180px] truncate hidden 2xl:table-cell" style={{ color: "var(--wa-70)" }} title={r.submittedBy}>
                               {r.submittedBy || "—"}
                             </td>
                           </>
@@ -706,10 +711,10 @@ const RequestExplorer: React.FC<Props> = ({
                         <td className="px-4 py-3 text-right whitespace-nowrap tabular-nums">
                           <div className="text-white/90">
                             {fmtMoney(r.amount)}{" "}
-                            <span className="text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>{r.currency}</span>
+                            <span className="text-xs" style={{ color: "var(--wa-60)" }}>{r.currency}</span>
                           </div>
                           {r.currency === "USD" && mxn != null && (
-                            <div className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.6)" }}>
+                            <div className="text-xs mt-0.5" style={{ color: "var(--wa-60)" }}>
                               ≈ ${mxn.toLocaleString("es-MX", { maximumFractionDigits: 0 })} MXN
                             </div>
                           )}
@@ -725,11 +730,11 @@ const RequestExplorer: React.FC<Props> = ({
                                 {fmtDay(r.estimatedPaymentDate)}
                               </span>
                             ) : (
-                              <span className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>—</span>
+                              <span className="text-xs" style={{ color: "var(--wa-60)" }}>—</span>
                             )}
                           </td>
                         )}
-                        <td className="px-4 py-3 whitespace-nowrap" style={{ color: "rgba(255,255,255,0.7)" }}>
+                        <td className="px-4 py-3 whitespace-nowrap" style={{ color: "var(--wa-70)" }}>
                           {fmtDay(r.date)}
                         </td>
                       </tr>
@@ -743,7 +748,7 @@ const RequestExplorer: React.FC<Props> = ({
             {filtered.length > PAGE_SIZE && (
               <div
                 className="flex items-center justify-between gap-3 px-4 py-2.5 text-xs"
-                style={{ borderTop: "1px solid var(--border-on-dark)", color: "rgba(255,255,255,0.7)" }}
+                style={{ borderTop: "1px solid var(--border-on-dark)", color: "var(--wa-70)" }}
               >
                 <span className="tabular-nums">
                   {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filtered.length)} de {filtered.length}
@@ -815,7 +820,7 @@ const RequestExplorer: React.FC<Props> = ({
                     >
                       {STATUS_LABEL[selected.status] || selected.status}
                     </p>
-                    <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.65)" }}>
+                    <p className="text-xs leading-relaxed" style={{ color: "var(--wa-70)" }}>
                       {STATUS_DESC[selected.status] || ""}
                     </p>
                     {selected.estimatedPaymentDate &&
@@ -866,10 +871,10 @@ const RequestExplorer: React.FC<Props> = ({
                     className="rounded-lg p-3 border border-yellow-800"
                     style={{ backgroundColor: "rgba(234, 179, 8, 0.06)" }}
                   >
-                    <p className="text-[10px] uppercase tracking-wider mb-1 font-semibold" style={{ color: "rgba(255,255,255,0.65)" }}>
+                    <p className="text-[11px] uppercase tracking-wider mb-1 font-semibold" style={{ color: "var(--wa-70)" }}>
                       Comentario del revisor
                     </p>
-                    <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.85)" }}>
+                    <p className="text-xs leading-relaxed" style={{ color: "var(--wa-90)" }}>
                       {selected.clarificationRequest}
                     </p>
                   </div>
@@ -880,10 +885,10 @@ const RequestExplorer: React.FC<Props> = ({
                       className="rounded-lg p-3"
                       style={{ border: "1px solid var(--border-on-dark)", background: "rgba(255,255,255,0.03)" }}
                     >
-                      <p className="text-[10px] uppercase tracking-wider mb-1 font-semibold" style={{ color: "rgba(255,255,255,0.6)" }}>
+                      <p className="text-[11px] uppercase tracking-wider mb-1 font-semibold" style={{ color: "var(--wa-60)" }}>
                         Tu respuesta anterior
                       </p>
-                      <p className="text-xs leading-relaxed italic" style={{ color: "rgba(255,255,255,0.65)" }}>
+                      <p className="text-xs leading-relaxed italic" style={{ color: "var(--wa-70)" }}>
                         "{selected.clarificationResponse}"
                       </p>
                     </div>
@@ -892,9 +897,9 @@ const RequestExplorer: React.FC<Props> = ({
                   {/* Response textarea */}
                   <div>
                     <label
-                      className="block text-[10px] uppercase tracking-wider mb-1 font-semibold"
+                      className="block text-[11px] uppercase tracking-wider mb-1 font-semibold"
                       htmlFor="clarification-note"
-                      style={{ color: "rgba(255,255,255,0.65)" }}
+                      style={{ color: "var(--wa-70)" }}
                     >
                       Tu respuesta / nota
                     </label>
@@ -928,7 +933,7 @@ const RequestExplorer: React.FC<Props> = ({
                         onClick={startEdit}
                         className="flex-1 py-2 rounded-lg text-sm font-semibold border transition-colors hover:text-white"
                         style={{
-                          color: "rgba(255,255,255,0.8)",
+                          color: "var(--wa-80)",
                           borderColor: "var(--border-on-dark)",
                           backgroundColor: "var(--enl-marino)",
                           fontFamily: "var(--font-primary)",
@@ -947,12 +952,12 @@ const RequestExplorer: React.FC<Props> = ({
                         border: "1px solid var(--border-on-dark)",
                       }}
                     >
-                      <p className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: "rgba(255,255,255,0.65)" }}>
+                      <p className="text-[11px] uppercase tracking-wider font-semibold" style={{ color: "var(--wa-70)" }}>
                         Editar antes de reenviar
                       </p>
 
                       <div>
-                        <label className="block text-[10px] uppercase tracking-wider mb-1 font-semibold" style={{ color: "rgba(255,255,255,0.65)" }}>
+                        <label className="block text-[11px] uppercase tracking-wider mb-1 font-semibold" style={{ color: "var(--wa-70)" }}>
                           Concepto
                         </label>
                         <textarea
@@ -970,7 +975,7 @@ const RequestExplorer: React.FC<Props> = ({
                       </div>
 
                       <div>
-                        <label className="block text-[10px] uppercase tracking-wider mb-1 font-semibold" style={{ color: "rgba(255,255,255,0.65)" }}>
+                        <label className="block text-[11px] uppercase tracking-wider mb-1 font-semibold" style={{ color: "var(--wa-70)" }}>
                           Departamento
                         </label>
                         <Combobox
@@ -989,7 +994,7 @@ const RequestExplorer: React.FC<Props> = ({
                       </div>
 
                       <div>
-                        <label className="block text-[10px] uppercase tracking-wider mb-1 font-semibold" style={{ color: "rgba(255,255,255,0.65)" }}>
+                        <label className="block text-[11px] uppercase tracking-wider mb-1 font-semibold" style={{ color: "var(--wa-70)" }}>
                           Tipo de pago
                         </label>
                         <div className="flex gap-2">
@@ -1016,7 +1021,7 @@ const RequestExplorer: React.FC<Props> = ({
 
                       {editPaymentType === "Parcial" && (
                         <div>
-                          <label className="block text-[10px] uppercase tracking-wider mb-1 font-semibold" style={{ color: "rgba(255,255,255,0.65)" }}>
+                          <label className="block text-[11px] uppercase tracking-wider mb-1 font-semibold" style={{ color: "var(--wa-70)" }}>
                             Subtotal ({selected.currency})
                           </label>
                           <input
@@ -1046,7 +1051,7 @@ const RequestExplorer: React.FC<Props> = ({
                         <button
                           onClick={() => { setEditMode(false); setEditErrors({}); }}
                           className="px-4 py-2 rounded-lg text-sm font-medium border transition-colors"
-                          style={{ color: "rgba(255,255,255,0.7)", borderColor: "var(--border-on-dark)" }}
+                          style={{ color: "var(--wa-70)", borderColor: "var(--border-on-dark)" }}
                         >
                           Cancelar
                         </button>
@@ -1114,10 +1119,10 @@ const RequestExplorer: React.FC<Props> = ({
                       {selected.paymentProof && <DetailRow label="Comprobante" value={selected.paymentProof} isLink />}
                       {selected.financeObservations && (
                         <div className="pt-2" style={{ borderTop: "1px solid var(--border-on-dark)" }}>
-                          <p className="text-[10px] uppercase tracking-wider mb-1 font-semibold" style={{ color: "rgba(255,255,255,0.6)" }}>
+                          <p className="text-[11px] uppercase tracking-wider mb-1 font-semibold" style={{ color: "var(--wa-60)" }}>
                             Observaciones de Finanzas
                           </p>
-                          <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.7)" }}>
+                          <p className="text-xs leading-relaxed" style={{ color: "var(--wa-70)" }}>
                             {selected.financeObservations}
                           </p>
                         </div>
@@ -1139,16 +1144,16 @@ const RequestExplorer: React.FC<Props> = ({
                     <XCircle size={14} color="#ef4444" />
                     <h4
                       className="font-semibold text-xs uppercase tracking-wider"
-                      style={{ color: "#ef4444", fontFamily: "var(--font-secondary)" }}
+                      style={{ color: "var(--signal-red)", fontFamily: "var(--font-secondary)" }}
                     >
                       Solicitud Rechazada
                     </h4>
                   </div>
                   <div className="rounded-lg p-3" style={{ backgroundColor: "rgba(239, 68, 68, 0.06)" }}>
-                    <p className="text-[10px] uppercase tracking-wider mb-1 font-semibold" style={{ color: "rgba(255,255,255,0.65)" }}>
+                    <p className="text-[11px] uppercase tracking-wider mb-1 font-semibold" style={{ color: "var(--wa-70)" }}>
                       Motivo del rechazo
                     </p>
-                    <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.85)" }}>
+                    <p className="text-xs leading-relaxed" style={{ color: "var(--wa-90)" }}>
                       {selected.rejectReason}
                     </p>
                   </div>
@@ -1175,7 +1180,7 @@ const SortableHeader: React.FC<{
     className={`px-4 py-3 font-semibold whitespace-nowrap select-none sticky top-0 z-10 ${
       align === "right" ? "text-right" : align === "center" ? "text-center" : "text-left"
     }`}
-    style={{ color: "rgba(255,255,255,0.75)", backgroundColor: "var(--enl-acero)" }}
+    style={{ color: "var(--wa-70)", backgroundColor: "var(--enl-acero)" }}
   >
     <button
       type="button"
@@ -1217,10 +1222,10 @@ const SummaryCard: React.FC<{
     >
       {value}
     </p>
-    <p className="text-xs font-semibold" style={{ color: "rgba(255,255,255,0.85)", fontFamily: "var(--font-primary)" }}>
+    <p className="text-xs font-semibold" style={{ color: "var(--wa-90)", fontFamily: "var(--font-primary)" }}>
       {label}
     </p>
-    <p className="text-[10px] mt-0.5" style={{ color: "rgba(255,255,255,0.6)" }}>{hint}</p>
+    <p className="text-[11px] mt-0.5" style={{ color: "var(--wa-60)" }}>{hint}</p>
   </div>
 );
 
@@ -1233,7 +1238,7 @@ const RequestSummary: React.FC<{ request: Request; fallbackRate?: number }> = ({
       style={{ backgroundColor: "var(--bg-card-dark, #1e2d3d)", border: "1px solid var(--border-on-dark)" }}
     >
       <div>
-        <p className="text-[10px] uppercase tracking-wider mb-1 font-semibold" style={{ color: "rgba(255,255,255,0.65)" }}>
+        <p className="text-[11px] uppercase tracking-wider mb-1 font-semibold" style={{ color: "var(--wa-70)" }}>
           Concepto
         </p>
         <p className="m-0 text-sm text-white leading-snug" style={{ fontFamily: "var(--font-primary)" }}>
@@ -1259,10 +1264,10 @@ const RequestSummary: React.FC<{ request: Request; fallbackRate?: number }> = ({
       </div>
       {r.comment && (
         <div className="pt-3" style={{ borderTop: "1px solid var(--border-on-dark)" }}>
-          <p className="text-[10px] uppercase tracking-wider mb-1 font-semibold" style={{ color: "rgba(255,255,255,0.65)" }}>
+          <p className="text-[11px] uppercase tracking-wider mb-1 font-semibold" style={{ color: "var(--wa-70)" }}>
             Comentario
           </p>
-          <p className="m-0 text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.8)" }}>{r.comment}</p>
+          <p className="m-0 text-xs leading-relaxed" style={{ color: "var(--wa-80)" }}>{r.comment}</p>
         </div>
       )}
     </div>
@@ -1278,7 +1283,7 @@ const DetailRow: React.FC<{
   const linkHref = value.startsWith("http") ? value : "https://" + value;
   return (
     <div className="flex justify-between items-start gap-2">
-      <span className="text-[10px] uppercase tracking-wider font-semibold shrink-0" style={{ color: "rgba(255,255,255,0.6)" }}>
+      <span className="text-[11px] uppercase tracking-wider font-semibold shrink-0" style={{ color: "var(--wa-60)" }}>
         {label}
       </span>
       {isLink ? (

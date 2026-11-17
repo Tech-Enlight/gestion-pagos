@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import {
   Shield,
   ClipboardCheck,
+  CalendarRange,
   Wallet,
   AlertTriangle,
   Clock,
@@ -13,6 +14,8 @@ import { STATUS, STATUS_HEX } from "../data/mockData";
 import type { Request, ExchangeRate } from "../data/mockData";
 import { useAuth } from "../context/AuthContext";
 import { canAccessView } from "./Sidebar";
+import { FLUJO_PROPUESTAS } from "../config/flujo";
+import { usePropuestasPendientes } from "./planeacion/usePropuestasPendientes";
 import ExchangeChart from "../components/ExchangeChart";
 import DashboardHero from "../components/dashboard/DashboardHero";
 import HeroKPI from "../components/dashboard/HeroKPI";
@@ -69,6 +72,12 @@ const fmtDate = (s: string) => {
 
 /** Vista a la que lleva cada estado; null si el rol no tiene acceso. */
 const viewForStatus = (status: string): string => {
+  if (FLUJO_PROPUESTAS) {
+    // Sin paso de MAC: lo que aún no tiene pago aprobado se planea en Planeación
+    if ([STATUS.SOLICITADA, STATUS.AUTORIZACION, STATUS.PENDING_FIN, STATUS.APPROVED].includes(status as never)) return "planeacion";
+    if (status === STATUS.PAYMENT_APPROVED) return "finanzas";
+    return "explorador";
+  }
   if (status === STATUS.AUTORIZACION) return "aprobaciones";
   if (status === STATUS.PENDING_FIN || status === STATUS.APPROVED) return "decision-pagos";
   if (status === STATUS.PAYMENT_APPROVED) return "finanzas";
@@ -88,7 +97,7 @@ const TrendLabel: React.FC<TrendLabelProps> = ({ current, previous, comparedTo, 
     return (
       <>
         <Clock size={12} color={color} aria-hidden />
-        <span style={{ color: "rgba(255,255,255,0.6)" }}>Sin base de comparación</span>
+        <span style={{ color: "var(--wa-60)" }}>Sin base de comparación</span>
       </>
     );
   }
@@ -147,7 +156,7 @@ const SecondaryKPI: React.FC<SecondaryKPIProps> = ({
         style={{
           fontFamily: "var(--font-secondary)",
           letterSpacing: "0.14em",
-          color: "rgba(255,255,255,0.6)",
+          color: "var(--wa-60)",
         }}
       >
         {label}
@@ -208,13 +217,13 @@ const DeptBreakdown: React.FC<DeptBreakdownProps> = ({ requests, rate, loading }
         >
           Top departamentos
         </h3>
-        <p className="m-0 mt-0.5 text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>
+        <p className="m-0 mt-0.5 text-xs" style={{ color: "var(--wa-60)" }}>
           Solicitudes en flujo y pagadas · MXN equivalente
         </p>
       </div>
       <div style={{ padding: "16px 20px 20px" }}>
         {data.length === 0 && (
-          <p className="m-0 text-center text-xs" style={{ padding: "16px 0", color: "rgba(255,255,255,0.6)" }}>
+          <p className="m-0 text-center text-xs" style={{ padding: "16px 0", color: "var(--wa-60)" }}>
             {loading ? "Cargando…" : "Aún no hay gasto para mostrar."}
           </p>
         )}
@@ -227,7 +236,7 @@ const DeptBreakdown: React.FC<DeptBreakdownProps> = ({ requests, rate, loading }
                 <span className="text-white text-[13.5px] font-medium truncate">{d.name}</span>
                 <span
                   className="text-[13px] tabular-nums flex-shrink-0"
-                  style={{ color: "rgba(255,255,255,0.7)" }}
+                  style={{ color: "var(--wa-70)" }}
                 >
                   {fmtMXN(d.value)}
                 </span>
@@ -252,7 +261,7 @@ const DeptBreakdown: React.FC<DeptBreakdownProps> = ({ requests, rate, loading }
           );
         })}
         {hidden > 0 && (
-          <p className="m-0 mt-4 text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>
+          <p className="m-0 mt-4 text-xs" style={{ color: "var(--wa-60)" }}>
             +{hidden} {hidden === 1 ? "departamento más" : "departamentos más"}
           </p>
         )}
@@ -288,7 +297,9 @@ const Dashboard: React.FC<DashboardProps> = ({
     if (role === "superadmin") return [STATUS.AUTORIZACION, STATUS.PENDING_FIN, STATUS.APPROVED];
     return [STATUS.AUTORIZACION];
   }, [role]);
-  const primaryView = role === "admin" ? "decision-pagos" : "aprobaciones";
+  const primaryView = FLUJO_PROPUESTAS ? "planeacion" : role === "admin" ? "decision-pagos" : "aprobaciones";
+  // Con el flujo de propuestas, lo que espera a cada rol son propuestas (no solicitudes sueltas)
+  const props = usePropuestasPendientes(role, FLUJO_PROPUESTAS);
 
   const go = (view: string) => {
     if (canAccessView(view, role)) onNavigate(view);
@@ -305,9 +316,9 @@ const Dashboard: React.FC<DashboardProps> = ({
       readyToPay: count(STATUS.APPROVED, STATUS.PAYMENT_APPROVED),
       rejectRate: rejectionRate(requests),
       total: requests.length,
-      queueCount: count(...queueStatuses),
+      queueCount: FLUJO_PROPUESTAS ? props.count : count(...queueStatuses),
     };
-  }, [requests, rate, queueStatuses]);
+  }, [requests, rate, queueStatuses, props.count]);
 
   const paid = useMemo(() => paidThisMonth(requests, rate), [requests, rate]);
   const unpaidSeries = useMemo(
@@ -337,13 +348,18 @@ const Dashboard: React.FC<DashboardProps> = ({
     } else {
       summary = `${m.queueCount} ${plural(m.queueCount, "solicitud está", "solicitudes están")} en autorización esperando tu revisión.${cycle}`;
     }
+    if (FLUJO_PROPUESTAS && !loading && dataState !== "error") {
+      summary = m.queueCount === 0
+        ? `Todo está al corriente. No hay propuestas de pago esperando tu aprobación.${cycle}`
+        : `${m.queueCount} ${plural(m.queueCount, "propuesta de pago espera", "propuestas de pago esperan")} tu aprobación.${cycle}`;
+    }
     const isAdmin = role === "admin";
     return {
       summary,
       primary: {
-        label: isAdmin ? "Ir a decisión de pagos" : "Ir a aprobaciones",
+        label: FLUJO_PROPUESTAS ? "Ir a Planeación" : isAdmin ? "Ir a decisión de pagos" : "Ir a aprobaciones",
         count: loading ? 0 : m.queueCount,
-        icon: isAdmin ? <ClipboardCheck size={14} /> : <Shield size={14} />,
+        icon: FLUJO_PROPUESTAS ? <CalendarRange size={14} /> : isAdmin ? <ClipboardCheck size={14} /> : <Shield size={14} />,
         onClick: () => go(primaryView),
       },
     };
@@ -353,9 +369,9 @@ const Dashboard: React.FC<DashboardProps> = ({
   const queue = useMemo(
     () =>
       requests
-        .filter((r) => queueStatuses.includes(r.status))
+        .filter((r) => (FLUJO_PROPUESTAS ? props.requestIds.has(r.id) : queueStatuses.includes(r.status)))
         .sort((a, b) => a.date.localeCompare(b.date)),
-    [requests, queueStatuses]
+    [requests, queueStatuses, props.requestIds]
   );
 
   const now = new Date();
@@ -371,7 +387,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             padding: "10px 14px",
             background: "rgba(239,68,68,0.08)",
             border: "1px solid rgba(239,68,68,0.3)",
-            color: "rgba(255,255,255,0.9)",
+            color: "var(--wa-90)",
           }}
         >
           <span className="flex items-center gap-2">
@@ -505,7 +521,7 @@ const Dashboard: React.FC<DashboardProps> = ({
               >
                 Pipeline
               </h3>
-              <p className="m-0 mt-0.5 text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>
+              <p className="m-0 mt-0.5 text-xs" style={{ color: "var(--wa-60)" }}>
                 Cómo avanzan las solicitudes
               </p>
             </div>
@@ -514,7 +530,7 @@ const Dashboard: React.FC<DashboardProps> = ({
               style={{
                 fontFamily: "var(--font-secondary)",
                 letterSpacing: "0.14em",
-                color: "rgba(255,255,255,0.6)",
+                color: "var(--wa-60)",
               }}
             >
               {loading ? DASH : m.total} totales

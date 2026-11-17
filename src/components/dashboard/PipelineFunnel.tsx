@@ -1,6 +1,7 @@
 import React from "react";
 import { AlertTriangle } from "lucide-react";
 import { STATUS, STATUS_HEX } from "../../data/mockData";
+import { FLUJO_PROPUESTAS } from "../../config/flujo";
 import type { Request } from "../../data/mockData";
 
 /**
@@ -24,13 +25,23 @@ interface PipelineFunnelProps {
 
 // Etapas del flujo confirmado el 2026-07-15. `Approved` es legacy y cuenta
 // como "Lista para pago" (igual que WorkflowTracker).
-const STAGES: { status: string; statuses: string[]; label: string; desc: string }[] = [
+const STAGES_ANTERIOR: { status: string; statuses: string[]; label: string; desc: string }[] = [
   { status: STATUS.DRAFT,            statuses: [STATUS.DRAFT],            label: "Borrador",           desc: "Pendiente de envío" },
   { status: STATUS.AUTORIZACION,     statuses: [STATUS.AUTORIZACION],     label: "En autorización",    desc: "Dirección autoriza" },
   { status: STATUS.PENDING_FIN,      statuses: [STATUS.PENDING_FIN],      label: "Decisión de pagos",  desc: "Admin decide el pago" },
   { status: STATUS.PAYMENT_APPROVED, statuses: [STATUS.PAYMENT_APPROVED, STATUS.APPROVED], label: "Lista para pago", desc: "Contabilidad programa y paga" },
   { status: STATUS.PAID,             statuses: [STATUS.PAID],             label: "Pagada",             desc: "Ciclo cerrado" },
 ];
+
+// Flujo de propuestas: la solicitud espera en "Solicitada" hasta que Finanzas la incluye en una propuesta que
+// aprueban dos niveles; solo entonces pasa a pago aprobado. Los estados anteriores se leen como "Solicitada".
+const STAGES_PROPUESTAS: typeof STAGES_ANTERIOR = [
+  { status: STATUS.DRAFT,            statuses: [STATUS.DRAFT],            label: "Borrador",        desc: "Pendiente de envío" },
+  { status: STATUS.SOLICITADA,       statuses: [STATUS.SOLICITADA, STATUS.AUTORIZACION, STATUS.PENDING_FIN], label: "Solicitada", desc: "Finanzas la planea en una propuesta" },
+  { status: STATUS.PAYMENT_APPROVED, statuses: [STATUS.PAYMENT_APPROVED, STATUS.APPROVED], label: "Lista para pago", desc: "Aprobada en propuesta; Finanzas ejecuta" },
+  { status: STATUS.PAID,             statuses: [STATUS.PAID],             label: "Pagada",          desc: "Ciclo cerrado" },
+];
+const STAGES = FLUJO_PROPUESTAS ? STAGES_PROPUESTAS : STAGES_ANTERIOR;
 
 const PipelineFunnel: React.FC<PipelineFunnelProps> = ({ requests, onStageClick, isClickable }) => {
   const stages = STAGES.map((s) => ({
@@ -88,7 +99,7 @@ const PipelineFunnel: React.FC<PipelineFunnelProps> = ({ requests, onStageClick,
                   <span
                     className="text-[11px] tabular-nums"
                     style={{
-                      color: "rgba(255,255,255,0.6)",
+                      color: "var(--wa-60)",
                       fontFamily: "var(--font-secondary)",
                     }}
                   >
@@ -158,7 +169,7 @@ const PipelineFunnel: React.FC<PipelineFunnelProps> = ({ requests, onStageClick,
           }}
         >
           <AlertTriangle size={14} className="text-red-500 flex-shrink-0" />
-          <span className="text-[12.5px] flex-1" style={{ color: "rgba(255,255,255,0.85)" }}>
+          <span className="text-[12.5px] flex-1" style={{ color: "var(--wa-90)" }}>
             <strong className="text-white font-semibold">{rejected}</strong>
             {" "}
             {rejected === 1 ? "rechazada" : "rechazadas"} fuera del flujo
@@ -166,7 +177,7 @@ const PipelineFunnel: React.FC<PipelineFunnelProps> = ({ requests, onStageClick,
           <span
             className="text-[11px]"
             style={{
-              color: "rgba(255,255,255,0.5)",
+              color: "var(--wa-60)",
               fontFamily: "var(--font-secondary)",
             }}
           >

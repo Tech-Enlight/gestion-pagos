@@ -19,16 +19,16 @@ const DetailPanel: React.FC<Props> = ({
   onClose,
 }) => {
   const canApprove =
-    request.status === "Autorización" || request.status === "Pending Fin";
+    request.status === "Solicitada" || request.status === "Autorización" || request.status === "Pending Fin";
 
   return (
     <div
-      className="w-80 shrink-0 rounded-xl border border-gray-700 flex flex-col"
-      style={{ backgroundColor: "#1e2d3d" }}
+      className="w-80 shrink-0 rounded-xl border border-white/10 flex flex-col"
+      style={{ backgroundColor: "var(--surface-modal)" }}
     >
       <div
-        className="flex items-center justify-between px-4 py-3 border-b border-gray-700"
-        style={{ backgroundColor: "#293C47" }}
+        className="flex items-center justify-between px-4 py-3 border-b border-white/10"
+        style={{ backgroundColor: "var(--enl-acero)" }}
       >
         <h3
           className="text-white font-semibold text-sm"
@@ -46,7 +46,7 @@ const DetailPanel: React.FC<Props> = ({
 
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         <div className="flex items-center justify-between">
-          <span className="text-gray-400 text-xs">Estado Actual</span>
+          <span className="text-white/60 text-xs">Estado Actual</span>
           <StatusPill status={request.status} />
         </div>
 
@@ -65,7 +65,7 @@ const DetailPanel: React.FC<Props> = ({
         {request.comment && (
           <div
             className="rounded-lg p-3 border border-yellow-600"
-            style={{ backgroundColor: "#2a2a1a" }}
+            style={{ backgroundColor: "var(--surface-warn)" }}
           >
             <p className="text-yellow-400 text-xs font-medium mb-1">
               Comentario
@@ -76,7 +76,7 @@ const DetailPanel: React.FC<Props> = ({
       </div>
 
       {canApprove && (
-        <div className="p-4 border-t border-gray-700 space-y-2">
+        <div className="p-4 border-t border-white/10 space-y-2">
           <button
             onClick={() => onApprove(request.id)}
             className="w-full py-2 rounded-lg text-white text-sm font-semibold bg-green-600 hover:bg-green-700 transition-colors"
@@ -107,9 +107,9 @@ const DetailRow: React.FC<{
   highlight?: boolean;
 }> = ({ label, value, highlight }) => (
   <div className="flex flex-col gap-0.5">
-    <span className="text-gray-500 text-xs">{label}</span>
+    <span className="text-white/60 text-xs">{label}</span>
     <span
-      className={`text-sm font-medium ${highlight ? "text-[#00aa85]" : "text-gray-200"
+      className={`text-sm font-medium ${highlight ? "text-jade" : "text-white/90"
         }`}
       style={{ fontFamily: "Alexandria, sans-serif" }}
     >

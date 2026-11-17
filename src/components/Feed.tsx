@@ -87,7 +87,7 @@ const Feed: React.FC = () => {
         <h2 className="text-white text-2xl font-bold mb-1" style={{ fontFamily: "Alexandria, sans-serif" }}>
           Inicio
         </h2>
-        <p className="text-gray-400 text-sm">
+        <p className="text-white/60 text-sm">
           Anuncios y avisos de Finanzas para todo el equipo.
         </p>
       </div>
@@ -95,7 +95,7 @@ const Feed: React.FC = () => {
       {canPost && (
         <div
           className="rounded-xl border p-4"
-          style={{ backgroundColor: "#1e2d3d", borderColor: "rgba(255,255,255,0.08)" }}
+          style={{ backgroundColor: "var(--surface-modal)", borderColor: "var(--wa-08)" }}
         >
           <textarea
             value={body}
@@ -104,8 +104,8 @@ const Feed: React.FC = () => {
             rows={3}
             className="w-full rounded-lg p-3 text-sm text-white resize-none"
             style={{
-              backgroundColor: "#121926",
-              border: "1px solid rgba(255,255,255,0.08)",
+              backgroundColor: "var(--enl-marino)",
+              border: "1px solid var(--wa-08)",
               fontFamily: "Albert Sans, sans-serif",
             }}
           />
@@ -115,8 +115,8 @@ const Feed: React.FC = () => {
             placeholder="Link (opcional)"
             className="w-full rounded-lg p-2 mt-2 text-sm text-white"
             style={{
-              backgroundColor: "#121926",
-              border: "1px solid rgba(255,255,255,0.08)",
+              backgroundColor: "var(--enl-marino)",
+              border: "1px solid var(--wa-08)",
               fontFamily: "Albert Sans, sans-serif",
             }}
           />
@@ -139,25 +139,25 @@ const Feed: React.FC = () => {
         </div>
       )}
 
-      {error && <p className="text-sm" style={{ color: "#ef4444" }}>{error}</p>}
-      {loading && <p className="text-gray-400 text-sm">Cargando…</p>}
+      {error && <p className="text-sm" style={{ color: "var(--signal-red)" }}>{error}</p>}
+      {loading && <p className="text-white/60 text-sm">Cargando…</p>}
       {!loading && posts.length === 0 && (
-        <p className="text-gray-500 text-sm">Todavía no hay publicaciones.</p>
+        <p className="text-white/60 text-sm">Todavía no hay publicaciones.</p>
       )}
 
       {posts.map((post) => (
         <div
           key={post.id}
           className="rounded-xl border p-4"
-          style={{ backgroundColor: "#1e2d3d", borderColor: "rgba(255,255,255,0.08)" }}
+          style={{ backgroundColor: "var(--surface-modal)", borderColor: "var(--wa-08)" }}
         >
           <div className="flex items-center justify-between mb-2">
             <span className="text-white text-sm font-semibold" style={{ fontFamily: "Alexandria, sans-serif" }}>
               {post.authorName}
             </span>
-            <span className="text-gray-500 text-xs">{timeAgo(post.createdAt)}</span>
+            <span className="text-white/60 text-xs">{timeAgo(post.createdAt)}</span>
           </div>
-          <p className="text-gray-200 text-sm whitespace-pre-wrap" style={{ fontFamily: "Albert Sans, sans-serif" }}>
+          <p className="text-white/90 text-sm whitespace-pre-wrap" style={{ fontFamily: "Albert Sans, sans-serif" }}>
             {post.body}
           </p>
           {post.link && (
@@ -166,12 +166,12 @@ const Feed: React.FC = () => {
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm mt-2 inline-block break-all"
-              style={{ color: "#00AA85" }}
+              style={{ color: "var(--enl-jade)" }}
             >
               {post.link}
             </a>
           )}
-          <div className="mt-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="mt-3 pt-3" style={{ borderTop: "1px solid var(--wa-06)" }}>
             <button
               onClick={() => handleLike(post)}
               className="flex items-center gap-1.5 text-xs font-semibold"

@@ -84,7 +84,7 @@ const TopBar: React.FC<Props> = ({ onNavigate }) => {
           width: 36,
           height: 36,
           borderRadius: 999,
-          background: "rgba(255,255,255,0.06)",
+          background: "var(--wa-06)",
           border: "none",
           cursor: "pointer",
           color: "#fff",
@@ -97,9 +97,9 @@ const TopBar: React.FC<Props> = ({ onNavigate }) => {
               position: "absolute",
               top: -2,
               right: -2,
-              background: "#00AA85",
+              background: "var(--enl-jade)",
               color: "#fff",
-              fontSize: 10,
+              fontSize: 11,
               fontWeight: 700,
               minWidth: 16,
               height: 16,
@@ -122,22 +122,22 @@ const TopBar: React.FC<Props> = ({ onNavigate }) => {
             top: 44,
             right: 0,
             width: 320,
-            background: "#1e2d3d",
-            border: "1px solid rgba(255,255,255,0.08)",
+            background: "var(--surface-modal)",
+            border: "1px solid var(--wa-08)",
             borderRadius: 12,
             boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
             zIndex: 20,
             overflow: "hidden",
           }}
         >
-          <div style={{ padding: "10px 14px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <div style={{ padding: "10px 14px", borderBottom: "1px solid var(--wa-06)" }}>
             <span style={{ color: "#fff", fontSize: 13, fontWeight: 600, fontFamily: "Alexandria, sans-serif" }}>
               Notificaciones
             </span>
           </div>
           <div style={{ maxHeight: 280, overflowY: "auto" }}>
             {recent.length === 0 && (
-              <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, padding: "16px 14px" }}>
+              <p style={{ color: "var(--wa-40)", fontSize: 12, padding: "16px 14px" }}>
                 Sin publicaciones todavía.
               </p>
             )}
@@ -152,7 +152,7 @@ const TopBar: React.FC<Props> = ({ onNavigate }) => {
                   padding: "10px 14px",
                   background: "transparent",
                   border: "none",
-                  borderBottom: "1px solid rgba(255,255,255,0.04)",
+                  borderBottom: "1px solid var(--wa-04)",
                   cursor: "pointer",
                 }}
                 onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
@@ -163,7 +163,7 @@ const TopBar: React.FC<Props> = ({ onNavigate }) => {
                 </p>
                 <p
                   style={{
-                    color: "rgba(255,255,255,0.6)",
+                    color: "var(--wa-60)",
                     fontSize: 12,
                     margin: "2px 0 0",
                     overflow: "hidden",
@@ -186,7 +186,7 @@ const TopBar: React.FC<Props> = ({ onNavigate }) => {
               padding: "10px 14px",
               background: "transparent",
               border: "none",
-              color: "#00AA85",
+              color: "var(--enl-jade)",
               fontSize: 12,
               fontWeight: 600,
               cursor: "pointer",

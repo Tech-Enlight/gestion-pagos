@@ -8,6 +8,7 @@ import type { Request } from "../../data/mockData";
 
 /** Etapas post-autorización que aún no se pagan (incluye `Approved` legacy). */
 export const UNPAID_AFTER_AUTH: string[] = [
+  STATUS.SOLICITADA,
   STATUS.PENDING_FIN,
   STATUS.APPROVED,
   STATUS.PAYMENT_APPROVED,

@@ -4,6 +4,7 @@ export type Role =
   | "operaciones"
   | "ingenieria"
   | "servicios"
+  | "pmo"
   | "admin"
   | "superadmin"
   | "analista_contable";

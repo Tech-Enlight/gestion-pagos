@@ -102,7 +102,7 @@ const ExchangeChart: React.FC = () => {
           >
             Tipo de Cambio USD/MXN
           </h3>
-          <p className="text-gray-500 text-xs mt-1">
+          <p className="text-white/60 text-xs mt-1">
             Tendencia de los últimos 30 días (Banxico)
           </p>
         </div>
@@ -111,7 +111,7 @@ const ExchangeChart: React.FC = () => {
             <span className="text-[#00aa85] text-xl font-bold block">
               ${data[data.length - 1].rate.toFixed(4)}
             </span>
-            <span className="text-gray-500 text-[10px] uppercase tracking-wider">
+            <span className="text-white/60 text-[11px] uppercase tracking-wider">
               Último Cierre
             </span>
           </div>
@@ -126,7 +126,7 @@ const ExchangeChart: React.FC = () => {
         </div>
       ) : data.length === 0 ? (
         <div className="h-[280px] flex items-center justify-center">
-          <p className="text-gray-500 text-sm italic">Sin datos disponibles</p>
+          <p className="text-white/60 text-sm italic">Sin datos disponibles</p>
         </div>
       ) : (
         <ResponsiveContainer width="100%" height={280}>
@@ -150,7 +150,7 @@ const ExchangeChart: React.FC = () => {
               dataKey="name"
               axisLine={false}
               tickLine={false}
-              tick={{ fill: "#64748b", fontSize: 9 }}
+              tick={{ fill: "#64748b", fontSize: 11 }}
               interval={0}
               angle={-45}
               textAnchor="end"
@@ -161,7 +161,7 @@ const ExchangeChart: React.FC = () => {
               domain={[minRate, maxRate]}
               axisLine={false}
               tickLine={false}
-              tick={{ fill: "#64748b", fontSize: 10 }}
+              tick={{ fill: "#64748b", fontSize: 11 }}
               tickFormatter={(v) => v.toFixed(2)}
             />
             <Tooltip

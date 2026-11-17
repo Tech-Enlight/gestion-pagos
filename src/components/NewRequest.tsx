@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { FLUJO_PROPUESTAS } from "../config/flujo";
+const ESTADO_INICIAL = FLUJO_PROPUESTAS ? "Solicitada" : "Autorización";
 import { useAuth } from "../context/AuthContext";
 import { fetchProjects, fetchOCsByProject, fetchVendorName, fetchBillsByOC, fetchCecoList, type NSCeco } from "../services/sheets";
 import type { Request } from "../data/mockData";
@@ -305,13 +307,13 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate, existingRequest
       amount: total,
       currency,
       department: department.trim(),
-      status: "Autorización",
+      status: ESTADO_INICIAL,
       submittedBy: user?.name || "Usuario Actual",
       submittedByEmail: user?.email,
       date: new Date().toISOString().slice(0, 10),
       statusHistory: [
         { status: "Draft", timestamp: new Date().toISOString(), changedBy: user?.name || "" },
-        { status: "Autorización", timestamp: new Date().toISOString(), changedBy: user?.name || "" },
+        { status: ESTADO_INICIAL, timestamp: new Date().toISOString(), changedBy: user?.name || "" },
       ],
       // NS-sourced metadata
       nsProjectId: selectedProjectId,
@@ -353,26 +355,26 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate, existingRequest
     return (
       <div className="flex items-center justify-center py-20">
         <div
-          className="rounded-xl p-8 text-center border border-[#00aa85] shadow-xl max-w-md w-full"
-          style={{ backgroundColor: "#1e2d3d" }}
+          className="rounded-xl p-8 text-center border border-jade shadow-xl max-w-md w-full"
+          style={{ backgroundColor: "var(--surface-modal)" }}
         >
-          <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-[#00aa85]/20 text-[#00aa85] flex items-center justify-center">
+          <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-jade/20 text-jade flex items-center justify-center">
             <CheckCircle2 size={32} />
           </div>
           <h2 className="text-white text-2xl font-bold mb-2" style={{ fontFamily: "Alexandria, sans-serif" }}>
             ¡Solicitud Enviada!
           </h2>
-          <p className="text-gray-400 mb-4">Tu solicitud ha sido registrada y enviada a la cola de autorización.</p>
-          <div className="bg-[#293C47] rounded-lg px-4 py-3 mb-6">
-            <p className="text-gray-400 text-xs mb-1">ID de Solicitud</p>
-            <p className="text-[#00aa85] text-2xl font-bold">{generatedId}</p>
+          <p className="text-white/60 mb-4">Tu solicitud ha sido registrada y enviada a la cola de autorización.</p>
+          <div className="bg-acero rounded-lg px-4 py-3 mb-6">
+            <p className="text-white/60 text-xs mb-1">ID de Solicitud</p>
+            <p className="text-jade text-2xl font-bold">{generatedId}</p>
           </div>
-          <p className="text-gray-400 text-sm mb-6">Tu solicitud será revisada en un plazo de 1-2 días hábiles.</p>
+          <p className="text-white/60 text-sm mb-6">Tu solicitud será revisada en un plazo de 1-2 días hábiles.</p>
           <div className="flex gap-3 justify-center">
-            <button onClick={resetForm} className="px-5 py-2 rounded-lg text-white font-medium" style={{ backgroundColor: "#293C47" }}>
+            <button onClick={resetForm} className="px-5 py-2 rounded-lg text-white font-medium" style={{ backgroundColor: "var(--enl-acero)" }}>
               Nueva Solicitud
             </button>
-            <button onClick={() => onNavigate("mis-solicitudes")} className="px-5 py-2 rounded-lg text-white font-medium" style={{ backgroundColor: "#00aa85" }}>
+            <button onClick={() => onNavigate("mis-solicitudes")} className="px-5 py-2 rounded-lg text-white font-medium" style={{ backgroundColor: "var(--enl-jade)" }}>
               Ver Mis Solicitudes
             </button>
           </div>
@@ -390,7 +392,7 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate, existingRequest
         <h2 className="text-white text-2xl font-bold mb-1" style={{ fontFamily: "Alexandria, sans-serif" }}>
           Nueva Solicitud de Pago
         </h2>
-        <p className="text-gray-400 text-sm">Selecciona proyecto y OC. Los datos se auto-llenan desde NetSuite.</p>
+        <p className="text-white/60 text-sm">Selecciona proyecto y OC. Los datos se auto-llenan desde NetSuite.</p>
       </div>
 
       {/* Global fetch error banner */}
@@ -403,7 +405,7 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate, existingRequest
       {/* ---- Section 1: Proyecto ---- */}
       <FormSection title="Proyecto">
         <div>
-          <label className="block text-gray-300 text-xs font-medium mb-1" style={{ fontFamily: "Alexandria, sans-serif" }}>
+          <label className="block text-white/80 text-xs font-medium mb-1" style={{ fontFamily: "Alexandria, sans-serif" }}>
             Proyecto <span className="text-red-400">*</span>
           </label>
           {loadingProjects ? (
@@ -429,13 +431,13 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate, existingRequest
       {selectedProjectId && (
         <FormSection title="Orden de Compra">
           <div>
-            <label className="block text-gray-300 text-xs font-medium mb-1" style={{ fontFamily: "Alexandria, sans-serif" }}>
+            <label className="block text-white/80 text-xs font-medium mb-1" style={{ fontFamily: "Alexandria, sans-serif" }}>
               OC <span className="text-red-400">*</span>
             </label>
             {loadingOCs ? (
               <Skeleton />
             ) : ocList.length === 0 ? (
-              <p className="text-gray-500 text-sm py-2">No se encontraron OCs abiertas para este proyecto.</p>
+              <p className="text-white/60 text-sm py-2">No se encontraron OCs abiertas para este proyecto.</p>
             ) : (
               <Combobox
                 options={ocList.map((oc) => ({
@@ -462,7 +464,7 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate, existingRequest
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {checkingPaidStatus ? (
-                <div className="md:col-span-2 flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-600 bg-[#293C47] text-gray-400 text-xs font-medium">
+                <div className="md:col-span-2 flex items-center gap-2 px-3 py-2 rounded-lg border border-white/20 bg-acero text-white/60 text-xs font-medium">
                   Verificando en NetSuite si esta OC ya tiene un pago registrado…
                 </div>
               ) : selectedOcPaid && (
@@ -509,7 +511,7 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate, existingRequest
         <FormSection title="Detalles del Pago">
           {/* Payment type toggle */}
           <div>
-            <label className="block text-gray-300 text-xs font-medium mb-2" style={{ fontFamily: "Alexandria, sans-serif" }}>
+            <label className="block text-white/80 text-xs font-medium mb-2" style={{ fontFamily: "Alexandria, sans-serif" }}>
               Tipo de pago <span className="text-red-400">*</span>
             </label>
             <div className="flex gap-2">
@@ -522,8 +524,8 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate, existingRequest
                     setErrors((prev) => { const n = { ...prev }; delete n.subtotal; return n; });
                   }}
                   className={`px-4 py-2 rounded-lg text-xs font-medium transition-colors border ${paymentType === t
-                    ? "text-white border-[#00aa85]"
-                    : "text-gray-400 border-gray-700 hover:border-gray-500"
+                    ? "text-white border-jade"
+                    : "text-white/60 border-white/10 hover:border-white/30"
                     }`}
                   style={{
                     backgroundColor: paymentType === t ? "rgba(0,170,133,0.15)" : "#293C47",
@@ -545,7 +547,7 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate, existingRequest
               />
             ) : (
               <div>
-                <label className="block text-gray-300 text-xs font-medium mb-1" style={{ fontFamily: "Alexandria, sans-serif" }}>
+                <label className="block text-white/80 text-xs font-medium mb-1" style={{ fontFamily: "Alexandria, sans-serif" }}>
                   Subtotal <span className="text-red-400">*</span>
                 </label>
                 <input
@@ -558,9 +560,9 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate, existingRequest
                   placeholder={`Máximo ${ocTotal.toLocaleString("es-MX", { minimumFractionDigits: 2 })}`}
                   step="0.01"
                   max={ocTotal}
-                  className={`w-full px-3 py-2 rounded-lg text-white text-sm outline-none border transition-colors ${errors.subtotal ? "border-red-500" : "border-gray-600 focus:border-[#00aa85]"
+                  className={`w-full px-3 py-2 rounded-lg text-white text-sm outline-none border transition-colors ${errors.subtotal ? "border-red-500" : "border-white/20 focus:border-jade"
                     }`}
-                  style={{ backgroundColor: "#293C47", fontFamily: "Alexandria, sans-serif" }}
+                  style={{ backgroundColor: "var(--enl-acero)", fontFamily: "Alexandria, sans-serif" }}
                 />
                 {errors.subtotal && <p className="text-red-400 text-xs mt-1">{errors.subtotal}</p>}
               </div>
@@ -575,8 +577,8 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate, existingRequest
 
           {/* Monto Solicitado + Divisa */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="rounded-lg px-3 py-2 border border-[#00aa85]" style={{ backgroundColor: "#293C47" }}>
-              <label className="block text-[#00aa85] text-xs font-semibold mb-1" style={{ fontFamily: "Alexandria, sans-serif" }}>
+            <div className="rounded-lg px-3 py-2 border border-jade" style={{ backgroundColor: "var(--enl-acero)" }}>
+              <label className="block text-jade text-xs font-semibold mb-1" style={{ fontFamily: "Alexandria, sans-serif" }}>
                 Monto Solicitado
               </label>
               <p className="text-white text-lg font-bold" style={{ fontFamily: "Alexandria, sans-serif" }}>
@@ -593,7 +595,7 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate, existingRequest
         <>
           <FormSection title="Concepto">
             <div>
-              <label className="block text-gray-300 text-xs font-medium mb-1" style={{ fontFamily: "Alexandria, sans-serif" }}>
+              <label className="block text-white/80 text-xs font-medium mb-1" style={{ fontFamily: "Alexandria, sans-serif" }}>
                 Concepto de pago <span className="text-red-400">*</span>
               </label>
               <textarea
@@ -604,9 +606,9 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate, existingRequest
                 }}
                 placeholder="Describe el concepto del pago"
                 rows={3}
-                className={`w-full px-3 py-2 rounded-lg text-white text-sm outline-none border transition-colors resize-none ${errors.concept ? "border-red-500" : "border-gray-600 focus:border-[#00aa85]"
+                className={`w-full px-3 py-2 rounded-lg text-white text-sm outline-none border transition-colors resize-none ${errors.concept ? "border-red-500" : "border-white/20 focus:border-jade"
                   }`}
-                style={{ backgroundColor: "#293C47", fontFamily: "Alexandria, sans-serif" }}
+                style={{ backgroundColor: "var(--enl-acero)", fontFamily: "Alexandria, sans-serif" }}
               />
               {errors.concept && <p className="text-red-400 text-xs mt-1">{errors.concept}</p>}
             </div>
@@ -615,7 +617,7 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate, existingRequest
           <FormSection title="Solicitante">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-gray-300 text-xs font-medium mb-1" style={{ fontFamily: "Alexandria, sans-serif" }}>
+                <label className="block text-white/80 text-xs font-medium mb-1" style={{ fontFamily: "Alexandria, sans-serif" }}>
                   Departamento solicitante <span className="text-red-400">*</span>
                 </label>
                 {loadingCeco ? (
@@ -649,12 +651,12 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate, existingRequest
               onClick={handleSubmit}
               disabled={checkingPaidStatus || (!!selectedOC && !!selectedOcPaid) || !!duplicateAmountMatch}
               className="px-8 py-3 rounded-lg text-white font-semibold text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:opacity-40 hover:opacity-90"
-              style={{ backgroundColor: "#00aa85", fontFamily: "Alexandria, sans-serif" }}
+              style={{ backgroundColor: "var(--enl-jade)", fontFamily: "Alexandria, sans-serif" }}
             >
               Enviar Solicitud →
             </button>
             {checkingPaidStatus ? (
-              <p className="text-gray-400 text-xs">Verificando estado de pago en NetSuite…</p>
+              <p className="text-white/60 text-xs">Verificando estado de pago en NetSuite…</p>
             ) : selectedOC && selectedOcPaid ? (
               <p className="text-yellow-400 text-xs">
                 Esta OC ya tiene un pago registrado en NetSuite — no se puede enviar.
@@ -676,8 +678,8 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate, existingRequest
 /* ================================================================== */
 
 const FormSection: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
-  <div className="rounded-xl p-5 border border-gray-700 space-y-4" style={{ backgroundColor: "#1e2d3d" }}>
-    <h3 className="text-[#00aa85] text-sm font-semibold uppercase tracking-wider" style={{ fontFamily: "Alexandria, sans-serif" }}>
+  <div className="rounded-xl p-5 border border-white/10 space-y-4" style={{ backgroundColor: "var(--surface-modal)" }}>
+    <h3 className="text-jade text-sm font-semibold uppercase tracking-wider" style={{ fontFamily: "Alexandria, sans-serif" }}>
       {title}
     </h3>
     {children}
@@ -686,11 +688,11 @@ const FormSection: React.FC<{ title: string; children: React.ReactNode }> = ({ t
 
 const ReadonlyField: React.FC<{ label: string; value: string }> = ({ label, value }) => (
   <div>
-    <label className="block text-gray-300 text-xs font-medium mb-1" style={{ fontFamily: "Alexandria, sans-serif" }}>
+    <label className="block text-white/80 text-xs font-medium mb-1" style={{ fontFamily: "Alexandria, sans-serif" }}>
       {label}
     </label>
     <div
-      className="w-full px-3 py-2 rounded-lg text-gray-400 text-sm border border-gray-600 cursor-not-allowed"
+      className="w-full px-3 py-2 rounded-lg text-white/60 text-sm border border-white/20 cursor-not-allowed"
       style={{ backgroundColor: "#243340", fontFamily: "Alexandria, sans-serif" }}
     >
       {value}
@@ -700,7 +702,7 @@ const ReadonlyField: React.FC<{ label: string; value: string }> = ({ label, valu
 
 /** Placeholder skeleton while async data loads */
 const Skeleton: React.FC = () => (
-  <div className="w-full h-10 rounded-lg animate-pulse" style={{ backgroundColor: "#293C47" }} />
+  <div className="w-full h-10 rounded-lg animate-pulse" style={{ backgroundColor: "var(--enl-acero)" }} />
 );
 
 export default NewRequest;

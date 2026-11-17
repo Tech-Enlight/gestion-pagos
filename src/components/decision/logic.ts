@@ -144,7 +144,8 @@ export function evalDecision(
 // Flujo confirmado: MAC autoriza (→ Pending Fin), el admin decide aquí en un solo
 // paso (→ Payment Approved, directo al analista) o rechaza / pide aclaración.
 // "Approved" quedó fuera del flujo pero se acepta para destrabar filas legacy.
-export const canDecideOn = (p: PagoFlat) => p.estatus === STATUS.PENDING_FIN || p.estatus === STATUS.APPROVED;
+// "Solicitada": con el flujo de propuestas Pedro puede devolver o rechazar una solicitud antes de que entre a una propuesta
+export const canDecideOn = (p: PagoFlat) => p.estatus === STATUS.SOLICITADA || p.estatus === STATUS.PENDING_FIN || p.estatus === STATUS.APPROVED;
 
 // ─── Filter state ────────────────────────────────────────────
 export interface Filters {

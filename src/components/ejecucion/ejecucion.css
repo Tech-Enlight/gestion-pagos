@@ -1,0 +1,13 @@
+/* Ejecución de pagos: reutiliza el layout y las filas de Planeación (pl-*); aquí solo lo propio. */
+
+/* El control real de cada fila (teclado/lector); el clic en la fila es solo comodidad. El foco lo pinta la fila (:focus-within). */
+.ej-rowbtn {
+  all: unset;
+  display: block;
+  min-width: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+/* Fila abierta en el detalle */
+.pl-row[data-open="true"] { background: rgba(0, 170, 133, 0.1); box-shadow: inset 0 0 0 1px rgba(0, 170, 133, 0.35); }

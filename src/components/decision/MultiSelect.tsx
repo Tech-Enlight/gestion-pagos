@@ -73,7 +73,7 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({ label, options, select
               placeholder="Buscar…"
               style={{
                 width: "100%", padding: "5px 8px", border: `1px solid ${T.cardBorder}`,
-                borderRadius: 5, background: "rgba(255,255,255,0.06)", color: T.text,
+                borderRadius: 5, background: "var(--wa-06)", color: T.text,
                 fontSize: 12, fontFamily: T.fontAlt, outline: "none",
               }}
               autoFocus
@@ -99,7 +99,7 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({ label, options, select
                   style={{ accentColor: T.jade, width: 13, height: 13, flexShrink: 0 }} />
                 <span style={{ flex: 1, fontSize: 12, fontFamily: T.fontAlt, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{o}</span>
                 {counts?.[o] != null && (
-                  <span style={{ fontSize: 10, color: T.textMuted, fontFamily: T.fontAlt }}>{counts[o]}</span>
+                  <span style={{ fontSize: 11, color: T.textMuted, fontFamily: T.fontAlt }}>{counts[o]}</span>
                 )}
               </label>
             ))}

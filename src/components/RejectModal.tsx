@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { XCircle } from 'lucide-react';
 import { T } from './decision/tokens';
-import { ActionBtn, BarBtn, useEscape } from './decision/ui';
+import { ActionBtn, BarBtn } from './decision/ui';
+import { ModalShell } from "./ModalShell";
 
 interface Props {
   /** "PAY-123", "3 solicitudes" o (legacy) "de 3 solicitudes" — se normaliza para el título. */
@@ -14,7 +15,6 @@ interface Props {
 const RejectModal: React.FC<Props> = ({ requestId, onConfirm, onCancel }) => {
   const [comment, setComment] = useState('');
   const [error, setError] = useState('');
-  useEscape(onCancel);
 
   // Los llamadores pasan "de N solicitudes"; el título leía "Rechazar Solicitud de N solicitudes".
   const label = requestId.replace(/^de /, '');
@@ -25,10 +25,11 @@ const RejectModal: React.FC<Props> = ({ requestId, onConfirm, onCancel }) => {
   };
 
   return (
-    <div
-      role="dialog" aria-modal="true" aria-labelledby="reject-title"
-      onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+    <ModalShell
+      labelledBy="reject-title"
+      onClose={onCancel}
+      onBackdropClick={onCancel}
+      style={{ position: 'fixed', inset: 0, background: 'var(--scrim)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
     >
       <div style={{ background: T.modalBg, borderRadius: 12, border: `1px solid ${T.red}70`, boxShadow: '0 16px 60px rgba(0,0,0,0.5)', padding: 24, width: 'min(440px, 100%)' }}>
         <div id="reject-title" style={{ fontSize: 16, fontWeight: 700, color: T.text, fontFamily: T.font, marginBottom: 6 }}>
@@ -58,7 +59,7 @@ const RejectModal: React.FC<Props> = ({ requestId, onConfirm, onCancel }) => {
           <ActionBtn label="Confirmar rechazo" color={T.red} icon={<XCircle size={14} />} onClick={handleConfirm} />
         </div>
       </div>
-    </div>
+    </ModalShell>
   );
 };
 

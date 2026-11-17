@@ -124,9 +124,9 @@ export const TotalRow: React.FC<{ cells: { value: string; align?: "left" | "righ
 
 export const StatItem: React.FC<{ label: string; value: string; mono?: boolean; color?: string; sub?: string }> = ({ label, value, mono, color, sub }) => (
   <div>
-    <div style={{ fontSize: 10, color: T.textMuted, fontFamily: T.fontAlt, textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</div>
+    <div style={{ fontSize: 11, color: T.textMuted, fontFamily: T.fontAlt, textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</div>
     <div style={{ fontSize: 14, fontWeight: 700, color: color || T.text, ...(mono ? NUM : { fontFamily: T.font, fontVariantNumeric: "tabular-nums" }) }}>{value}</div>
-    {sub && <div style={{ fontSize: 10, color: T.textMuted, fontFamily: T.fontAlt }}>{sub}</div>}
+    {sub && <div style={{ fontSize: 11, color: T.textMuted, fontFamily: T.fontAlt }}>{sub}</div>}
   </div>
 );
 

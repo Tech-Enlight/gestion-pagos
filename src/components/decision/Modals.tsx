@@ -3,18 +3,19 @@ import { CheckCircle2, HelpCircle, X, Download, Copy } from "lucide-react";
 import type { PagoFlat } from "../../services/decision";
 import { T, NUM } from "./tokens";
 import { fmtN, fmtMXN, fmtFecha } from "./format";
-import { ActionBtn, BarBtn, TotalRow, useEscape } from "./ui";
+import { ActionBtn, BarBtn, TotalRow } from "./ui";
+import { ModalShell } from "../ModalShell";
 
 // Modal de aclaración: regresa la solicitud a Borrador con el comentario del admin
 export const ClarifyModal: React.FC<{ label: string; onConfirm: (comment: string) => void; onCancel: () => void }> = ({ label, onConfirm, onCancel }) => {
   const [comment, setComment] = useState("");
   const [err, setErr] = useState("");
-  useEscape(onCancel);
   return (
-    <div
-      role="dialog" aria-modal="true" aria-labelledby="clarify-title"
-      onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
-      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+    <ModalShell
+      labelledBy="clarify-title"
+      onClose={onCancel}
+      onBackdropClick={onCancel}
+      style={{ position: "fixed", inset: 0, background: "var(--scrim)", zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
     >
       <div style={{ background: T.modalBg, borderRadius: 12, border: `1px solid ${T.amber}70`, boxShadow: "0 16px 60px rgba(0,0,0,0.5)", padding: 24, width: "min(440px, 100%)" }}>
         <div id="clarify-title" style={{ fontSize: 16, fontWeight: 700, color: T.text, fontFamily: T.font, marginBottom: 6 }}>Solicitar aclaración — {label}</div>
@@ -43,7 +44,7 @@ export const ClarifyModal: React.FC<{ label: string; onConfirm: (comment: string
           }} />
         </div>
       </div>
-    </div>
+    </ModalShell>
   );
 };
 
@@ -58,7 +59,6 @@ export const ConfirmApproveModal: React.FC<{
   onConfirm: () => void;
   onCancel: () => void;
 }> = ({ count, totalMxn, notProceed, sinTc, hidden, onConfirm, onCancel }) => {
-  useEscape(onCancel);
 
   const warnings = [
     notProceed > 0 && `${notProceed} no tiene${notProceed === 1 ? "" : "n"} la decisión "Procede" (OC o avance de proyecto sin validar).`,
@@ -67,10 +67,11 @@ export const ConfirmApproveModal: React.FC<{
   ].filter(Boolean) as string[];
 
   return (
-    <div
-      role="dialog" aria-modal="true" aria-labelledby="confirm-approve-title"
-      onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
-      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+    <ModalShell
+      labelledBy="confirm-approve-title"
+      onClose={onCancel}
+      onBackdropClick={onCancel}
+      style={{ position: "fixed", inset: 0, background: "var(--scrim)", zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
     >
       <div style={{ background: T.modalBg, borderRadius: 12, border: `1px solid ${T.jade}70`, boxShadow: "0 16px 60px rgba(0,0,0,0.5)", padding: 24, width: "min(460px, 100%)" }}>
         <div id="confirm-approve-title" style={{ fontSize: 16, fontWeight: 700, color: T.text, fontFamily: T.font, marginBottom: 6 }}>
@@ -90,7 +91,7 @@ export const ConfirmApproveModal: React.FC<{
           <ActionBtn label={`Aprobar ${count}`} color={T.jade} icon={<CheckCircle2 size={14} />} onClick={onConfirm} />
         </div>
       </div>
-    </div>
+    </ModalShell>
   );
 };
 
@@ -102,14 +103,14 @@ export const SelectionModal: React.FC<{ selected: Set<string>; pagos: PagoFlat[]
   const total = sel.reduce((s, p) => s + p.total_mxn, 0);
   const propTotal = sel.filter((p) => p.propuesta_bucket === "Propuesta").reduce((s, p) => s + p.total_mxn, 0);
   const aplazTotal = sel.filter((p) => p.propuesta_bucket === "Aplazado").reduce((s, p) => s + p.total_mxn, 0);
-  useEscape(onClose);
 
   return (
-    <div
-      role="dialog" aria-modal="true" aria-labelledby="selection-title"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    <ModalShell
+      labelledBy="selection-title"
+      onClose={onClose}
+      onBackdropClick={onClose}
       style={{
-        position: "fixed", inset: 0, background: "rgba(0,0,0,0.65)", zIndex: 300,
+        position: "fixed", inset: 0, background: "var(--scrim)", zIndex: 300,
         display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
       }}
     >
@@ -142,16 +143,16 @@ export const SelectionModal: React.FC<{ selected: Set<string>; pagos: PagoFlat[]
                 const tagColor = p.propuesta_bucket === "Propuesta" ? T.jade : T.steel;
                 const tagBg = p.propuesta_bucket === "Propuesta" ? T.jadeFaint : T.steelFaint;
                 return (
-                  <tr key={p.id} style={{ borderBottom: `1px solid rgba(255,255,255,0.04)` }}>
-                    <td style={{ padding: "8px 12px", fontSize: 12, color: T.textMuted }}>{i + 1}.<span style={{ marginLeft: 4, padding: "1px 6px", background: tagBg, color: tagColor, borderRadius: 3, fontSize: 10, fontWeight: 700 }}>{p.propuesta || "—"}</span></td>
-                    <td style={{ padding: "8px 12px", fontSize: 12, color: T.text, fontFamily: T.fontAlt }}>{p.tipo_op}<br /><span style={{ fontSize: 10, color: T.textMuted }}>{p.operacion_cat}</span></td>
-                    <td style={{ padding: "8px 12px", fontSize: 12, color: T.text }}>{p.proj_id || "—"}<br /><span style={{ fontSize: 10, color: T.textMuted }}>{(p.proyecto || "").slice(0, 40)}</span></td>
+                  <tr key={p.id} style={{ borderBottom: `1px solid var(--wa-04)` }}>
+                    <td style={{ padding: "8px 12px", fontSize: 12, color: T.textMuted }}>{i + 1}.<span style={{ marginLeft: 4, padding: "1px 6px", background: tagBg, color: tagColor, borderRadius: 3, fontSize: 11, fontWeight: 700 }}>{p.propuesta || "—"}</span></td>
+                    <td style={{ padding: "8px 12px", fontSize: 12, color: T.text, fontFamily: T.fontAlt }}>{p.tipo_op}<br /><span style={{ fontSize: 11, color: T.textMuted }}>{p.operacion_cat}</span></td>
+                    <td style={{ padding: "8px 12px", fontSize: 12, color: T.text }}>{p.proj_id || "—"}<br /><span style={{ fontSize: 11, color: T.textMuted }}>{(p.proyecto || "").slice(0, 40)}</span></td>
                     <td style={{ padding: "8px 12px", fontSize: 12, color: T.text }}>{p.solicitante || "—"}</td>
-                    <td style={{ padding: "8px 12px", fontSize: 12, color: T.text }}>{(p.benef_clean || "").slice(0, 28)}<br /><span style={{ fontSize: 10, color: T.textMuted }}>{p.cliente || "—"}</span></td>
-                    <td style={{ padding: "8px 12px", fontSize: 11, ...NUM, color: T.text }}>{p.oc || "—"}<br /><span style={{ fontSize: 10, color: T.textMuted }}>{(p.factura || "").slice(0, 18)}</span></td>
+                    <td style={{ padding: "8px 12px", fontSize: 12, color: T.text }}>{(p.benef_clean || "").slice(0, 28)}<br /><span style={{ fontSize: 11, color: T.textMuted }}>{p.cliente || "—"}</span></td>
+                    <td style={{ padding: "8px 12px", fontSize: 11, ...NUM, color: T.text }}>{p.oc || "—"}<br /><span style={{ fontSize: 11, color: T.textMuted }}>{(p.factura || "").slice(0, 18)}</span></td>
                     <td style={{ padding: "8px 12px", fontSize: 12, color: T.textSub }}>{p.banco}</td>
                     <td style={{ padding: "8px 12px", fontSize: 11, ...NUM, color: T.textSub }}>{fmtFecha(p.venc)}</td>
-                    <td style={{ padding: "8px 12px", textAlign: "right", fontSize: 13, ...NUM, fontWeight: 700, color: T.text }}>{fmtMXN(p.total_mxn)}{p.divisa !== "MXN" && <><br /><span style={{ fontSize: 10, color: T.textMuted }}>{p.divisa} {fmtN(p.monto)}</span></>}</td>
+                    <td style={{ padding: "8px 12px", textAlign: "right", fontSize: 13, ...NUM, fontWeight: 700, color: T.text }}>{fmtMXN(p.total_mxn)}{p.divisa !== "MXN" && <><br /><span style={{ fontSize: 11, color: T.textMuted }}>{p.divisa} {fmtN(p.monto)}</span></>}</td>
                   </tr>
                 );
               })}
@@ -175,6 +176,6 @@ export const SelectionModal: React.FC<{ selected: Set<string>; pagos: PagoFlat[]
           </div>
         </div>
       </div>
-    </div>
+    </ModalShell>
   );
 };

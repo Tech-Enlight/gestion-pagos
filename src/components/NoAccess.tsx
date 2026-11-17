@@ -23,7 +23,7 @@ export const NoAccess: React.FC<Props> = ({ viewLabel, onGoHome }) => (
     <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 8 }}>
       No tienes acceso a {viewLabel ?? "esta vista"}
     </h2>
-    <p style={{ color: "rgba(255,255,255,0.65)", fontWeight: 300, marginBottom: 20 }}>
+    <p style={{ color: "var(--wa-70)", fontWeight: 300, marginBottom: 20 }}>
       Tu rol no incluye esta sección. Si crees que es un error, avisa al equipo TECH.
     </p>
     <button

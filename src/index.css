@@ -75,9 +75,51 @@
   --border-on-dark: rgba(255, 255, 255, .14);
   --fg-on-dark-muted: rgba(255, 255, 255, .70);
 
+  /* ── Superficies de la UI oscura (la app es oscura) ──────────────────────────────
+     FUENTE ÚNICA: antes estos valores estaban escritos a mano en ~60 sitios
+     (#1e2d3d solo, 39 veces). decision/tokens.ts (T) los refleja en hex porque le
+     concatena alpha; `npm run check:tokens` valida que no se desfasen. */
+  --surface-panel: #1A2738;   /* paneles laterales y de detalle */
+  --surface-modal: #1E2D3D;   /* modales y tarjetas de las pantallas heredadas */
+  --surface-hover: #243545;   /* fila en hover/seleccionada (pantallas heredadas) */
+  --surface-warn:  #2A2A1A;   /* fondo de aviso ámbar */
+  --surface-error: #2A1A1A;   /* fondo de aviso de error */
+  --scrim: rgba(0, 0, 0, .7); /* fondo oscuro detrás de un modal */
+
+  /* ── Escala de blanco translúcido: texto, líneas y rellenos ──────────────────────
+     Texto: 90 (principal) · 70 (secundario) · 60 (terciario, mínimo AA sobre superficie).
+     Líneas: 14 (borde) · 08 (separador). Rellenos: 06 · 04. */
+  --wa-90: rgba(255, 255, 255, .90);
+  --wa-80: rgba(255, 255, 255, .80);
+  --wa-70: rgba(255, 255, 255, .70);
+  --wa-60: rgba(255, 255, 255, .60);
+  --wa-40: rgba(255, 255, 255, .40);
+  --wa-14: rgba(255, 255, 255, .14);
+  --wa-08: rgba(255, 255, 255, .08);
+  --wa-06: rgba(255, 255, 255, .06);
+  --wa-04: rgba(255, 255, 255, .04);
+
+  /* ── Señales: solo para estado y validación (error, advertencia), nunca decorativas ── */
+  --signal-red: #EF4444;
+  --signal-amber: #F59E0B;
+  --signal-yellow: #EAB308;
+
   /* Motion */
   --ease-standard: cubic-bezier(.4, 0, .2, 1);
   --dur-fast: 120ms;
+}
+
+/* Utilidades de Tailwind sobre los mismos tokens (sin duplicar valores): bg-jade, text-jade, border-jade/30, bg-surface-modal… */
+@theme inline {
+  --color-jade: var(--enl-jade);
+  --color-acero: var(--enl-acero);
+  --color-cerceta: var(--enl-cerceta);
+  --color-marino: var(--enl-marino);
+  --color-surface-panel: var(--surface-panel);
+  --color-surface-modal: var(--surface-modal);
+  --color-surface-hover: var(--surface-hover);
+  --color-signal-red: var(--signal-red);
+  --color-signal-yellow: var(--signal-yellow);
 }
 
 * {
@@ -164,4 +206,19 @@ body,
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.16);
+}
+
+/* ---- Foco visible por defecto -------------------------------- */
+/* Varios campos usan la utilidad outline-none y solo cambiaban el color del borde al enfocarse, un cambio
+   casi invisible. En @layer base con :where() (especificidad 0): cualquier estilo de foco propio de un
+   componente (dp-*, btn-close, ap-/pl-check…) sigue ganando; esto solo cubre lo que no define el suyo.
+   Los checkbox/radio se excluyen: los temáticos ya dibujan su propio anillo. */
+@layer base {
+  :where(input:not([type="checkbox"]):not([type="radio"]), select, textarea):focus-visible {
+    box-shadow: var(--focus-ring);
+  }
+  :where(button, a[href], summary, [role="button"]):focus-visible {
+    outline: 2px solid var(--enl-jade);
+    outline-offset: 2px;
+  }
 }

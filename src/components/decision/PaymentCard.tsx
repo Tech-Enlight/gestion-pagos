@@ -98,7 +98,7 @@ const PaymentCardBase: React.FC<CardProps> = ({
             padding: "3px 8px", borderRadius: 4, background: tagBg,
             color: tagColor, fontSize: 11, fontWeight: 700, fontFamily: T.font, letterSpacing: "0.02em",
           }}>{p.propuesta || "—"}</div>
-          <div style={{ fontSize: 10, color: T.textMuted, fontFamily: T.fontAlt, marginTop: 2, lineHeight: 1.2 }}>
+          <div style={{ fontSize: 11, color: T.textMuted, fontFamily: T.fontAlt, marginTop: 2, lineHeight: 1.2 }}>
             {p.operacion_cat || "—"}
           </div>
         </div>
@@ -107,7 +107,7 @@ const PaymentCardBase: React.FC<CardProps> = ({
         <div className="dp-card-main">
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, marginBottom: 4 }}>
             {p.tipo_op && (
-              <span style={{ padding: "2px 7px", background: "rgba(255,255,255,0.08)", borderRadius: 4, fontSize: 11, color: T.textSub, fontFamily: T.fontAlt }}>
+              <span style={{ padding: "2px 7px", background: "var(--wa-08)", borderRadius: 4, fontSize: 11, color: T.textSub, fontFamily: T.fontAlt }}>
                 {p.tipo_op}
               </span>
             )}
@@ -140,7 +140,7 @@ const PaymentCardBase: React.FC<CardProps> = ({
 
         {/* Beneficiary */}
         <div style={{ flexShrink: 0, minWidth: 120, textAlign: "right" }}>
-          <div style={{ fontSize: 10, color: T.textMuted, fontFamily: T.fontAlt, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>Beneficiario</div>
+          <div style={{ fontSize: 11, color: T.textMuted, fontFamily: T.fontAlt, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>Beneficiario</div>
           <div style={{ fontSize: 12, color: T.text, fontFamily: T.fontAlt, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 160 }} title={p.beneficiario}>
             {p.benef_clean || "—"}
           </div>
@@ -151,7 +151,7 @@ const PaymentCardBase: React.FC<CardProps> = ({
 
         {/* Factura */}
         <div style={{ flexShrink: 0, minWidth: 100, textAlign: "right" }}>
-          <div style={{ fontSize: 10, color: T.textMuted, fontFamily: T.fontAlt, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>Factura · Vence</div>
+          <div style={{ fontSize: 11, color: T.textMuted, fontFamily: T.fontAlt, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>Factura · Vence</div>
           <div style={{ fontSize: 12, color: T.text, ...NUM, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 120 }} title={p.factura}>
             {p.factura || "—"}
           </div>
@@ -255,11 +255,13 @@ export const ExpandedPanel: React.FC<{
         {/* Acciones del admin: la decisión se toma aquí, no en Finanzas */}
         {canDecide && canDecideOn(p) && (
           <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }} onClick={(e) => e.stopPropagation()}>
-            <ActionBtn
-              label="Aprobar" color={T.jade} disabled={actionBusy || !crossReady} icon={<CheckCircle2 size={14} />}
-              title={crossReady ? undefined : "Espera a que termine el cruce con OC y pronóstico"}
-              onClick={() => onApprove?.(p)}
-            />
+            {onApprove && (
+              <ActionBtn
+                label="Aprobar" color={T.jade} disabled={actionBusy || !crossReady} icon={<CheckCircle2 size={14} />}
+                title={crossReady ? undefined : "Espera a que termine el cruce con OC y pronóstico"}
+                onClick={() => onApprove(p)}
+              />
+            )}
             <ActionBtn label="Aclaración" color={T.amber} disabled={actionBusy} icon={<HelpCircle size={14} />} onClick={() => onClarify?.(p)} />
             <ActionBtn label="Rechazar" color={T.red} disabled={actionBusy} icon={<XCircle size={14} />} onClick={() => onReject?.(p)} />
             <span style={{ fontSize: 11, color: T.textMuted, fontFamily: T.fontAlt, alignSelf: "center" }}>
@@ -307,7 +309,7 @@ export const ExpandedPanel: React.FC<{
 
       {p.obs && (
         <div style={{
-          marginTop: 10, padding: "8px 12px", background: "rgba(255,255,255,0.04)",
+          marginTop: 10, padding: "8px 12px", background: "var(--wa-04)",
           borderRadius: 6, fontSize: 12, color: T.textSub, fontFamily: T.fontAlt,
         }}>
           <strong style={{ color: T.text }}>Obs. finanzas: </strong>{p.obs}
@@ -350,7 +352,7 @@ export const OcBlock: React.FC<{ oc: OcRecord | null; p: PagoFlat }> = ({ oc, p 
         </span>
       </div>
       {[oc.coment_oc, oc.coment_costos, oc.comentarios_req].filter(Boolean).map((c, i) => (
-        <div key={i} style={{ marginTop: 6, padding: "6px 10px", background: "rgba(255,255,255,0.04)", borderRadius: 4, fontSize: 11, color: T.textSub, fontFamily: T.fontAlt }}>
+        <div key={i} style={{ marginTop: 6, padding: "6px 10px", background: "var(--wa-04)", borderRadius: 4, fontSize: 11, color: T.textSub, fontFamily: T.fontAlt }}>
           {c}
         </div>
       ))}
@@ -403,8 +405,8 @@ export const ForecastBlock: React.FC<{ fc: ForecastRecord | null; p: PagoFlat }>
             <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
               <div style={{ width: 7, height: 7, borderRadius: "50%", background: dotColor, flexShrink: 0 }} />
               <span style={{ flex: 1, fontSize: 11, color: T.textSub, fontFamily: T.fontAlt, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{h.nombre}</span>
-              <span style={{ fontSize: 10, color: T.textMuted, fontFamily: T.fontAlt, flexShrink: 0 }}>{fmtFecha(h.fecha)}</span>
-              <span style={{ fontSize: 10, color: T.textMuted, ...NUM, flexShrink: 0 }}>
+              <span style={{ fontSize: 11, color: T.textMuted, fontFamily: T.fontAlt, flexShrink: 0 }}>{fmtFecha(h.fecha)}</span>
+              <span style={{ fontSize: 11, color: T.textMuted, ...NUM, flexShrink: 0 }}>
                 {h.pct != null ? (h.pct * 100).toFixed(1) + "%" : "—"}
               </span>
             </div>

@@ -140,7 +140,7 @@ const DashboardHero: React.FC<DashboardHeroProps> = ({
         <p
           className="mt-3.5 mb-5"
           style={{
-            color: "rgba(255,255,255,0.75)",
+            color: "var(--wa-70)",
             fontSize: 15,
             lineHeight: 1.5,
             fontWeight: 300,

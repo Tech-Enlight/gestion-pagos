@@ -172,8 +172,8 @@ export const Combobox: React.FC<ComboboxProps> = ({
           onKeyDown={handleKeyDown}
           placeholder={selectedOption ? selectedOption.label : placeholder}
           className={`w-full pr-16 pl-3 py-2 rounded-lg text-white text-sm outline-none border transition-colors cursor-text ${
-            disabled ? "opacity-50 cursor-not-allowed bg-[#243340] border-gray-700" :
-            hasError ? "border-red-500 bg-[#293C47]" : "border-gray-600 bg-[#293C47] focus:border-[#00aa85]"
+            disabled ? "opacity-50 cursor-not-allowed bg-[#243340] border-white/10" :
+            hasError ? "border-red-500 bg-acero" : "border-white/20 bg-acero focus:border-jade"
           }`}
           style={{ fontFamily: "Alexandria, sans-serif" }}
         />
@@ -184,7 +184,7 @@ export const Combobox: React.FC<ComboboxProps> = ({
             <button
               type="button"
               onClick={handleClear}
-              className="p-1 text-gray-400 hover:text-white rounded-full transition-colors hover:bg-white/10"
+              className="p-1 text-white/60 hover:text-white rounded-full transition-colors hover:bg-white/10"
               title="Limpiar selección"
             >
               <X size={14} />
@@ -194,12 +194,12 @@ export const Combobox: React.FC<ComboboxProps> = ({
             type="button"
             onClick={handleToggle}
             disabled={disabled}
-            className="p-1 text-gray-400 hover:text-white transition-colors"
+            className="p-1 text-white/60 hover:text-white transition-colors"
           >
             <ChevronDown
               size={18}
               className={`transform transition-transform duration-200 ${
-                isOpen ? "rotate-180 text-[#00aa85]" : ""
+                isOpen ? "rotate-180 text-jade" : ""
               }`}
             />
           </button>
@@ -209,7 +209,7 @@ export const Combobox: React.FC<ComboboxProps> = ({
       {/* Options Dropdown Menu */}
       {isOpen && (
         <div 
-          className="absolute left-0 right-0 mt-1 rounded-lg border border-gray-600 shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-1 duration-150"
+          className="absolute left-0 right-0 mt-1 rounded-lg border border-white/20 shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-1 duration-150"
           style={{ backgroundColor: "#22313d" }}
         >
           <ul
@@ -217,7 +217,7 @@ export const Combobox: React.FC<ComboboxProps> = ({
             className="max-h-60 overflow-y-auto p-1.5 space-y-0.5 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent"
           >
             {filteredOptions.length === 0 ? (
-              <li className="px-3 py-3 text-gray-500 text-xs text-center font-medium">
+              <li className="px-3 py-3 text-white/60 text-xs text-center font-medium">
                 {emptyMessage}
               </li>
             ) : (
@@ -232,23 +232,23 @@ export const Combobox: React.FC<ComboboxProps> = ({
                     onMouseEnter={() => setActiveIndex(index)}
                     className={`flex items-center justify-between px-3 py-2 text-sm rounded-md cursor-pointer transition-colors ${
                       isSelected 
-                        ? "bg-[#00aa85]/20 text-white font-semibold" 
+                        ? "bg-jade/20 text-white font-semibold" 
                         : isActive 
-                        ? "bg-[#00aa85] text-white" 
-                        : "text-gray-300 hover:bg-gray-700/50 hover:text-white"
+                        ? "bg-jade text-white" 
+                        : "text-white/80 hover:bg-white/5 hover:text-white"
                     }`}
                     style={{ fontFamily: "Alexandria, sans-serif" }}
                   >
                     <span className="truncate pr-4 flex items-center gap-2">
                       {option.label}
                       {option.badge && (
-                        <span className="shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-[#00aa85]/20 text-[#00aa85]">
+                        <span className="shrink-0 px-1.5 py-0.5 rounded text-[11px] font-bold uppercase tracking-wide bg-jade/20 text-jade">
                           {option.badge}
                         </span>
                       )}
                     </span>
                     {isSelected && (
-                      <Check size={16} className="text-[#00aa85] flex-shrink-0" />
+                      <Check size={16} className="text-jade flex-shrink-0" />
                     )}
                   </li>
                 );

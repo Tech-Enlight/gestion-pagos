@@ -15,6 +15,8 @@
 import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import type { Role } from "../types/auth";
+import { FLUJO_PROPUESTAS } from "../config/flujo";
+import { ROLES_PLANEACION } from "./planeacion/logic";
 import {
   LayoutDashboard,
   FilePlus2,
@@ -30,6 +32,7 @@ import {
   ChevronLeft,
   ChevronRight,
   HelpCircle,
+  CalendarRange,
 } from "lucide-react";
 
 const COLLAPSED_KEY = "sidebar-collapsed";
@@ -49,10 +52,14 @@ interface NavItem {
 //   Inicio, Nueva/Mis solicitudes, Tipo de cambio, Configuración y Ayuda → todos
 const navItems: NavItem[] = [
   { id: "inicio", label: "Inicio", roles: "all", icon: <Home size={17} />, group: "principal" },
-  { id: "dashboard", label: "Panel general", roles: ["mac", "operaciones", "ingenieria", "servicios", "admin", "superadmin"], icon: <LayoutDashboard size={17} />, group: "principal" },
+  { id: "dashboard", label: "Panel general", roles: ["mac", "operaciones", "ingenieria", "servicios", "pmo", "admin", "superadmin"], icon: <LayoutDashboard size={17} />, group: "principal" },
   { id: "nueva-solicitud", label: "Nueva solicitud", roles: "all", icon: <FilePlus2 size={17} />, group: "principal" },
   { id: "mis-solicitudes", label: "Mis solicitudes", roles: "all", icon: <ListTodo size={17} />, group: "principal" },
-  { id: "aprobaciones", label: "Aprobaciones", roles: ["mac", "operaciones", "ingenieria", "servicios", "superadmin"], icon: <ShieldCheck size={17} />, group: "gestion" },
+  // Con el flujo de propuestas ya no hay autorización individual de MAC: la pantalla se retira
+  { id: "aprobaciones", label: "Aprobaciones", roles: FLUJO_PROPUESTAS ? [] : ["mac", "operaciones", "ingenieria", "servicios", "superadmin"], icon: <ShieldCheck size={17} />, group: "gestion" },
+  // TEMPORAL (Fase 1 del flujo de propuestas): solo superadmin hasta que existan las aprobaciones de Nivel 1 y 2;
+  // si Finanzas la usara antes, enviaría propuestas que nadie puede aprobar. Al cerrar la Fase 2 → ["analista_contable", "superadmin"].
+  { id: "planeacion", label: "Planeación de pagos", roles: FLUJO_PROPUESTAS ? ROLES_PLANEACION : ["superadmin"], icon: <CalendarRange size={17} />, group: "gestion" },
   { id: "finanzas", label: "Finanzas", roles: ["analista_contable", "superadmin"], icon: <CreditCard size={17} />, group: "gestion" },
   { id: "decision-pagos", label: "Decisión de Pagos", roles: ["admin", "superadmin", "analista_contable"], icon: <ClipboardCheck size={17} />, group: "gestion" },
   { id: "explorador", label: "Explorador", roles: ["admin", "superadmin", "analista_contable"], icon: <Search size={17} />, group: "gestion" },
@@ -130,7 +137,7 @@ export const Sidebar: React.FC<Props> = ({ currentView, setCurrentView }) => {
           {active && (
             <span style={{
               position: "absolute", left: -10, top: 8, bottom: 8, width: 3,
-              background: "#00AA85", borderRadius: "0 2px 2px 0",
+              background: "var(--enl-jade)", borderRadius: "0 2px 2px 0",
             }} />
           )}
           <span style={{ display: "inline-flex", width: 18, height: 18, alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -142,8 +149,8 @@ export const Sidebar: React.FC<Props> = ({ currentView, setCurrentView }) => {
               {item.badge !== undefined && (
                 <span style={{
                   marginLeft: "auto",
-                  background: "rgba(0,170,133,0.18)", color: "#00AA85",
-                  fontSize: 10, fontWeight: 700, padding: "2px 7px",
+                  background: "rgba(0,170,133,0.18)", color: "var(--enl-jade)",
+                  fontSize: 11, fontWeight: 700, padding: "2px 7px",
                   borderRadius: 999, letterSpacing: 0.2,
                 }}>{item.badge}</span>
               )}
@@ -157,11 +164,11 @@ export const Sidebar: React.FC<Props> = ({ currentView, setCurrentView }) => {
     !collapsed && (
       <div style={{
         fontFamily: "Albert Sans, sans-serif",
-        fontSize: 10,
+        fontSize: 11,
         fontWeight: 500,
         letterSpacing: "0.16em",
         textTransform: "uppercase",
-        color: "rgba(255,255,255,0.4)",
+        color: "var(--wa-40)",
         padding: "14px 12px 6px",
       }}>{text}</div>
     );
@@ -169,10 +176,10 @@ export const Sidebar: React.FC<Props> = ({ currentView, setCurrentView }) => {
   return (
     <aside style={{
       width: collapsed ? 68 : 256, minWidth: collapsed ? 68 : 256,
-      background: "#293C47",
+      background: "var(--enl-acero)",
       display: "flex", flexDirection: "column",
       fontFamily: "Alexandria, sans-serif",
-      borderRight: "1px solid rgba(255,255,255,0.08)",
+      borderRight: "1px solid var(--wa-08)",
       transition: "width 0.15s, min-width 0.15s",
       position: "relative",
     }}>
@@ -183,8 +190,8 @@ export const Sidebar: React.FC<Props> = ({ currentView, setCurrentView }) => {
         style={{
           position: "absolute", top: 20, right: -12, zIndex: 10,
           width: 24, height: 24, borderRadius: "50%",
-          background: "#293C47", border: "1px solid rgba(255,255,255,0.14)",
-          color: "rgba(255,255,255,0.7)", cursor: "pointer",
+          background: "var(--enl-acero)", border: "1px solid var(--wa-14)",
+          color: "var(--wa-70)", cursor: "pointer",
           display: "flex", alignItems: "center", justifyContent: "center",
         }}
         onMouseEnter={(e) => { e.currentTarget.style.color = "#fff"; e.currentTarget.style.borderColor = "#00AA85"; }}
@@ -196,7 +203,7 @@ export const Sidebar: React.FC<Props> = ({ currentView, setCurrentView }) => {
       {/* Brand */}
       <div style={{
         padding: collapsed ? "24px 8px 20px" : "24px 20px 20px",
-        borderBottom: "1px solid rgba(255,255,255,0.08)",
+        borderBottom: "1px solid var(--wa-08)",
         display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center",
         overflow: "hidden",
       }}>
@@ -212,7 +219,7 @@ export const Sidebar: React.FC<Props> = ({ currentView, setCurrentView }) => {
             </div>
             <div style={{
               marginTop: 2, fontFamily: "Albert Sans, sans-serif", fontSize: 11,
-              color: "rgba(255,255,255,0.7)", letterSpacing: "0.04em", textTransform: "uppercase",
+              color: "var(--wa-70)", letterSpacing: "0.04em", textTransform: "uppercase",
             }}>
               Clean Energy Microgrids
             </div>
@@ -232,7 +239,7 @@ export const Sidebar: React.FC<Props> = ({ currentView, setCurrentView }) => {
 
       {/* User */}
       {user && (
-        <div style={{ padding: collapsed ? "14px 8px 18px" : "14px 16px 18px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+        <div style={{ padding: collapsed ? "14px 8px 18px" : "14px 16px 18px", borderTop: "1px solid var(--wa-08)" }}>
           <div style={{ display: "flex", gap: 10, alignItems: "center", justifyContent: collapsed ? "center" : "flex-start", marginBottom: collapsed ? 8 : 12 }}>
             <div
               title={collapsed ? `${user.name} · ${user.role}` : undefined}
@@ -255,7 +262,7 @@ export const Sidebar: React.FC<Props> = ({ currentView, setCurrentView }) => {
                   {user.name}
                 </p>
                 <p style={{
-                  color: "#00AA85", fontSize: 10.5, margin: "2px 0 0",
+                  color: "var(--enl-jade)", fontSize: 10.5, margin: "2px 0 0",
                   textTransform: "capitalize", fontFamily: "Albert Sans, sans-serif",
                   letterSpacing: "0.04em",
                 }}>
@@ -271,8 +278,8 @@ export const Sidebar: React.FC<Props> = ({ currentView, setCurrentView }) => {
               width: "100%",
               padding: 8,
               background: "transparent",
-              color: "rgba(255,255,255,0.6)",
-              border: "1px solid rgba(255,255,255,0.14)",
+              color: "var(--wa-60)",
+              border: "1px solid var(--wa-14)",
               borderRadius: 8,
               cursor: "pointer",
               fontSize: 12,

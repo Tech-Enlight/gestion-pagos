@@ -1,4 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { ModalShell } from "./ModalShell";
+import { FLUJO_PROPUESTAS } from "../config/flujo";
+import EjecucionPagos from "./ejecucion/EjecucionPagos";
 import {
   CheckCircle2,
   Banknote,
@@ -30,6 +33,8 @@ interface Props {
   onUpdateRequestBulk?: (ids: string[], status: string, extra?: any) => Promise<void>;
   onUpdateFinanceFieldsBulk?: (ids: string[], fields: Partial<Request>) => Promise<void>;
   onUpdateFinanceFieldsBulkPerRequest?: (items: { id: string; fields: Partial<Request> }[]) => Promise<void>;
+  /** Refresca las solicitudes de la app (la vista de Ejecución cambia estados desde el servidor). */
+  onReloadRequests?: () => void;
 }
 
 type Filter = "all" | "pending" | "approved" | "paymentApproved";
@@ -42,6 +47,7 @@ const FinanceManagement: React.FC<Props> = ({
   onUpdateRequestBulk,
   onUpdateFinanceFieldsBulk,
   onUpdateFinanceFieldsBulkPerRequest,
+  onReloadRequests,
 }) => {
   const { user } = useAuth();
   const isAnalista = user?.role === "analista_contable";
@@ -112,7 +118,7 @@ const FinanceManagement: React.FC<Props> = ({
   // Filter logic — el analista solo trabaja la bandeja de pagos aprobados;
   // superadmin conserva las pestañas de seguimiento (incl. Pago Aprobado).
   const financeRequests = useMemo(() => {
-    if (isAnalista) {
+    if (isAnalista || FLUJO_PROPUESTAS) {
       return requests.filter((r) => r.status === STATUS.PAYMENT_APPROVED);
     }
     return requests.filter((r) => {
@@ -488,6 +494,7 @@ const FinanceManagement: React.FC<Props> = ({
 
   return (
     <div className="space-y-5">
+      {!FLUJO_PROPUESTAS && (<>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -497,14 +504,14 @@ const FinanceManagement: React.FC<Props> = ({
           >
             Gestión de Finanzas
           </h2>
-          <p className="text-gray-400 text-sm">
+          <p className="text-white/60 text-sm">
             Control de tesorería y programación de pagos
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           {isBulkOperating && (
-            <div className="flex items-center gap-2 text-xs text-[#00aa85] font-semibold bg-[#243545] px-3 py-1.5 rounded-lg border border-[#00aa85]/20 animate-pulse mr-2">
+            <div className="flex items-center gap-2 text-xs text-jade font-semibold bg-surface-hover px-3 py-1.5 rounded-lg border border-jade/20 animate-pulse mr-2">
               <Loader2 size={14} className="animate-spin" />
               Procesando lote...
             </div>
@@ -512,15 +519,15 @@ const FinanceManagement: React.FC<Props> = ({
 
           {/* Banxico T/C indicator */}
           <div
-            className="px-3 py-1.5 rounded-lg border border-gray-700 text-xs text-gray-400 flex items-center gap-1.5"
-            style={{ backgroundColor: "#1e2d3d" }}
+            className="px-3 py-1.5 rounded-lg border border-white/10 text-xs text-white/60 flex items-center gap-1.5"
+            style={{ backgroundColor: "var(--surface-modal)" }}
           >
-            <DollarSign size={12} className="text-[#00aa85]" />
+            <DollarSign size={12} className="text-jade" />
             <span>T/C Banxico:</span>
             <strong className="text-white">
               ${lastRate.rate.toFixed(4)}
             </strong>
-            <span className="text-gray-500">({lastRate.date})</span>
+            <span className="text-white/60">({lastRate.date})</span>
           </div>
         </div>
       </div>
@@ -528,10 +535,10 @@ const FinanceManagement: React.FC<Props> = ({
       {/* Aviso: la decisión del admin se toma en Decisión de Pagos */}
       {!isAnalista && (
         <div
-          className="rounded-xl border border-[#00aa85]/30 px-4 py-3 text-sm text-gray-300"
-          style={{ backgroundColor: "#1e2d3d", fontFamily: "Albert Sans, sans-serif" }}
+          className="rounded-xl border border-jade/30 px-4 py-3 text-sm text-white/80"
+          style={{ backgroundColor: "var(--surface-modal)", fontFamily: "Albert Sans, sans-serif" }}
         >
-          Las aprobaciones del admin se realizan en <strong className="text-[#00aa85]">Decisión de Pagos</strong>.
+          Las aprobaciones del admin se realizan en <strong className="text-jade">Decisión de Pagos</strong>.
           Esta vista es para la operación de Finanzas: programar pago, marcar pagado, aclaraciones y notas.
         </div>
       )}
@@ -540,7 +547,7 @@ const FinanceManagement: React.FC<Props> = ({
       <div className="flex gap-2">
         {isAnalista ? (
           <button
-            className="px-4 py-2 rounded-lg text-sm font-medium bg-[#00aa85] text-white"
+            className="px-4 py-2 rounded-lg text-sm font-medium bg-jade text-white"
             style={{ fontFamily: "Alexandria, sans-serif" }}
           >
             Pago Aprobado ({counts.paymentApproved})
@@ -550,8 +557,8 @@ const FinanceManagement: React.FC<Props> = ({
             <button
               onClick={() => setFilter("all")}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === "all"
-                ? "bg-[#00aa85] text-white"
-                : "bg-[#1e2d3d] text-gray-400 hover:text-white"
+                ? "bg-jade text-white"
+                : "bg-surface-modal text-white/60 hover:text-white"
                 }`}
               style={{ fontFamily: "Alexandria, sans-serif" }}
             >
@@ -560,8 +567,8 @@ const FinanceManagement: React.FC<Props> = ({
             <button
               onClick={() => setFilter("pending")}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === "pending"
-                ? "bg-[#00aa85] text-white"
-                : "bg-[#1e2d3d] text-gray-400 hover:text-white"
+                ? "bg-jade text-white"
+                : "bg-surface-modal text-white/60 hover:text-white"
                 }`}
               style={{ fontFamily: "Alexandria, sans-serif" }}
             >
@@ -570,8 +577,8 @@ const FinanceManagement: React.FC<Props> = ({
             <button
               onClick={() => setFilter("approved")}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === "approved"
-                ? "bg-[#00aa85] text-white"
-                : "bg-[#1e2d3d] text-gray-400 hover:text-white"
+                ? "bg-jade text-white"
+                : "bg-surface-modal text-white/60 hover:text-white"
                 }`}
               style={{ fontFamily: "Alexandria, sans-serif" }}
             >
@@ -580,8 +587,8 @@ const FinanceManagement: React.FC<Props> = ({
             <button
               onClick={() => setFilter("paymentApproved")}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === "paymentApproved"
-                ? "bg-[#00aa85] text-white"
-                : "bg-[#1e2d3d] text-gray-400 hover:text-white"
+                ? "bg-jade text-white"
+                : "bg-surface-modal text-white/60 hover:text-white"
                 }`}
               style={{ fontFamily: "Alexandria, sans-serif" }}
             >
@@ -593,16 +600,16 @@ const FinanceManagement: React.FC<Props> = ({
 
       {/* Bulk Actions Bar */}
       {selectedIds.length > 0 && (
-        <div className="flex items-center justify-between p-4 rounded-xl border border-[#00aa85]/30 bg-[#243545] shadow-lg shadow-[#00aa85]/5 transition-all duration-300">
+        <div className="flex items-center justify-between p-4 rounded-xl border border-jade/30 bg-surface-hover shadow-lg shadow-[#00aa85]/5 transition-all duration-300">
           <div className="flex flex-col gap-0.5">
             <div className="flex items-center gap-2">
-              <span className="text-[#00aa85] text-sm font-bold">✓</span>
-              <span className="text-gray-200 text-sm font-medium">
+              <span className="text-jade text-sm font-bold">✓</span>
+              <span className="text-white/90 text-sm font-medium">
                 {selectedIds.length} solicitud{selectedIds.length !== 1 ? "es" : ""} seleccionada{selectedIds.length !== 1 ? "s" : ""}
               </span>
             </div>
             {isMixed && (
-              <span className="text-yellow-400 text-[10px] font-medium">
+              <span className="text-yellow-400 text-[11px] font-medium">
                 <AlertTriangle size={11} className="inline mr-1" /> Selección mixta: Filtra por pestaña para ver acciones específicas (Aprobación/Pago).
               </span>
             )}
@@ -648,11 +655,11 @@ const FinanceManagement: React.FC<Props> = ({
               <XCircle size={14} />
               Rechazar
             </button>
-            <div className="w-[1px] h-6 bg-gray-700 mx-1"></div>
+            <div className="w-[1px] h-6 bg-white/10 mx-1"></div>
             <button
               onClick={() => setSelectedIds([])}
               disabled={isBulkOperating}
-              className="px-3 py-1.5 rounded-lg text-gray-400 hover:text-white text-xs font-medium border border-gray-600 hover:border-gray-500 transition-colors"
+              className="px-3 py-1.5 rounded-lg text-white/60 hover:text-white text-xs font-medium border border-white/20 hover:border-white/30 transition-colors"
             >
               Cancelar
             </button>
@@ -662,37 +669,37 @@ const FinanceManagement: React.FC<Props> = ({
 
       {/* Main Table */}
       <div
-        className="rounded-xl border border-gray-700 overflow-hidden"
-        style={{ backgroundColor: "#1e2d3d" }}
+        className="rounded-xl border border-white/10 overflow-hidden"
+        style={{ backgroundColor: "var(--surface-modal)" }}
       >
         <table className="w-full text-sm">
           <thead>
-            <tr style={{ backgroundColor: "#293C47" }}>
+            <tr style={{ backgroundColor: "var(--enl-acero)" }}>
               <th className="px-4 py-3 w-10 text-center">
                 <input
                   type="checkbox"
                   checked={allSelected}
                   onChange={handleSelectAll}
                   disabled={isBulkOperating || financeRequests.length === 0}
-                  className="rounded border-gray-600 text-[#00aa85] focus:ring-0 focus:ring-offset-0 bg-[#293C47] cursor-pointer disabled:opacity-50"
+                  className="rounded border-white/20 text-jade focus:ring-0 focus:ring-offset-0 bg-acero cursor-pointer disabled:opacity-50"
                 />
               </th>
-              <th className="text-left px-4 py-3 text-gray-300 font-semibold">
+              <th className="text-left px-4 py-3 text-white/80 font-semibold">
                 ID
               </th>
-              <th className="text-left px-4 py-3 text-gray-300 font-semibold">
+              <th className="text-left px-4 py-3 text-white/80 font-semibold">
                 Beneficiario
               </th>
-              <th className="text-left px-4 py-3 text-gray-300 font-semibold">
+              <th className="text-left px-4 py-3 text-white/80 font-semibold">
                 Proyecto / Depto
               </th>
-              <th className="text-right px-4 py-3 text-gray-300 font-semibold">
+              <th className="text-right px-4 py-3 text-white/80 font-semibold">
                 Monto
               </th>
-              <th className="text-center px-4 py-3 text-gray-300 font-semibold">
+              <th className="text-center px-4 py-3 text-white/80 font-semibold">
                 Estado
               </th>
-              <th className="text-center px-4 py-3 text-gray-300 font-semibold">
+              <th className="text-center px-4 py-3 text-white/80 font-semibold">
                 Acción
               </th>
             </tr>
@@ -700,7 +707,7 @@ const FinanceManagement: React.FC<Props> = ({
           <tbody>
             {financeRequests.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                <td colSpan={7} className="px-4 py-8 text-center text-white/60">
                   No hay solicitudes en esta bandeja
                 </td>
               </tr>
@@ -708,7 +715,7 @@ const FinanceManagement: React.FC<Props> = ({
             {financeRequests.map((r) => (
               <tr
                 key={r.id}
-                className={`border-t border-gray-700 transition-colors cursor-pointer ${selectedId === r.id ? "bg-[#243545]" : "hover:bg-[#243545]"
+                className={`border-t border-white/10 transition-colors cursor-pointer ${selectedId === r.id ? "bg-surface-hover" : "hover:bg-surface-hover"
                   }`}
                 onClick={() => handleSelect(selectedId === r.id ? null : r.id)}
               >
@@ -718,13 +725,13 @@ const FinanceManagement: React.FC<Props> = ({
                     checked={selectedIds.includes(r.id)}
                     onChange={(e) => handleSelectRow(e, r.id)}
                     disabled={isBulkOperating}
-                    className="rounded border-gray-600 text-[#00aa85] focus:ring-0 focus:ring-offset-0 bg-[#293C47] cursor-pointer disabled:opacity-50"
+                    className="rounded border-white/20 text-jade focus:ring-0 focus:ring-offset-0 bg-acero cursor-pointer disabled:opacity-50"
                   />
                 </td>
-                <td className="px-4 py-3 text-[#00aa85] font-medium">{r.id}</td>
-                <td className="px-4 py-3 text-gray-300">{r.beneficiary}</td>
-                <td className="px-4 py-3 text-gray-400">{r.projectNumber}</td>
-                <td className="px-4 py-3 text-gray-200 text-right">
+                <td className="px-4 py-3 text-jade font-medium">{r.id}</td>
+                <td className="px-4 py-3 text-white/80">{r.beneficiary}</td>
+                <td className="px-4 py-3 text-white/60">{r.projectNumber}</td>
+                <td className="px-4 py-3 text-white/90 text-right">
                   {r.amount.toLocaleString("es-MX")} {r.currency}
                 </td>
                 <td className="px-4 py-3 text-center">
@@ -737,7 +744,7 @@ const FinanceManagement: React.FC<Props> = ({
                       handleSelect(r.id);
                     }}
                     className="px-3 py-1 rounded text-xs font-medium text-white transition-colors hover:opacity-90 animate-fadeIn"
-                    style={{ backgroundColor: "#3d7d80" }}
+                    style={{ backgroundColor: "var(--enl-cerceta)" }}
                   >
                     Revisar
                   </button>
@@ -751,13 +758,13 @@ const FinanceManagement: React.FC<Props> = ({
       {/* Inline Detail Panel (when selected) */}
       {selected && (
         <div
-          className="rounded-xl border border-gray-700 overflow-hidden animate-fadeIn"
-          style={{ backgroundColor: "#1e2d3d" }}
+          className="rounded-xl border border-white/10 overflow-hidden animate-fadeIn"
+          style={{ backgroundColor: "var(--surface-modal)" }}
         >
           {/* Panel Header */}
           <div
-            className="flex items-center justify-between px-5 py-3 border-b border-gray-700"
-            style={{ backgroundColor: "#293C47" }}
+            className="flex items-center justify-between px-5 py-3 border-b border-white/10"
+            style={{ backgroundColor: "var(--enl-acero)" }}
           >
             <div className="flex items-center gap-3">
               <span
@@ -806,8 +813,8 @@ const FinanceManagement: React.FC<Props> = ({
           </div>
 
           {/* Finance notes section */}
-          <div className="px-5 py-4 border-t border-gray-700">
-            <label className="text-gray-400 text-xs font-medium mb-1 block">
+          <div className="px-5 py-4 border-t border-white/10">
+            <label className="text-white/60 text-xs font-medium mb-1 block">
               Notas y Observaciones de Finanzas
             </label>
             <div className="flex gap-2">
@@ -816,13 +823,13 @@ const FinanceManagement: React.FC<Props> = ({
                 onChange={(e) => setFinObs(e.target.value)}
                 placeholder="Escribe una observación interna..."
                 rows={2}
-                className="flex-1 px-3 py-1.5 rounded-lg text-white text-sm outline-none border border-gray-600 focus:border-[#00aa85] resize-none"
-                style={{ backgroundColor: "#293C47", fontFamily: "Alexandria, sans-serif" }}
+                className="flex-1 px-3 py-1.5 rounded-lg text-white text-sm outline-none border border-white/20 focus:border-jade resize-none"
+                style={{ backgroundColor: "var(--enl-acero)", fontFamily: "Alexandria, sans-serif" }}
               />
               <button
                 onClick={handleSaveObs}
                 disabled={isSaving || !finObs.trim()}
-                className="px-4 rounded-lg text-white text-xs font-semibold bg-[#00aa85] hover:opacity-90 disabled:opacity-50 flex items-center gap-1.5 transition-all"
+                className="px-4 rounded-lg text-white text-xs font-semibold bg-jade hover:opacity-90 disabled:opacity-50 flex items-center gap-1.5 transition-all"
               >
                 {isSaving ? (
                   <Loader2 size={12} className="animate-spin" />
@@ -853,13 +860,13 @@ const FinanceManagement: React.FC<Props> = ({
                   }
 
                   return notes.slice().reverse().map((note, idx) => (
-                    <div key={idx} className="bg-[#1a2b34] p-3 rounded-lg border border-gray-700/50">
+                    <div key={idx} className="bg-[#1a2b34] p-3 rounded-lg border border-white/5">
                       <div className="flex justify-between items-start mb-1">
-                        <div className="flex items-center gap-1.5 text-[10px] text-[#00aa85] font-medium uppercase tracking-wider">
+                        <div className="flex items-center gap-1.5 text-[11px] text-jade font-medium uppercase tracking-wider">
                           <User size={10} />
                           {note.user}
                         </div>
-                        <div className="flex items-center gap-1 text-[10px] text-gray-500">
+                        <div className="flex items-center gap-1 text-[11px] text-white/60">
                           <Clock size={10} />
                           {new Date(note.timestamp).toLocaleString('es-MX', {
                             day: '2-digit',
@@ -870,7 +877,7 @@ const FinanceManagement: React.FC<Props> = ({
                           })}
                         </div>
                       </div>
-                      <p className="text-gray-300 text-xs leading-relaxed" style={{ fontFamily: "Alexandria, sans-serif" }}>
+                      <p className="text-white/80 text-xs leading-relaxed" style={{ fontFamily: "Alexandria, sans-serif" }}>
                         {note.text}
                       </p>
                     </div>
@@ -885,7 +892,7 @@ const FinanceManagement: React.FC<Props> = ({
             selected.bankName ||
             selected.operationRef ||
             selected.estimatedPaymentDate) && (
-              <div className="px-5 py-3 border-t border-gray-700">
+              <div className="px-5 py-3 border-t border-white/10">
                 <p
                   className="text-purple-400 text-xs font-semibold mb-3 uppercase tracking-wide"
                   style={{ fontFamily: "Alexandria, sans-serif" }}
@@ -951,7 +958,7 @@ const FinanceManagement: React.FC<Props> = ({
             <div className="px-5 pb-4">
               <div
                 className="rounded-lg p-3 border border-yellow-600"
-                style={{ backgroundColor: "#2a2a1a" }}
+                style={{ backgroundColor: "var(--surface-warn)" }}
               >
                 <p className="text-yellow-400 text-xs font-medium mb-1">
                   Comentario de Aclaración / Rechazo anterior
@@ -962,7 +969,7 @@ const FinanceManagement: React.FC<Props> = ({
           )}
 
           {/* Actions */}
-          <div className="flex items-center gap-3 px-5 py-4 border-t border-gray-700 flex-wrap">
+          <div className="flex items-center gap-3 px-5 py-4 border-t border-white/10 flex-wrap">
             {(selected.status === STATUS.APPROVED ||
               selected.status === STATUS.PAYMENT_APPROVED) && (
               <button
@@ -1001,11 +1008,34 @@ const FinanceManagement: React.FC<Props> = ({
         </div>
       )}
 
+      </>)}
+
+      {/* Ejecución de pagos (flujo de propuestas): usa el mismo motor de selección, cruce con NetSuite y PaymentModal de este componente */}
+      {FLUJO_PROPUESTAS && (
+        <EjecucionPagos
+          requests={requests}
+          rate={lastRate.rate}
+          rateDate={lastRate.date}
+          selectedId={selectedId}
+          onSelect={handleSelect}
+          selectedIds={selectedIds}
+          setSelectedIds={setSelectedIds}
+          busy={isBulkOperating}
+          nsLoading={nsLoading}
+          claimedPaymentIds={claimedPaymentIds}
+          onMarkPaid={handleMarkPaidGate}
+          onBulkMarkPaid={handleBulkMarkPaidGate}
+          onUpdateRequest={onUpdateRequest}
+          onUpdateFinanceFields={onUpdateFinanceFields}
+          onReloadRequests={onReloadRequests}
+        />
+      )}
+
       {/* NS Block Message Banner */}
       {nsBlockMessage && (
         <div
           className="rounded-xl border border-red-600/50 p-4 flex items-start gap-3 animate-fadeIn"
-          style={{ backgroundColor: "#2a1a1a" }}
+          style={{ backgroundColor: "var(--surface-error)" }}
         >
           <XCircle size={20} className="text-red-400 flex-shrink-0 mt-0.5" />
           <div className="flex-1">
@@ -1107,9 +1137,9 @@ const Field: React.FC<{
   highlight?: boolean;
 }> = ({ label, value, highlight }) => (
   <div className="flex flex-col gap-0.5">
-    <span className="text-gray-500 text-xs">{label}</span>
+    <span className="text-white/60 text-xs">{label}</span>
     <span
-      className={`text-sm font-medium ${highlight ? "text-[#00aa85]" : "text-gray-200"
+      className={`text-sm font-medium ${highlight ? "text-jade" : "text-white/90"
         }`}
       style={{ fontFamily: "Alexandria, sans-serif" }}
     >
@@ -1136,21 +1166,24 @@ const ClarifyModal: React.FC<{
   };
 
   return (
-    <div
+    <ModalShell
+      labelledBy="fin-clarify-title"
+      onClose={onCancel}
       className="fixed inset-0 flex items-center justify-center z-50"
-      style={{ backgroundColor: "rgba(0,0,0,0.7)" }}
+      style={{ backgroundColor: "var(--scrim)" }}
     >
       <div
         className="rounded-xl p-6 border border-yellow-700 shadow-2xl max-w-md w-full mx-4"
-        style={{ backgroundColor: "#1e2d3d" }}
+        style={{ backgroundColor: "var(--surface-modal)" }}
       >
         <h3
+          id="fin-clarify-title"
           className="text-white text-lg font-bold mb-2"
           style={{ fontFamily: "Alexandria, sans-serif" }}
         >
           Solicitar Aclaración — {requestId}
         </h3>
-        <p className="text-gray-400 text-sm mb-4">
+        <p className="text-white/60 text-sm mb-4">
           Describe qué información necesitas que se corrija o se aclare.
         </p>
         <textarea
@@ -1161,9 +1194,9 @@ const ClarifyModal: React.FC<{
           }}
           placeholder="Ej: Falta factura anexa, verificar monto..."
           rows={4}
-          className="w-full px-3 py-2 rounded-lg text-white text-sm outline-none border border-gray-600 focus:border-yellow-500 resize-none"
+          className="w-full px-3 py-2 rounded-lg text-white text-sm outline-none border border-white/20 focus:border-yellow-500 resize-none"
           style={{
-            backgroundColor: "#293C47",
+            backgroundColor: "var(--enl-acero)",
             fontFamily: "Alexandria, sans-serif",
           }}
         />
@@ -1171,7 +1204,7 @@ const ClarifyModal: React.FC<{
         <div className="flex gap-3 mt-4 justify-end">
           <button
             onClick={onCancel}
-            className="px-4 py-2 rounded-lg text-gray-300 text-sm font-medium border border-gray-600 hover:border-gray-400 transition-colors"
+            className="px-4 py-2 rounded-lg text-white/80 text-sm font-medium border border-white/20 hover:border-white/40 transition-colors"
           >
             Cancelar
           </button>
@@ -1183,7 +1216,7 @@ const ClarifyModal: React.FC<{
           </button>
         </div>
       </div>
-    </div>
+    </ModalShell>
   );
 };
 
@@ -1206,21 +1239,24 @@ const EstimatedDateModal: React.FC<{
   };
 
   return (
-    <div
+    <ModalShell
+      labelledBy="fin-date-title"
+      onClose={onCancel}
       className="fixed inset-0 flex items-center justify-center z-50"
-      style={{ backgroundColor: "rgba(0,0,0,0.7)" }}
+      style={{ backgroundColor: "var(--scrim)" }}
     >
       <div
         className="rounded-xl p-6 border border-blue-700 shadow-2xl max-w-md w-full mx-4"
-        style={{ backgroundColor: "#1e2d3d" }}
+        style={{ backgroundColor: "var(--surface-modal)" }}
       >
         <h3
+          id="fin-date-title"
           className="text-white text-lg font-bold mb-2"
           style={{ fontFamily: "Alexandria, sans-serif" }}
         >
           Programar Pago — {requestId}
         </h3>
-        <p className="text-gray-400 text-sm mb-4">
+        <p className="text-white/60 text-sm mb-4">
           Selecciona la fecha en la que se realizará el pago. El solicitante
           recibirá la fecha programada por correo.
         </p>
@@ -1231,9 +1267,9 @@ const EstimatedDateModal: React.FC<{
             setDate(e.target.value);
             setError("");
           }}
-          className="w-full px-3 py-2 rounded-lg text-white text-sm outline-none border border-gray-600 focus:border-blue-500"
+          className="w-full px-3 py-2 rounded-lg text-white text-sm outline-none border border-white/20 focus:border-blue-500"
           style={{
-            backgroundColor: "#293C47",
+            backgroundColor: "var(--enl-acero)",
             fontFamily: "Alexandria, sans-serif",
           }}
         />
@@ -1241,7 +1277,7 @@ const EstimatedDateModal: React.FC<{
         <div className="flex gap-3 mt-6 justify-end">
           <button
             onClick={onCancel}
-            className="px-4 py-2 rounded-lg text-gray-300 text-sm font-medium border border-gray-600 hover:border-gray-400 transition-colors"
+            className="px-4 py-2 rounded-lg text-white/80 text-sm font-medium border border-white/20 hover:border-white/40 transition-colors"
           >
             Cancelar
           </button>
@@ -1253,7 +1289,7 @@ const EstimatedDateModal: React.FC<{
           </button>
         </div>
       </div>
-    </div>
+    </ModalShell>
   );
 };
 

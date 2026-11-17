@@ -74,7 +74,7 @@ export const TabResumen: React.FC<{ data: DecisionData }> = ({ data }) => {
             </thead>
             <tbody>
               {resumen_op.map((r) => (
-                <tr key={r.operacion} style={{ borderBottom: `1px solid rgba(255,255,255,0.04)` }}>
+                <tr key={r.operacion} style={{ borderBottom: `1px solid var(--wa-04)` }}>
                   <td style={{ padding: "9px 12px", fontSize: 13, color: T.text, fontFamily: T.fontAlt, fontWeight: 500 }}>{r.operacion}</td>
                   <td style={{ padding: "9px 12px", textAlign: "right", fontSize: 13, color: T.steel, ...NUM }}>{fmtMXN(r.aplazado)}</td>
                   <td style={{ padding: "9px 12px", textAlign: "right", fontSize: 13, color: T.jade, ...NUM }}>{fmtMXN(r.propuesta)}</td>
@@ -107,7 +107,7 @@ export const TabResumen: React.FC<{ data: DecisionData }> = ({ data }) => {
             </thead>
             <tbody>
               {data.resumen_prov.slice(0, 20).map((r) => (
-                <tr key={r.nombre_display} style={{ borderBottom: `1px solid rgba(255,255,255,0.04)` }}>
+                <tr key={r.nombre_display} style={{ borderBottom: `1px solid var(--wa-04)` }}>
                   <td style={{ padding: "8px 12px", fontSize: 12, color: T.text, fontFamily: T.fontAlt }}>{r.nombre_display}</td>
                   <td style={{ padding: "8px 12px", textAlign: "right", fontSize: 12, color: T.steel, ...NUM }}>{fmtMXN(r.aplazado)}</td>
                   <td style={{ padding: "8px 12px", textAlign: "right", fontSize: 12, color: T.jade, ...NUM }}>{fmtMXN(r.propuesta)}</td>
@@ -155,7 +155,7 @@ export const TabProveedores: React.FC<{ data: DecisionData }> = ({ data }) => {
               acc += r.total;
               const pctAcc = ratio(acc, total);
               return (
-                <tr key={r.nombre} style={{ borderBottom: `1px solid rgba(255,255,255,0.04)` }}>
+                <tr key={r.nombre} style={{ borderBottom: `1px solid var(--wa-04)` }}>
                   <td style={{ padding: "8px 12px", fontSize: 13, color: T.text, fontFamily: T.fontAlt }}>{i + 1}. {r.nombre}</td>
                   <td style={{ padding: "8px 12px", textAlign: "right", fontSize: 12, color: T.textSub, fontFamily: T.fontAlt }}>{r.pagos}</td>
                   <td style={{ padding: "8px 12px", textAlign: "right", fontSize: 12, color: T.jade, ...NUM }}>{fmtMXN(r.propuesta)}</td>
@@ -221,7 +221,7 @@ export const TabClientes: React.FC<{ data: DecisionData }> = ({ data }) => {
                 acc += r.total;
                 const pctAcc = ratio(acc, total);
                 return (
-                  <tr key={r.nombre} style={{ borderBottom: `1px solid rgba(255,255,255,0.04)` }}>
+                  <tr key={r.nombre} style={{ borderBottom: `1px solid var(--wa-04)` }}>
                     <td style={{ padding: "8px 12px", fontSize: 13, color: T.text, fontFamily: T.fontAlt }}>{i + 1}. {r.nombre}</td>
                     <td style={{ padding: "8px 12px", textAlign: "right", fontSize: 12, color: T.textSub }}>{r.pagos}</td>
                     <td style={{ padding: "8px 12px", textAlign: "right", fontSize: 12, color: T.jade, ...NUM }}>{fmtMXN(r.propuesta)}</td>
@@ -255,7 +255,7 @@ export const TabClientes: React.FC<{ data: DecisionData }> = ({ data }) => {
               {bankArr.map((r) => {
                 const pct = ratio(r.total, total);
                 return (
-                  <tr key={r.nombre} style={{ borderBottom: `1px solid rgba(255,255,255,0.04)` }}>
+                  <tr key={r.nombre} style={{ borderBottom: `1px solid var(--wa-04)` }}>
                     <td style={{ padding: "8px 12px", fontSize: 13, color: T.text, fontFamily: T.fontAlt, fontWeight: 500 }}>{r.nombre}</td>
                     <td style={{ padding: "8px 12px", textAlign: "right", fontSize: 12, color: T.textSub }}>{r.pagos}</td>
                     <td style={{ padding: "8px 12px", textAlign: "right", fontSize: 12, color: T.text, ...NUM }}>{fmtMXN(r.total)}</td>

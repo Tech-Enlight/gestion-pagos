@@ -19,7 +19,7 @@ export const LoginScreen: React.FC = () => {
       <div
         style={{
           background: "rgba(41,60,71,0.55)",
-          border: "1px solid rgba(255,255,255,0.08)",
+          border: "1px solid var(--wa-08)",
           borderRadius: 16,
           padding: "3rem 2.5rem",
           maxWidth: 400,
@@ -45,7 +45,7 @@ export const LoginScreen: React.FC = () => {
         </h1>
         <p
           style={{
-            color: "#94a3b8",
+            color: "var(--wa-60)",
             fontSize: 14,
             margin: "0 0 32px",
             lineHeight: 1.5,
@@ -67,7 +67,7 @@ export const LoginScreen: React.FC = () => {
         {authError && (
           <p
             style={{
-              color: "#ef4444",
+              color: "var(--signal-red)",
               fontSize: 13,
               marginTop: 20,
               fontWeight: 500,

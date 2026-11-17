@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { ModalShell } from "./ModalShell";
 import type { Request, ExchangeRate } from "../data/mockData";
 import type { NSBill } from "../services/sheets";
 
@@ -413,41 +414,46 @@ const PaymentModal: React.FC<Props> = ({
   };
 
   const inputClass =
-    "w-full px-3 py-2 rounded-lg text-white text-sm outline-none border border-gray-600 focus:border-[#00aa85] transition-colors";
+    "w-full px-3 py-2 rounded-lg text-white text-sm outline-none border border-white/20 focus:border-jade transition-colors";
   const inputStyle = {
-    backgroundColor: "#293C47",
+    backgroundColor: "var(--enl-acero)",
     fontFamily: "Alexandria, sans-serif",
   };
   const bulkCellClass = (field: string, id: string) =>
-    `w-full px-2 py-1 rounded text-white text-xs outline-none border transition-colors ${bulkFieldErrors[field]?.includes(id) ? "border-red-500" : "border-gray-600 focus:border-[#00aa85]"
+    `w-full px-2 py-1 rounded text-white text-xs outline-none border transition-colors ${bulkFieldErrors[field]?.includes(id) ? "border-red-500" : "border-white/20 focus:border-jade"
     }`;
-  const labelClass = "text-gray-400 text-xs font-medium mb-1 block";
+  const labelClass = "text-white/60 text-xs font-medium mb-1 block";
 
   const totalUSD = isBulk ? requests!.filter(r => r.currency === "USD").reduce((sum, r) => sum + r.amount, 0) : 0;
   const totalMXN = isBulk ? requests!.filter(r => r.currency === "MXN").reduce((sum, r) => sum + r.amount, 0) : 0;
 
+  // Sin onClose a propósito: un Esc accidental perdería un formulario ya capturado (y al reabrir se
+  // vuelve a consultar NetSuite). Se cierra con "Cancelar". El foco queda atrapado y regresa al cerrar.
   return (
-    <div
+    <ModalShell
+      labelledBy="pay-modal-title"
+      initialFocus="container"
       className="fixed inset-0 flex items-center justify-center z-50"
-      style={{ backgroundColor: "rgba(0,0,0,0.7)" }}
+      style={{ backgroundColor: "var(--scrim)" }}
     >
       <div
-        className={`rounded-xl border border-gray-600 shadow-2xl w-full mx-4 max-h-[90vh] flex flex-col transition-all duration-300 ${isBulk ? "max-w-6xl" : "max-w-2xl"
+        className={`rounded-xl border border-white/20 shadow-2xl w-full mx-4 max-h-[90vh] flex flex-col transition-all duration-300 ${isBulk ? "max-w-6xl" : "max-w-2xl"
           }`}
-        style={{ backgroundColor: "#1e2d3d" }}
+        style={{ backgroundColor: "var(--surface-modal)" }}
       >
         {/* Header */}
         <div
-          className="px-6 py-4 border-b border-gray-700 flex-shrink-0"
-          style={{ backgroundColor: "#293C47", borderRadius: "12px 12px 0 0" }}
+          className="px-6 py-4 border-b border-white/10 flex-shrink-0"
+          style={{ backgroundColor: "var(--enl-acero)", borderRadius: "12px 12px 0 0" }}
         >
           <h3
+            id="pay-modal-title"
             className="text-white text-lg font-bold"
             style={{ fontFamily: "Alexandria, sans-serif" }}
           >
             {isBulk ? "Registrar Pagos en Lote" : `Registrar Pago — ${request?.id}`}
           </h3>
-          <p className="text-gray-400 text-xs mt-1">
+          <p className="text-white/60 text-xs mt-1">
             {isBulk ? (
               <span>
                 Seleccionadas: <strong className="text-white">{requests!.length} solicitudes</strong>
@@ -467,7 +473,7 @@ const PaymentModal: React.FC<Props> = ({
           {/* === Required fields === */}
           <div>
             <p
-              className="text-[#00aa85] text-xs font-semibold mb-3 uppercase tracking-wide"
+              className="text-jade text-xs font-semibold mb-3 uppercase tracking-wide"
               style={{ fontFamily: "Alexandria, sans-serif" }}
             >
               Datos obligatorios comunes
@@ -478,7 +484,7 @@ const PaymentModal: React.FC<Props> = ({
                 <div>
                   <label className={labelClass}>
                     Banco*
-                    {activeBill?.bank_account && <span className="text-[#00aa85] ml-1">(NS)</span>}
+                    {activeBill?.bank_account && <span className="text-jade ml-1">(NS)</span>}
                   </label>
                   {activeBill?.bank_account ? (
                     <input
@@ -563,7 +569,7 @@ const PaymentModal: React.FC<Props> = ({
                   {/* NS source badge */}
                   {hasNsBills && (
                     <div className="md:col-span-2">
-                      <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[#00aa85]/30 bg-[#00aa85]/10 text-xs text-[#00aa85]">
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-jade/30 bg-jade/10 text-xs text-jade">
                         <span>✓</span>
                         <span>Datos pre-llenados desde NetSuite (factura {activeBill!.bill_number}, pagada {activeBill!.payment_date}). Campos de NS son de solo lectura.</span>
                       </div>
@@ -620,7 +626,7 @@ const PaymentModal: React.FC<Props> = ({
                       <div>
                         <label className={labelClass}>
                           Tipo de Cambio*{" "}
-                          <span className="text-gray-500">
+                          <span className="text-white/60">
                             {hasNsBills ? "(NetSuite)" : `(Banxico ${lastRate.date})`}
                           </span>
                         </label>
@@ -648,9 +654,9 @@ const PaymentModal: React.FC<Props> = ({
                       <div>
                         <label className={labelClass}>Monto en MXN (calculado)</label>
                         <div
-                          className="px-3 py-2 rounded-lg text-[#00aa85] text-sm font-semibold border border-gray-700"
+                          className="px-3 py-2 rounded-lg text-jade text-sm font-semibold border border-white/10"
                           style={{
-                            backgroundColor: "#243545",
+                            backgroundColor: "var(--surface-hover)",
                             fontFamily: "Alexandria, sans-serif",
                           }}
                         >
@@ -668,7 +674,7 @@ const PaymentModal: React.FC<Props> = ({
                     <label className={labelClass}>
                       Referencia de Operación*{" "}
                       {activeBill?.payment_tranid && (
-                        <span className="text-gray-500">(NetSuite)</span>
+                        <span className="text-white/60">(NetSuite)</span>
                       )}
                     </label>
                     <input
@@ -708,7 +714,7 @@ const PaymentModal: React.FC<Props> = ({
             return (
               <div className="space-y-2">
                 <p
-                  className="text-[#00aa85] text-xs font-semibold uppercase tracking-wide"
+                  className="text-jade text-xs font-semibold uppercase tracking-wide"
                   style={{ fontFamily: "Alexandria, sans-serif" }}
                 >
                   Confirmación de Pago por Solicitud (NetSuite)
@@ -735,16 +741,16 @@ const PaymentModal: React.FC<Props> = ({
                     return (
                       <div
                         key={r.id}
-                        className={`rounded-lg border p-3 space-y-2 ${isDuplicate ? "border-red-500" : "border-gray-700"}`}
-                        style={{ backgroundColor: "#1e2d3d" }}
+                        className={`rounded-lg border p-3 space-y-2 ${isDuplicate ? "border-red-500" : "border-white/10"}`}
+                        style={{ backgroundColor: "var(--surface-modal)" }}
                       >
                         <div className="flex items-center justify-between flex-wrap gap-2">
                           <div className="flex items-center gap-2 text-xs">
-                            <span className="font-semibold text-[#00aa85]">{r.id}</span>
-                            <span className="text-gray-400">{r.beneficiary}</span>
+                            <span className="font-semibold text-jade">{r.id}</span>
+                            <span className="text-white/60">{r.beneficiary}</span>
                           </div>
                           {isDuplicate && (
-                            <span className="text-red-400 text-[10px] font-bold uppercase tracking-wide">
+                            <span className="text-red-400 text-[11px] font-bold uppercase tracking-wide">
                               Pago duplicado en el lote
                             </span>
                           )}
@@ -752,15 +758,15 @@ const PaymentModal: React.FC<Props> = ({
 
                         {bills.length > 1 ? (
                           <div>
-                            <label className="text-gray-400 text-[10px] uppercase tracking-wider mb-1 block font-semibold">
+                            <label className="text-white/60 text-[11px] uppercase tracking-wider mb-1 block font-semibold">
                               Pago de NetSuite a aplicar*
                             </label>
                             <select
                               value={selectedIdx}
                               onChange={(e) => handleBillSelectionChange(r.id, Number(e.target.value))}
-                              className={`w-full px-2 py-1.5 rounded text-white text-xs outline-none border transition-colors ${isDuplicate ? "border-red-500" : "border-gray-600 focus:border-[#00aa85]"
+                              className={`w-full px-2 py-1.5 rounded text-white text-xs outline-none border transition-colors ${isDuplicate ? "border-red-500" : "border-white/20 focus:border-jade"
                                 }`}
-                              style={{ backgroundColor: "#293C47", fontFamily: "Alexandria, sans-serif" }}
+                              style={{ backgroundColor: "var(--enl-acero)", fontFamily: "Alexandria, sans-serif" }}
                             >
                               {bills.map((b, i) => (
                                 <option key={`${b.payment_id}-${i}`} value={i}>
@@ -770,8 +776,8 @@ const PaymentModal: React.FC<Props> = ({
                             </select>
                           </div>
                         ) : (
-                          <p className="text-gray-500 text-[10px]">
-                            Factura NS: <span className="text-gray-300">{bill?.bill_number}</span> · Pagada {bill?.payment_date}
+                          <p className="text-white/60 text-[11px]">
+                            Factura NS: <span className="text-white/80">{bill?.bill_number}</span> · Pagada {bill?.payment_date}
                           </p>
                         )}
 
@@ -779,7 +785,7 @@ const PaymentModal: React.FC<Props> = ({
                           const mismatch = amountMismatch(bill?.payment_amount ?? bill?.bill_total, r.amount);
                           if (!mismatch) return null;
                           return (
-                            <div className="flex items-start gap-1.5 px-2 py-1.5 rounded border border-yellow-500/40 bg-yellow-500/10 text-[10px] text-yellow-300">
+                            <div className="flex items-start gap-1.5 px-2 py-1.5 rounded border border-yellow-500/40 bg-yellow-500/10 text-[11px] text-yellow-300">
                               <span>⚠</span>
                               <span>
                                 Difiere del monto solicitado por {Math.abs(mismatch.diff).toLocaleString("es-MX", { minimumFractionDigits: 2 })} ({mismatch.pct.toFixed(1)}%) — posible retención. Verifica en NetSuite.
@@ -790,47 +796,47 @@ const PaymentModal: React.FC<Props> = ({
 
                         <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
                           <div>
-                            <label className="text-gray-500 text-[10px] uppercase tracking-wider mb-1 block">
+                            <label className="text-white/60 text-[11px] uppercase tracking-wider mb-1 block">
                               Monto Pagado (NS)
                             </label>
                             <div
-                              className="px-2 py-1.5 rounded text-[#00aa85] text-xs font-semibold border border-gray-700"
-                              style={{ backgroundColor: "#243545" }}
+                              className="px-2 py-1.5 rounded text-jade text-xs font-semibold border border-white/10"
+                              style={{ backgroundColor: "var(--surface-hover)" }}
                             >
                               ${amtPaid.toLocaleString("es-MX", { minimumFractionDigits: 2 })} {bill?.currency ?? r.currency}
                             </div>
                           </div>
                           <div>
-                            <label className="text-gray-500 text-[10px] uppercase tracking-wider mb-1 block">
+                            <label className="text-white/60 text-[11px] uppercase tracking-wider mb-1 block">
                               Tipo de Cambio
                             </label>
                             <div
-                              className="px-2 py-1.5 rounded text-gray-300 text-xs border border-gray-700"
-                              style={{ backgroundColor: "#243545" }}
+                              className="px-2 py-1.5 rounded text-white/80 text-xs border border-white/10"
+                              style={{ backgroundColor: "var(--surface-hover)" }}
                             >
                               {exRate.toFixed(4)}
                             </div>
                           </div>
                           <div>
-                            <label className="text-gray-500 text-[10px] uppercase tracking-wider mb-1 block">
+                            <label className="text-white/60 text-[11px] uppercase tracking-wider mb-1 block">
                               N° Factura (NS)
                             </label>
                             <div
-                              className="px-2 py-1.5 rounded text-white text-xs border border-gray-700 opacity-70"
-                              style={{ backgroundColor: "#243545" }}
+                              className="px-2 py-1.5 rounded text-white text-xs border border-white/10 opacity-70"
+                              style={{ backgroundColor: "var(--surface-hover)" }}
                             >
                               {bill?.bill_number || "—"}
                             </div>
                           </div>
                           <div>
-                            <label className="text-gray-400 text-[10px] uppercase tracking-wider mb-1 block font-semibold">
+                            <label className="text-white/60 text-[11px] uppercase tracking-wider mb-1 block font-semibold">
                               Banco*
-                              {bill?.bank_account && <span className="text-[#00aa85] ml-1">(NS)</span>}
+                              {bill?.bank_account && <span className="text-jade ml-1">(NS)</span>}
                             </label>
                             {bill?.bank_account ? (
                               <div
-                                className="px-2 py-1.5 rounded text-white text-xs border border-gray-700 opacity-70"
-                                style={{ backgroundColor: "#243545" }}
+                                className="px-2 py-1.5 rounded text-white text-xs border border-white/10 opacity-70"
+                                style={{ backgroundColor: "var(--surface-hover)" }}
                               >
                                 {individualBanks[r.id]}
                               </div>
@@ -839,7 +845,7 @@ const PaymentModal: React.FC<Props> = ({
                                 value={individualBanks[r.id] || ""}
                                 onChange={(e) => handleIndividualFieldChange("bank", r.id, e.target.value)}
                                 className={bulkCellClass("bank", r.id)}
-                                style={{ backgroundColor: "#293C47", fontFamily: "Alexandria, sans-serif" }}
+                                style={{ backgroundColor: "var(--enl-acero)", fontFamily: "Alexandria, sans-serif" }}
                               >
                                 <option value="">Seleccionar...</option>
                                 {BANK_OPTIONS.map((b) => (
@@ -851,16 +857,16 @@ const PaymentModal: React.FC<Props> = ({
                             )}
                           </div>
                           <div>
-                            <label className="text-gray-400 text-[10px] uppercase tracking-wider mb-1 block font-semibold">
+                            <label className="text-white/60 text-[11px] uppercase tracking-wider mb-1 block font-semibold">
                               Ref. Operación*
-                              {bill?.payment_tranid && <span className="text-[#00aa85] ml-1">(NS)</span>}
+                              {bill?.payment_tranid && <span className="text-jade ml-1">(NS)</span>}
                             </label>
                             <input
                               type="text"
                               value={individualRefs[r.id] || ""}
                               onChange={(e) => handleIndividualFieldChange("ref", r.id, e.target.value)}
                               className={bulkCellClass("ref", r.id)}
-                              style={{ backgroundColor: "#293C47", fontFamily: "Alexandria, sans-serif" }}
+                              style={{ backgroundColor: "var(--enl-acero)", fontFamily: "Alexandria, sans-serif" }}
                               placeholder="Ej: TRF-20231027-001"
                             />
                           </div>
@@ -875,17 +881,17 @@ const PaymentModal: React.FC<Props> = ({
 
           {/* Bulk Mode: Inline Requests Details Table */}
           {isBulk && (
-            <div className="border border-gray-700 rounded-xl overflow-hidden">
+            <div className="border border-white/10 rounded-xl overflow-hidden">
               <div
-                className="px-4 py-2 border-b border-gray-700 text-xs font-bold text-gray-300 uppercase tracking-wide"
-                style={{ backgroundColor: "#243545" }}
+                className="px-4 py-2 border-b border-white/10 text-xs font-bold text-white/80 uppercase tracking-wide"
+                style={{ backgroundColor: "var(--surface-hover)" }}
               >
                 Información Administrativa por Solicitud
               </div>
               <div className="max-h-80 overflow-y-auto overflow-x-auto custom-scrollbar">
                 <table className="w-full text-xs text-left min-w-[1200px]">
                   <thead>
-                    <tr className="border-b border-gray-700 text-gray-400" style={{ backgroundColor: "#1e2d3d" }}>
+                    <tr className="border-b border-white/10 text-white/60" style={{ backgroundColor: "var(--surface-modal)" }}>
                       <th className="px-3 py-2 w-[70px]">ID</th>
                       <th className="px-3 py-2 w-[150px]">Beneficiario</th>
                       <th className="px-3 py-2 w-[120px]">Monto</th>
@@ -899,15 +905,15 @@ const PaymentModal: React.FC<Props> = ({
                   </thead>
                   <tbody>
                     {requests!.map((r) => (
-                      <tr key={r.id} className="border-b border-gray-700/50 hover:bg-[#243545]/30">
-                        <td className="px-3 py-2 font-semibold text-[#00aa85]">{r.id}</td>
-                        <td className="px-3 py-2 text-gray-300 max-w-[150px] truncate" title={r.beneficiary}>
+                      <tr key={r.id} className="border-b border-white/5 hover:bg-surface-hover/30">
+                        <td className="px-3 py-2 font-semibold text-jade">{r.id}</td>
+                        <td className="px-3 py-2 text-white/80 max-w-[150px] truncate" title={r.beneficiary}>
                           {r.beneficiary}
                         </td>
-                        <td className="px-3 py-2 text-gray-300 font-medium">
+                        <td className="px-3 py-2 text-white/80 font-medium">
                           {r.amount.toLocaleString("es-MX", { minimumFractionDigits: 2 })} {r.currency}
                           {r.currency === "USD" && (
-                            <span className="block text-[10px] text-gray-500 font-normal">
+                            <span className="block text-[11px] text-white/60 font-normal">
                               MXN: ${(r.amount * lastRate.rate).toLocaleString("es-MX", { minimumFractionDigits: 2 })}
                             </span>
                           )}
@@ -918,7 +924,7 @@ const PaymentModal: React.FC<Props> = ({
                             value={individualInvoiceLinks[r.id] || ""}
                             onChange={(e) => handleIndividualFieldChange("link", r.id, e.target.value)}
                             className={bulkCellClass("link", r.id)}
-                            style={{ backgroundColor: "#293C47", fontFamily: "Alexandria, sans-serif" }}
+                            style={{ backgroundColor: "var(--enl-acero)", fontFamily: "Alexandria, sans-serif" }}
                             placeholder="Ej: https://..."
                           />
                         </td>
@@ -928,7 +934,7 @@ const PaymentModal: React.FC<Props> = ({
                             value={individualClients[r.id] || ""}
                             onChange={(e) => handleIndividualFieldChange("client", r.id, e.target.value)}
                             className={bulkCellClass("client", r.id)}
-                            style={{ backgroundColor: "#293C47", fontFamily: "Alexandria, sans-serif" }}
+                            style={{ backgroundColor: "var(--enl-acero)", fontFamily: "Alexandria, sans-serif" }}
                           />
                         </td>
                         <td className="px-3 py-2">
@@ -936,7 +942,7 @@ const PaymentModal: React.FC<Props> = ({
                             value={individualServiceDeliveries[r.id] || ""}
                             onChange={(e) => handleIndividualFieldChange("delivery", r.id, e.target.value)}
                             className={bulkCellClass("delivery", r.id)}
-                            style={{ backgroundColor: "#293C47", fontFamily: "Alexandria, sans-serif" }}
+                            style={{ backgroundColor: "var(--enl-acero)", fontFamily: "Alexandria, sans-serif" }}
                           >
                             <option value="">Seleccionar...</option>
                             {SERVICE_DELIVERY_OPTIONS.map((opt) => (
@@ -946,14 +952,14 @@ const PaymentModal: React.FC<Props> = ({
                             ))}
                           </select>
                         </td>
-                        <td className="px-3 py-2 text-gray-300">{getProposal(r)}</td>
+                        <td className="px-3 py-2 text-white/80">{getProposal(r)}</td>
                         <td className="px-3 py-2">
                           <input
                             type="text"
                             value={individualOcStatuses[r.id] || ""}
                             onChange={(e) => handleIndividualFieldChange("ocStatus", r.id, e.target.value)}
                             className={bulkCellClass("ocStatus", r.id)}
-                            style={{ backgroundColor: "#293C47", fontFamily: "Alexandria, sans-serif" }}
+                            style={{ backgroundColor: "var(--enl-acero)", fontFamily: "Alexandria, sans-serif" }}
                             placeholder="Ej: Entregada, Parcial"
                           />
                         </td>
@@ -963,7 +969,7 @@ const PaymentModal: React.FC<Props> = ({
                             value={individualPaymentProofs[r.id] || ""}
                             onChange={(e) => handleIndividualFieldChange("proof", r.id, e.target.value)}
                             className={bulkCellClass("proof", r.id)}
-                            style={{ backgroundColor: "#293C47", fontFamily: "Alexandria, sans-serif" }}
+                            style={{ backgroundColor: "var(--enl-acero)", fontFamily: "Alexandria, sans-serif" }}
                             placeholder="URL o ref"
                           />
                         </td>
@@ -978,7 +984,7 @@ const PaymentModal: React.FC<Props> = ({
           {/* === Additional fields (all mandatory) === */}
           <div>
             <p
-              className="text-gray-500 text-xs font-semibold mb-3 uppercase tracking-wide"
+              className="text-white/60 text-xs font-semibold mb-3 uppercase tracking-wide"
               style={{ fontFamily: "Alexandria, sans-serif" }}
             >
               Datos complementarios
@@ -990,7 +996,7 @@ const PaymentModal: React.FC<Props> = ({
                   <div>
                     <label className={labelClass}>
                       N° de Factura*
-                      {hasNsBills && <span className="text-[#00aa85] ml-1">(NS)</span>}
+                      {hasNsBills && <span className="text-jade ml-1">(NS)</span>}
                     </label>
                     <input
                       type="text"
@@ -1074,8 +1080,8 @@ const PaymentModal: React.FC<Props> = ({
                   <div>
                     <label className={labelClass}>Propuesta</label>
                     <div
-                      className="px-3 py-2 rounded-lg text-white text-sm border border-gray-700"
-                      style={{ backgroundColor: "#243545", fontFamily: "Alexandria, sans-serif" }}
+                      className="px-3 py-2 rounded-lg text-white text-sm border border-white/10"
+                      style={{ backgroundColor: "var(--surface-hover)", fontFamily: "Alexandria, sans-serif" }}
                     >
                       {getProposal(request!)}
                     </div>
@@ -1173,12 +1179,12 @@ const PaymentModal: React.FC<Props> = ({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-gray-700 flex-shrink-0">
-          <p className="text-gray-500 text-xs">* Campos obligatorios</p>
+        <div className="flex items-center justify-between px-6 py-4 border-t border-white/10 flex-shrink-0">
+          <p className="text-white/60 text-xs">* Campos obligatorios</p>
           <div className="flex gap-3">
             <button
               onClick={onCancel}
-              className="px-4 py-2 rounded-lg text-gray-300 text-sm font-medium border border-gray-600 hover:border-gray-400 transition-colors"
+              className="px-4 py-2 rounded-lg text-white/80 text-sm font-medium border border-white/20 hover:border-white/40 transition-colors"
             >
               Cancelar
             </button>
@@ -1191,7 +1197,7 @@ const PaymentModal: React.FC<Props> = ({
           </div>
         </div>
       </div>
-    </div>
+    </ModalShell>
   );
 };
 

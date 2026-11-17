@@ -10,9 +10,9 @@ interface KPICardProps {
 const KPICard: React.FC<KPICardProps> = ({ label, value, icon, color }) => {
   return (
     <div
-      className="rounded-xl p-5 shadow-lg border border-gray-700 group hover:border-gray-500 transition-all duration-300"
+      className="rounded-xl p-5 shadow-lg border border-white/10 group hover:border-white/30 transition-all duration-300"
       style={{
-        backgroundColor: "#1e2d3d",
+        backgroundColor: "var(--surface-modal)",
         background: "linear-gradient(145deg, #1e2d3d 0%, #16222c 100%)",
       }}
     >
@@ -29,7 +29,7 @@ const KPICard: React.FC<KPICardProps> = ({ label, value, icon, color }) => {
         ></div>
       </div>
       <p
-        className="text-gray-500 text-[10px] uppercase tracking-[0.15em] font-semibold mb-1"
+        className="text-white/60 text-[11px] uppercase tracking-[0.15em] font-semibold mb-1"
         style={{ fontFamily: "Alexandria, sans-serif" }}
       >
         {label}

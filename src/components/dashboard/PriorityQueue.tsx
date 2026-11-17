@@ -77,7 +77,7 @@ const QueueRow: React.FC<QueueRowProps> = ({ req, urgent, onOpen }) => {
             {req.beneficiary}
           </span>
         </div>
-        <div className="text-[11.5px] truncate" style={{ color: "rgba(255,255,255,0.6)" }}>
+        <div className="text-[11.5px] truncate" style={{ color: "var(--wa-60)" }}>
           {req.projectNumber}
           {days > 0 && ` · hace ${days} ${days === 1 ? "día" : "días"}`}
         </div>
@@ -90,7 +90,7 @@ const QueueRow: React.FC<QueueRowProps> = ({ req, urgent, onOpen }) => {
           <StatusPill status={req.status} />
         </div>
       </div>
-      <ChevronRight size={14} aria-hidden style={{ color: "rgba(255,255,255,0.4)" }} />
+      <ChevronRight size={14} aria-hidden style={{ color: "var(--wa-40)" }} />
     </button>
   );
 };
@@ -121,7 +121,7 @@ const PriorityQueue: React.FC<PriorityQueueProps> = ({
           >
             Necesita tu atención
           </h3>
-          <p className="m-0 mt-0.5 text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>
+          <p className="m-0 mt-0.5 text-xs" style={{ color: "var(--wa-60)" }}>
             Las más antiguas primero
           </p>
         </div>
@@ -137,13 +137,13 @@ const PriorityQueue: React.FC<PriorityQueueProps> = ({
       </div>
       <div style={{ padding: "12px 16px 16px" }}>
         {loading ? (
-          <p className="m-0 text-center text-xs" style={{ padding: "32px 16px", color: "rgba(255,255,255,0.6)" }}>
+          <p className="m-0 text-center text-xs" style={{ padding: "32px 16px", color: "var(--wa-60)" }}>
             Cargando solicitudes…
           </p>
         ) : rows.length === 0 ? (
           <div
             className="flex flex-col items-center text-center"
-            style={{ padding: "32px 16px", color: "rgba(255,255,255,0.7)" }}
+            style={{ padding: "32px 16px", color: "var(--wa-70)" }}
           >
             <div
               className="flex items-center justify-center rounded-full mb-3"
@@ -157,7 +157,7 @@ const PriorityQueue: React.FC<PriorityQueueProps> = ({
               <CheckCircle2 size={26} aria-hidden />
             </div>
             <p className="m-0 text-white font-medium">Estás al día</p>
-            <p className="m-0 mt-1 text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>
+            <p className="m-0 mt-1 text-xs" style={{ color: "var(--wa-60)" }}>
               No hay solicitudes esperando tu acción.
             </p>
           </div>
@@ -167,7 +167,7 @@ const PriorityQueue: React.FC<PriorityQueueProps> = ({
               <QueueRow key={r.id} req={r} urgent={i < 2} onOpen={() => onOpen(r.status)} />
             ))}
             {extra > 0 && (
-              <p className="m-0 mt-2 text-xs text-center" style={{ color: "rgba(255,255,255,0.6)" }}>
+              <p className="m-0 mt-2 text-xs text-center" style={{ color: "var(--wa-60)" }}>
                 +{extra} {extra === 1 ? "solicitud más" : "solicitudes más"}
               </p>
             )}

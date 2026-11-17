@@ -56,11 +56,13 @@ export const SelectionBar: React.FC<SelBarProps> = ({
       <div style={{ display: "flex", gap: 8, marginLeft: "auto", flexWrap: "wrap", justifyContent: "flex-end" }}>
         {canDecide && decidibles.length > 0 && (
           <>
-            <ActionBtn
-              label={`Aprobar (${decidibles.length})`} color={T.jade} disabled={actionBusy || !crossReady} icon={<CheckCircle2 size={13} />}
-              title={crossReady ? undefined : "Espera a que termine el cruce con OC y pronóstico"}
-              onClick={() => onApproveIds?.(decidibles)}
-            />
+            {onApproveIds && (
+              <ActionBtn
+                label={`Aprobar (${decidibles.length})`} color={T.jade} disabled={actionBusy || !crossReady} icon={<CheckCircle2 size={13} />}
+                title={crossReady ? undefined : "Espera a que termine el cruce con OC y pronóstico"}
+                onClick={() => onApproveIds(decidibles)}
+              />
+            )}
             <ActionBtn label={`Aclaración (${decidibles.length})`} color={T.amber} disabled={actionBusy} icon={<HelpCircle size={13} />} onClick={() => onClarifyIds?.(decidibles)} />
             <ActionBtn label={`Rechazar (${decidibles.length})`} color={T.red} disabled={actionBusy} icon={<XCircle size={13} />} onClick={() => onRejectIds?.(decidibles)} />
             <div style={{ width: 1, alignSelf: "stretch", background: T.cardBorder }} />

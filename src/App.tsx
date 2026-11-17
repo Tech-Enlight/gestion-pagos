@@ -15,6 +15,9 @@ import RequestExplorer from "./components/RequestExplorer";
 import ExchangeChart from "./components/ExchangeChart";
 import FinanceManagement from "./components/FinanceManagement";
 import DecisionPagos from "./components/DecisionPagos";
+import PlaneacionPagos from "./components/PlaneacionPagos";
+import { FLUJO_PROPUESTAS } from "./config/flujo";
+import { ROLES_PLANEACION } from "./components/planeacion/logic";
 import Help from "./components/Help";
 import type { Request, ExchangeRate } from "./data/mockData";
 import {
@@ -33,7 +36,7 @@ import {
 // user's role can't see, so an inapplicable deep link just renders nothing.
 const VALID_VIEWS = new Set([
   "inicio", "dashboard", "nueva-solicitud", "mis-solicitudes", "aprobaciones",
-  "finanzas", "explorador", "decision-pagos", "tipo-de-cambio", "configuracion", "ayuda",
+  "finanzas", "explorador", "decision-pagos", "planeacion", "tipo-de-cambio", "configuracion", "ayuda",
 ]);
 const getInitialView = () => {
   const requested = new URLSearchParams(window.location.search).get("view");
@@ -173,7 +176,7 @@ function AppContent() {
   if (!isAuthenticated) return <LoginScreen />;
 
   return (
-    <div style={{ display: "flex", height: "100vh", background: "#121926" }}>
+    <div style={{ display: "flex", height: "100vh", background: "var(--enl-marino)" }}>
       <Sidebar currentView={currentView} setCurrentView={setCurrentView} />
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <TopBar onNavigate={setCurrentView} />
@@ -192,6 +195,7 @@ function AppContent() {
             "operaciones",
             "ingenieria",
             "servicios",
+            "pmo",
             "admin",
             "superadmin",
           ]}
@@ -258,8 +262,14 @@ function AppContent() {
               onUpdateRequestBulk={handleUpdateRequestBulk}
               onUpdateFinanceFieldsBulk={handleUpdateFinanceFieldsBulk}
               onUpdateFinanceFieldsBulkPerRequest={handleUpdateFinanceFieldsBulkPerRequest}
+              onReloadRequests={loadRequests}
             />
           )}
+        </RoleGate>
+
+        {/* Misma lista de roles que en Sidebar.navItems (fuente única de la matriz) */}
+        <RoleGate allowedRoles={FLUJO_PROPUESTAS ? ROLES_PLANEACION : ["superadmin"]}>
+          {currentView === "planeacion" && <PlaneacionPagos requests={requests} onReloadRequests={loadRequests} />}
         </RoleGate>
 
         <RoleGate allowedRoles={["admin", "superadmin", "analista_contable"]}>
@@ -285,7 +295,7 @@ function AppContent() {
             style={{ color: "#fff", fontFamily: "Alexandria, sans-serif" }}
           >
             <h2 style={{ fontSize: 20, marginBottom: 16 }}>Configuración</h2>
-            <p style={{ color: "#94a3b8" }}>
+            <p style={{ color: "var(--wa-60)" }}>
               Sección de configuración — próximamente.
             </p>
           </div>

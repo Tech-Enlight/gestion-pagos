@@ -1,4 +1,5 @@
 import React from "react";
+import { FLUJO_PROPUESTAS } from "../config/flujo";
 import type { Request } from "../data/mockData";
 import {
   CheckCircle2,
@@ -15,7 +16,7 @@ interface Props {
   onClose: () => void;
 }
 
-const stages = [
+const STAGES_ANTERIOR = [
   {
     key: "Draft",
     label: "Borrador",
@@ -39,9 +40,21 @@ const stages = [
   { key: "Paid", label: "Pagado", desc: "Pago procesado" },
 ];
 
+// Flujo de propuestas: Solicitada → (Finanzas la incluye en una propuesta aprobada por dos niveles) → Pago aprobado → Pagado
+const STAGES_PROPUESTAS = [
+  { key: "Draft", label: "Borrador", desc: "Solicitud creada por el colaborador" },
+  { key: "Solicitada", label: "Solicitada", desc: "Finanzas la incluye en una propuesta de pagos" },
+  { key: "Payment Approved", label: "Pago Aprobado", desc: "Propuesta aprobada; Finanzas programa y ejecuta el pago" },
+  { key: "Paid", label: "Pagado", desc: "Pago procesado" },
+];
+const stages = FLUJO_PROPUESTAS ? STAGES_PROPUESTAS : STAGES_ANTERIOR;
+
 // "Approved" (legacy) equivale a la etapa de pago aprobado en el flujo actual
 const normalizeStatus = (status: string): string =>
-  status === "Approved" ? "Payment Approved" : status;
+  status === "Approved"
+    ? "Payment Approved"
+    // Estados del flujo anterior que aún no se hayan migrado se leen como "Solicitada"
+    : FLUJO_PROPUESTAS && (status === "Autorización" || status === "Pending Fin") ? "Solicitada" : status;
 
 const getStageIndex = (status: string): number => {
   if (status === "Rejected") return -1;
@@ -62,12 +75,12 @@ const WorkflowTracker: React.FC<Props> = ({ request, onClose }) => {
 
   return (
     <div
-      className="rounded-xl border border-gray-700 overflow-hidden"
-      style={{ backgroundColor: "#1e2d3d" }}
+      className="rounded-xl border border-white/10 overflow-hidden"
+      style={{ backgroundColor: "var(--surface-modal)" }}
     >
       <div
-        className="flex items-center justify-between px-4 py-3 border-b border-gray-700"
-        style={{ backgroundColor: "#293C47" }}
+        className="flex items-center justify-between px-4 py-3 border-b border-white/10"
+        style={{ backgroundColor: "var(--enl-acero)" }}
       >
         <h3
           className="text-white font-semibold text-sm"
@@ -77,7 +90,7 @@ const WorkflowTracker: React.FC<Props> = ({ request, onClose }) => {
         </h3>
         <button
           onClick={onClose}
-          className="text-gray-400 hover:text-white transition-colors"
+          className="text-white/60 hover:text-white transition-colors"
         >
           <XCircle size={20} />
         </button>
@@ -86,27 +99,27 @@ const WorkflowTracker: React.FC<Props> = ({ request, onClose }) => {
       <div className="p-5">
         <div className="flex flex-wrap gap-x-4 gap-y-2 mb-6">
           {request.poNumber && (
-            <div className="flex items-center gap-1.5 text-gray-400 text-[10px] uppercase tracking-wider font-medium">
-              <FileText size={12} className="text-[#3d7d80]" />
+            <div className="flex items-center gap-1.5 text-white/60 text-[11px] uppercase tracking-wider font-medium">
+              <FileText size={12} className="text-cerceta" />
               <span>OC:</span>
-              <span className="text-gray-200 font-bold">{request.poNumber}</span>
+              <span className="text-white/90 font-bold">{request.poNumber}</span>
             </div>
           )}
-          <div className="flex items-center gap-1.5 text-gray-400 text-[10px] uppercase tracking-wider font-medium">
-            <User size={12} className="text-[#3d7d80]" />
+          <div className="flex items-center gap-1.5 text-white/60 text-[11px] uppercase tracking-wider font-medium">
+            <User size={12} className="text-cerceta" />
             <span>Solicitante:</span>
-            <span className="text-gray-200">{request.submittedBy}</span>
+            <span className="text-white/90">{request.submittedBy}</span>
           </div>
-          <div className="flex items-center gap-1.5 text-gray-400 text-[10px] uppercase tracking-wider font-medium">
-            <Calendar size={12} className="text-[#3d7d80]" />
+          <div className="flex items-center gap-1.5 text-white/60 text-[11px] uppercase tracking-wider font-medium">
+            <Calendar size={12} className="text-cerceta" />
             <span>Enviado:</span>
-            <span className="text-gray-200">{request.date}</span>
+            <span className="text-white/90">{request.date}</span>
           </div>
           {request.estimatedPaymentDate && request.status !== "Paid" && (
-            <div className="flex items-center gap-1.5 text-gray-400 text-[10px] uppercase tracking-wider font-medium">
-              <Clock size={12} className="text-[#00aa85]" />
+            <div className="flex items-center gap-1.5 text-white/60 text-[11px] uppercase tracking-wider font-medium">
+              <Clock size={12} className="text-jade" />
               <span>Pago programado:</span>
-              <span className="text-[#00aa85] font-bold">{request.estimatedPaymentDate}</span>
+              <span className="text-jade font-bold">{request.estimatedPaymentDate}</span>
             </div>
           )}
         </div>
@@ -127,10 +140,10 @@ const WorkflowTracker: React.FC<Props> = ({ request, onClose }) => {
                   <div
                     className={`w-6 h-6 rounded-full flex items-center justify-center border-2 shrink-0 transition-colors duration-300 ${
                       isCompleted
-                        ? "bg-[#00aa85] border-[#00aa85] text-white"
+                        ? "bg-jade border-jade text-white"
                         : isCurrent
-                        ? "bg-[#3d7d80] border-[#00aa85] text-white shadow-[0_0_10px_rgba(0,170,133,0.3)]"
-                        : "bg-transparent border-gray-600 text-gray-600"
+                        ? "bg-cerceta border-jade text-white shadow-[0_0_10px_rgba(0,170,133,0.3)]"
+                        : "bg-transparent border-white/20 text-white/40"
                     }`}
                   >
                     {isCompleted ? <CheckCircle2 size={14} /> : isCurrent ? <Clock size={14} /> : <Circle size={10} />}
@@ -138,7 +151,7 @@ const WorkflowTracker: React.FC<Props> = ({ request, onClose }) => {
                   {(i < stages.length - 1 || isRejected) && (
                     <div
                       className={`w-0.5 h-8 mt-1 transition-colors duration-500 ${
-                        isCompleted ? "bg-[#00aa85]" : "bg-gray-700"
+                        isCompleted ? "bg-jade" : "bg-white/10"
                       }`}
                     />
                   )}
@@ -146,14 +159,14 @@ const WorkflowTracker: React.FC<Props> = ({ request, onClose }) => {
                 <div className="pb-4">
                   <p
                     className={`text-xs font-semibold tracking-wide ${
-                      isCompleted ? "text-[#00aa85]" : isCurrent ? "text-white" : "text-gray-500"
+                      isCompleted ? "text-jade" : isCurrent ? "text-white" : "text-white/60"
                     }`}
                     style={{ fontFamily: "Alexandria, sans-serif" }}
                   >
                     {stage.label}
                   </p>
                   {historyEvent ? (
-                    <p className="text-gray-500 text-[9px] mt-0.5 uppercase tracking-tighter">
+                    <p className="text-white/60 text-[11px] mt-0.5 uppercase tracking-tighter">
                       {new Date(historyEvent.timestamp).toLocaleString("es-MX", {
                         day: "2-digit",
                         month: "short",
@@ -161,10 +174,10 @@ const WorkflowTracker: React.FC<Props> = ({ request, onClose }) => {
                         minute: "2-digit",
                       })}
                       {" · "}
-                      <span className="text-gray-400 font-bold">{historyEvent.changedBy}</span>
+                      <span className="text-white/60 font-bold">{historyEvent.changedBy}</span>
                     </p>
                   ) : (
-                    <p className={`text-[10px] mt-0.5 ${isPending ? "text-gray-600" : "text-gray-400"}`}>
+                    <p className={`text-[11px] mt-0.5 ${isPending ? "text-white/60" : "text-white/80"}`}>
                       {stage.desc}
                     </p>
                   )}
@@ -188,7 +201,7 @@ const WorkflowTracker: React.FC<Props> = ({ request, onClose }) => {
                 {(() => {
                   const rejEvent = request.statusHistory?.find(e => e.status === "Rejected");
                   return rejEvent && (
-                    <p className="text-red-500/70 text-[9px] mb-2 uppercase tracking-tighter font-bold">
+                    <p className="text-red-500/70 text-[11px] mb-2 uppercase tracking-tighter font-bold">
                       {new Date(rejEvent.timestamp).toLocaleString("es-MX", {
                         day: "2-digit",
                         month: "short",

@@ -4,6 +4,7 @@
 // La UI vive en ./decision/*: PaymentCard, Tabs, SelectionBar, Modals, ui (primitivos).
 // ============================================================
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { FLUJO_PROPUESTAS } from "../config/flujo";
 import { RefreshCw, X, CheckCircle2, Loader2 } from "lucide-react";
 import {
   loadDecisionData,
@@ -73,6 +74,8 @@ const DecisionPagos: React.FC<DecisionPagosProps> = ({ onUpdateRequest, onUpdate
       // (NetSuite, lento) completa después. En refresco silencioso no se usa el
       // parcial para no degradar momentáneamente las decisiones ya calculadas.
       const d = await loadDecisionData({
+        // Con el flujo de propuestas esta vista es de análisis de TODO lo abierto, no solo de lo que espera decisión
+        scope: FLUJO_PROPUESTAS ? "abiertas" : undefined,
         force: opts?.force,
         onPartial: silent ? undefined : (partial) => {
           setData(partial);
@@ -515,7 +518,7 @@ const DecisionPagos: React.FC<DecisionPagosProps> = ({ onUpdateRequest, onUpdate
                 canDecide={canDecide}
                 actionBusy={actionBusy}
                 crossReady={crossReady}
-                onApprove={handleApproveOne}
+                onApprove={FLUJO_PROPUESTAS ? undefined : handleApproveOne}
                 onClarify={handleClarifyOne}
                 onReject={handleRejectOne}
               />
@@ -541,7 +544,7 @@ const DecisionPagos: React.FC<DecisionPagosProps> = ({ onUpdateRequest, onUpdate
         actionBusy={actionBusy}
         crossReady={crossReady}
         visibleIds={visibleIds}
-        onApproveIds={handleApproveIds}
+        onApproveIds={FLUJO_PROPUESTAS ? undefined : handleApproveIds}
         onClarifyIds={(ids) => setClarifyIds(ids)}
         onRejectIds={(ids) => setRejectIds(ids)}
       />
