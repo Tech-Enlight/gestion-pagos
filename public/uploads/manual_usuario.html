@@ -150,6 +150,8 @@ section > p.section-lead{
   transform:translateY(-50%) rotate(45deg);z-index:2;
 }
 
+.step:nth-child(4n)::after{display:none}
+
 /* ── Roles / permisos ── */
 .roles{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .role-card{
@@ -166,6 +168,19 @@ section > p.section-lead{
 .role-card.admin .badge-nivel{background:var(--enl-jade)}
 .role-card h4{font-size:15px;font-weight:600;margin-bottom:6px}
 .role-card p{font-family:var(--font-secondary);font-size:13px;color:var(--enl-gris);line-height:1.5}
+
+/* ── Matriz de visibilidad por pantalla ── */
+.matrix-wrap{overflow-x:auto;margin-top:20px}
+.matrix{width:100%;border-collapse:collapse;background:var(--enl-white);border:1px solid var(--enl-mist);border-radius:var(--radius-md)}
+.matrix th,.matrix td{
+  font-family:var(--font-secondary);font-size:12.5px;font-weight:400;color:var(--enl-acero);
+  padding:9px 10px;border-bottom:1px solid var(--enl-mist);text-align:center;
+}
+.matrix th{font-weight:700;background:var(--enl-bone)}
+.matrix th:first-child,.matrix td:first-child{text-align:left}
+.matrix td.y{color:var(--enl-cerceta);font-weight:500}
+.matrix td.n{color:var(--enl-gris)}
+.matrix tr:last-child td{border-bottom:none}
 
 /* ── Estados (idéntico a infografía) ── */
 .states{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
@@ -287,10 +302,12 @@ footer{
       <li class="toc-group">Empezar</li>
       <li><a href="#intro">¿Qué es esta herramienta?</a></li>
       <li><a href="#acceso">Acceso y roles</a></li>
+      <li><a href="#flujo">El flujo de punta a punta</a></li>
       <li class="toc-group">Uso</li>
       <li><a href="#primeros-pasos">Primeros pasos</a></li>
       <li><a href="#funciones">Funciones principales</a></li>
       <li><a href="#estados">Estados y seguimiento</a></li>
+      <li><a href="#correos">Correos y avisos</a></li>
       <li><a href="#requisitos">Requisitos y tips</a></li>
       <li class="toc-group">Referencia</li>
       <li><a href="#preguntas" class="jade">Preguntas frecuentes</a></li>
@@ -311,10 +328,10 @@ footer{
       <div class="hero" id="intro">
         <span class="eyebrow">Manual de usuario</span>
         <h1 class="h1" style="margin-top:10px">Portal de <span class="grad-text">Pagos</span></h1>
-        <p class="lead">Aplicación web para solicitar, autorizar, decidir y pagar solicitudes de pago a proveedores. Cruza cada solicitud contra NetSuite (órdenes de compra, facturas y pagos) para que Finanzas nunca pague dos veces lo mismo ni sin evidencia. Cubre desde que un colaborador pide un pago hasta que Contabilidad lo marca como pagado.</p>
+        <p class="lead">Aplicación web para solicitar, planear, aprobar y pagar solicitudes de pago a proveedores. Cualquier colaborador pide un pago; Finanzas arma cada semana una <b>propuesta de pagos</b> que aprueban dos niveles; y con la propuesta aprobada, Finanzas ejecuta los pagos. Cruza cada solicitud contra NetSuite (órdenes de compra, facturas y pagos) para que nunca se pague dos veces lo mismo ni sin evidencia.</p>
         <div class="meta-row">
           <span class="meta-pill">Acceso&nbsp;→&nbsp;<b>cuenta @enlight.mx (Google)</b></span>
-          <span class="meta-pill">Guía del proceso de aprobación&nbsp;→&nbsp;<b>infografia-portal-pagos.html</b></span>
+          <span class="meta-pill">Flujo vigente desde&nbsp;→&nbsp;<b>17 de noviembre de 2026</b></span>
         </div>
       </div>
 
@@ -329,35 +346,104 @@ footer{
           <div class="role-card">
             <span class="badge-nivel">Base</span>
             <h4>Nivel base (todos los roles)</h4>
-            <p>Sin importar tu rol asignado, todo colaborador puede crear solicitudes de pago (<b>Nueva solicitud</b>), ver y dar seguimiento a las suyas (<b>Mis solicitudes</b>), consultar el <b>Tipo de cambio</b> y leer <b>Inicio</b>. Puede responder o editar una solicitud cuando le piden aclaración. Este nivel se suma al de cualquier otro rol de la lista — no es un rol aparte.</p>
+            <p>Sin importar tu rol asignado, todo colaborador puede crear solicitudes de pago (<b>Nueva solicitud</b>), ver y dar seguimiento a las suyas (<b>Mis solicitudes</b>), consultar el <b>Tipo de cambio</b> y leer <b>Inicio</b>. Puede responder o editar una solicitud cuando le piden aclaración. Ya no hay autorización individual por parte de un jefe o de MAC: la solicitud entra directo a Finanzas. Este nivel se suma al de cualquier otro rol — no es un rol aparte.</p>
           </div>
           <div class="role-card avanzado">
-            <span class="badge-nivel">1</span>
-            <h4>MAC-Dirección — roles: mac, operaciones, ingeniería, servicios</h4>
-            <p>Cuatro roles independientes (uno por área) que, además del nivel base, autorizan en <b>Aprobaciones</b> las solicitudes de su equipo (Aprobar, Aclaración o Rechazar) antes de que pasen a Decisión de Pagos.</p>
-          </div>
-          <div class="role-card avanzado">
-            <span class="badge-nivel">2</span>
-            <h4>Analista contable</h4>
-            <p>Trabaja la bandeja de <b>Finanzas</b> (Programar Pago, Marcar Pagado con cruce contra NetSuite). Puede publicar avisos en <b>Inicio</b>. Ve <b>Decisión de Pagos</b> y <b>Explorador</b> solo en modo lectura.</p>
+            <span class="badge-nivel">Fin</span>
+            <h4>Finanzas — rol: analista contable</h4>
+            <p>Ve <b>todas</b> las solicitudes abiertas y arma la propuesta semanal en <b>Planeación de pagos</b> (crear, agregar, ajustar fechas, enviar, retirar, cancelar). Cuando la propuesta se aprueba, ejecuta los pagos en <b>Finanzas</b> (pantalla "Ejecución de pagos"). Ve <b>Decisión de Pagos</b> y <b>Explorador</b> solo en modo lectura y puede publicar avisos en <b>Inicio</b>.</p>
           </div>
           <div class="role-card admin">
-            <span class="badge-nivel">3</span>
-            <h4>Admin</h4>
-            <p>Decide las solicitudes en <b>Decisión de Pagos</b> (Aprobar → pasan directo a Finanzas, Aclaración, Rechazar) y consulta el <b>Explorador</b>. No ve Aprobaciones ni Finanzas.</p>
+            <span class="badge-nivel">N1</span>
+            <h4>Aprobador Nivel 1 — rol: admin</h4>
+            <p>Revisa la propuesta en <b>Planeación de pagos</b>: puede quitar pagos, mover fechas y fijar la meta de total; después "Aprobar y pasar a Nivel 2" o "Devolver a Finanzas". Basta que apruebe <b>uno</b> de los admin. En <b>Decisión de Pagos</b> puede pedir Aclaración o Rechazar una solicitud. También ve Panel general y Explorador, y puede publicar avisos.</p>
+          </div>
+          <div class="role-card admin">
+            <span class="badge-nivel">N2</span>
+            <h4>Aprobador Nivel 2 — roles: mac, operaciones, ingeniería, servicios, pmo</h4>
+            <p>Cinco roles independientes que, después de Nivel 1, revisan la propuesta en <b>Planeación de pagos</b> con el mismo panel: pueden quitar pagos, mover fechas y fijar la meta; "Aprobar y liberar pagos" (aprobación final) o "Devolver a Finanzas". Basta que apruebe <b>uno</b>. También ven Panel general.</p>
           </div>
           <div class="role-card admin" style="grid-column:1 / -1">
-            <span class="badge-nivel">4</span>
+            <span class="badge-nivel">SA</span>
             <h4>Superadmin</h4>
-            <p>Ve absolutamente todo: Panel general, Aprobaciones, Decisión de Pagos, Finanzas (con pestañas de seguimiento incluyendo "Pago Aprobado") y Explorador — pensado para dar soporte o cubrir cualquier paso del flujo.</p>
+            <p>Ve todas las pantallas (Panel general, Planeación, Finanzas, Decisión de Pagos, Explorador) y puede actuar en cualquier paso del flujo — pensado para dar soporte o cubrir a alguien.</p>
           </div>
         </div>
+
+        <div class="matrix-wrap">
+          <table class="matrix">
+            <thead>
+              <tr><th>Pantalla</th><th>Base (todos)</th><th>Finanzas</th><th>Nivel 1 (admin)</th><th>Nivel 2</th><th>Superadmin</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Inicio, Nueva solicitud, Mis solicitudes, Tipo de cambio, Configuración, Ayuda</td><td class="y">Sí</td><td class="y">Sí</td><td class="y">Sí</td><td class="y">Sí</td><td class="y">Sí</td></tr>
+              <tr><td>Panel general</td><td class="n">—</td><td class="n">—</td><td class="y">Sí</td><td class="y">Sí</td><td class="y">Sí</td></tr>
+              <tr><td>Planeación de pagos</td><td class="n">—</td><td class="y">Sí (arma)</td><td class="y">Sí (aprueba)</td><td class="y">Sí (aprueba)</td><td class="y">Sí</td></tr>
+              <tr><td>Finanzas (Ejecución de pagos)</td><td class="n">—</td><td class="y">Sí</td><td class="n">—</td><td class="n">—</td><td class="y">Sí</td></tr>
+              <tr><td>Decisión de Pagos</td><td class="n">—</td><td class="y">Solo lectura</td><td class="y">Sí (Aclaración / Rechazar)</td><td class="n">—</td><td class="y">Sí</td></tr>
+              <tr><td>Explorador</td><td class="n">—</td><td class="y">Sí</td><td class="y">Sí</td><td class="n">—</td><td class="y">Sí</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="small" style="margin-top:12px">La pantalla <b>Aprobaciones</b> (la bandeja de MAC) ya no existe: con el flujo de propuestas se retiró.</p>
+      </section>
+
+      <!-- ═══════════ FLUJO DE PUNTA A PUNTA ═══════════ -->
+      <section id="flujo">
+        <div class="section-head">
+          <span class="section-num">2</span>
+          <h2 class="h2">El flujo de punta a punta</h2>
+        </div>
+        <p class="section-lead">Desde 17 de noviembre de 2026 los pagos se aprueban por <b>propuesta semanal</b>, no solicitud por solicitud. Así recorre una solicitud el portal.</p>
+        <div class="steps">
+          <div class="step">
+            <span class="n">01</span>
+            <h3>Solicitas</h3>
+            <p>Cualquier colaborador crea la solicitud en "Nueva solicitud". Queda en estado <b>Solicitada</b> y se avisa a Finanzas.</p>
+          </div>
+          <div class="step">
+            <span class="n">02</span>
+            <h3>Finanzas planea</h3>
+            <p>Finanzas ve todas las solicitudes abiertas y arma la <b>propuesta</b> de la semana: marca las que se pagan y fija la fecha de cada una.</p>
+          </div>
+          <div class="step">
+            <span class="n">03</span>
+            <h3>Envía a Nivel 1</h3>
+            <p>"Enviar a aprobación": la propuesta pasa a Nivel 1 y los admin reciben un correo.</p>
+          </div>
+          <div class="step">
+            <span class="n">04</span>
+            <h3>Aprueba Nivel 1</h3>
+            <p>Un admin (Pedro, Lesly) la revisa, puede ajustarla y la aprueba o la devuelve a Finanzas con motivo.</p>
+          </div>
+          <div class="step">
+            <span class="n">05</span>
+            <h3>Aprueba Nivel 2</h3>
+            <p>Uno de mac, operaciones, ingeniería, servicios o pmo (Sebas, Isra, Jorge) da la aprobación final: "Aprobar y liberar pagos".</p>
+          </div>
+          <div class="step">
+            <span class="n">06</span>
+            <h3>Pago aprobado</h3>
+            <p>Los pagos pasan solos a <b>Pago aprobado</b> con su fecha programada. Cada solicitante recibe correo de aprobada y de pago programado.</p>
+          </div>
+          <div class="step">
+            <span class="n">07</span>
+            <h3>Finanzas ejecuta</h3>
+            <p>En "Ejecución de pagos" revisa NetSuite y usa <b>Marcar pagado</b>. Si hay un imprevisto: Reprogramar o Reportar problema.</p>
+          </div>
+          <div class="step">
+            <span class="n">08</span>
+            <h3>Pagada</h3>
+            <p>La solicitud queda <b>Pagada</b> y el solicitante recibe el correo de pago realizado.</p>
+          </div>
+        </div>
+        <p class="small" style="margin-top:14px">Lo que Finanzas no agrega a una propuesta queda <b>aplazado</b>: sigue como "Solicitada" y puede entrar a una propuesta posterior.</p>
       </section>
 
       <!-- ═══════════ PRIMEROS PASOS ═══════════ -->
       <section id="primeros-pasos">
         <div class="section-head">
-          <span class="section-num">2</span>
+          <span class="section-num">3</span>
           <h2 class="h2">Primeros pasos</h2>
         </div>
         <p class="section-lead">De cero a tu primera solicitud enviada.</p>
@@ -380,7 +466,7 @@ footer{
           <div class="step">
             <span class="n">04</span>
             <h3>Completa Concepto y Departamento, y envía</h3>
-            <p>La solicitud entra a la cola de <b>Autorización</b>. Recibirás un correo con el ID (ej. PAY-347) y podrás seguirla en "Mis solicitudes".</p>
+            <p>La solicitud queda en estado <b>Solicitada</b> y Finanzas la ve para incluirla en una propuesta. Recibirás un correo con el ID (ej. PAY-347) y podrás seguirla en "Mis solicitudes".</p>
           </div>
         </div>
       </section>
@@ -388,20 +474,20 @@ footer{
       <!-- ═══════════ FUNCIONES PRINCIPALES ═══════════ -->
       <section id="funciones">
         <div class="section-head">
-          <span class="section-num">3</span>
+          <span class="section-num">4</span>
           <h2 class="h2">Funciones principales</h2>
         </div>
-        <p class="section-lead">Una pantalla por función. La cadena completa de aprobación (quién aprueba qué y en qué orden) está documentada en la infografía del proceso — aquí se explica qué hace cada pantalla.</p>
+        <p class="section-lead">Una pantalla por función. El orden de aprobación está en la sección "El flujo de punta a punta"; aquí se explica qué hace cada pantalla.</p>
 
         <div class="feature">
           <h3>Inicio (avisos y notificaciones)</h3>
           <div class="shot"><span class="placeholder">[Captura — Feed de Inicio con avisos y botón de "like"]</span></div>
-          <p>Pantalla de aterrizaje con comunicados del equipo de Finanzas para todo el portal, en vez de correos o chats sueltos. Todos los roles la ven al entrar. Cada correo de estatus del portal también incluye un botón "Ver en el Portal" que te lleva directo a la pantalla que corresponde (Mis solicitudes, Aprobaciones, Decisión de Pagos o Finanzas), en vez de tener que navegar manualmente.</p>
+          <p>Pantalla de aterrizaje con comunicados del equipo de Finanzas para todo el portal, en vez de correos o chats sueltos. Todos los roles la ven al entrar. Los correos de estatus del portal también incluyen un botón que te lleva directo a la pantalla que corresponde, en vez de tener que navegar manualmente.</p>
           <ol class="substeps">
             <li>Analista contable, admin y superadmin pueden redactar un aviso (texto + link opcional) y publicarlo con "Publicar".</li>
             <li>Cualquier usuario puede reaccionar a un aviso con el ícono de rayo (<i>like</i>); el contador de likes es visible para todos.</li>
-            <li>La campana en la barra superior muestra un contador de avisos no leídos (se actualiza cada 90 segundos) y un desplegable con los más recientes; al entrar a Inicio se marcan como leídos automáticamente.</li>
-            <li>Si tienes una solicitud activa (en Autorización, Revisión Finanzas o Pago Aprobado), además del aviso en la app recibes un correo avisándote que hay una notificación pendiente en el Portal.</li>
+            <li>La campana en la barra superior muestra un contador de avisos no leídos (se actualiza al abrir el portal y al volver a la pestaña después de unos minutos) y un desplegable con los más recientes; al entrar a Inicio se marcan como leídos automáticamente.</li>
+            <li>Si tienes una solicitud en trámite, además del aviso en la app recibes un correo avisándote que hay una notificación pendiente en el Portal. [por confirmar: qué estados cuentan como "en trámite" desde el cambio de flujo]</li>
           </ol>
         </div>
 
@@ -415,55 +501,51 @@ footer{
             <li><b>Datos de la OC (NetSuite):</b> beneficiario, RFC, moneda, tipo de cambio, monto total y estatus de la OC se muestran de solo lectura. Si ya existen otras solicitudes abiertas contra la misma OC, aparece un aviso azul con esos folios (los pagos parciales sobre la misma OC son válidos, no es necesariamente un error).</li>
             <li><b>Detalles del pago:</b> elige <b>Completo</b> (usa el total de la OC, el IVA del 16% se calcula solo) o <b>Parcial</b> (capturas el subtotal, sin exceder el total de la OC).</li>
             <li><b>Concepto:</b> descripción del pago, en texto libre.</li>
-            <li><b>Solicitante → Departamento:</b> lista buscable de Centros de Costo (CeCo) de NetSuite — ya no es texto libre.</li>
+            <li><b>Solicitante → Departamento:</b> lista buscable de Centros de Costo (CeCo) de NetSuite — no es texto libre.</li>
             <li>El formulario no deja enviar mientras el beneficiario (proveedor de la OC) siga cargando desde NetSuite o si no se pudo resolver, para evitar solicitudes con ese dato en blanco.</li>
-            <li>Al enviar, la solicitud queda en estatus <b>Autorización</b> y recibes un correo de confirmación con el folio.</li>
+            <li>Al enviar, la solicitud queda en estado <b>Solicitada</b>, se avisa a Finanzas y recibes un correo de confirmación con el folio. Ya no pasa por una autorización individual.</li>
           </ol>
         </div>
 
         <div class="feature">
           <h3>Mis solicitudes</h3>
           <div class="shot"><span class="placeholder">[Captura — Mis Solicitudes, vista personal con tarjetas de resumen]</span></div>
-          <p>Vista personal de todo lo que has enviado, con un resumen en lenguaje sencillo de en qué va cada una (ej. "Tu jefe directo está revisando").</p>
+          <p>Vista personal de todo lo que has enviado, con un resumen en lenguaje sencillo de en qué va cada una (ej. "Finanzas la incluirá en una propuesta de pagos").</p>
           <ol class="substeps">
-            <li>Cada solicitud muestra Concepto, monto, OC y "Pago programado" (si Finanzas ya definió fecha).</li>
-            <li>Al abrir una solicitud ves el rastreador de estatus completo (Borrador → Autorización → Decisión de Pagos → Pago Aprobado → Pagado).</li>
-            <li>Si una solicitud requiere <b>Aclaración</b>, aquí respondes: puedes "Solo responder y reenviar" (agregas un comentario y la regresas a autorización) o "Editar solicitud" (corriges Concepto, Departamento y/o Tipo de Pago — con el mismo cálculo de IVA del 16% — antes de reenviarla).</li>
+            <li>Cada solicitud muestra Concepto, monto, OC y "Pago programado" (la fecha que Finanzas fijó en la propuesta).</li>
+            <li>Al abrir una solicitud ves el seguimiento completo: Borrador → Solicitada → Pago aprobado → Pagado. Si se rechazó, el seguimiento muestra el motivo.</li>
+            <li>Si una solicitud requiere <b>Aclaración</b> (queda en Borrador), aquí respondes: puedes "Solo responder y reenviar" (agregas un comentario y la regresas a Solicitada) o "Editar solicitud" (corriges Concepto, Departamento y/o Tipo de Pago — con el mismo cálculo de IVA del 16% — antes de reenviarla).</li>
           </ol>
         </div>
 
         <div class="feature">
-          <h3>Aprobaciones (MAC-Dirección)</h3>
-          <div class="shot"><span class="placeholder">[Captura — Gestión de Aprobaciones, tabla de solicitudes pendientes]</span></div>
-          <p>Bandeja de solicitudes en estatus <b>Autorización</b> para mac/operaciones/ingeniería/servicios y superadmin. Es el primer filtro antes de que la solicitud llegue a Decisión de Pagos.</p>
+          <h3>Planeación de pagos (Finanzas arma · Nivel 1 y Nivel 2 aprueban)</h3>
+          <div class="shot"><span class="placeholder">[Captura — Planeación de pagos: lista de solicitudes abiertas a la izquierda y panel de la propuesta a la derecha]</span></div>
+          <p>Es el corazón del flujo nuevo. A la izquierda están todas las solicitudes abiertas que aún no están en ninguna propuesta; a la derecha, la propuesta seleccionada. El encabezado resume cuántas solicitudes hay sin programar, su total y cuántas ya van en propuestas. Si hay varias propuestas, las eliges en el selector de arriba; por defecto se abre la que espera tu acción (aprobadores) o la última en Borrador (Finanzas).</p>
           <ol class="substeps">
-            <li>Selecciona una fila para ver el detalle completo (beneficiario, OC, concepto, montos, solicitante).</li>
-            <li>Acciones disponibles: <b>Aprobar</b> (pasa a Revisión Finanzas), <b>Aclaración</b> (regresa al solicitante con un comentario) o <b>Rechazar</b> (requiere motivo).</li>
-            <li>Selección múltiple con casillas para aprobar, pedir aclaración o rechazar varias solicitudes a la vez.</li>
+            <li><b>Lista de solicitudes abiertas.</b> Cada fila muestra ID, etapa, antigüedad (en ámbar si lleva tiempo esperando), beneficiario, concepto y monto. También el <b>veredicto</b> tomado de Decisión de Pagos (Procede / Revisar / Bloquear) y el vencimiento. Puedes buscar, filtrar por etapa y ordenar por "Más antiguas primero" o "Por vencimiento". Si el veredicto no carga, aparece un aviso y puedes planear sin él.</li>
+            <li><b>Nueva propuesta (Finanzas).</b> Escribes un nombre y una fecha de corte (el sistema sugiere el próximo viernes). Una solicitud solo puede estar en una propuesta activa a la vez.</li>
+            <li><b>Agregar pagos (Finanzas, en Borrador).</b> Marca solicitudes con la casilla (o "Seleccionar todas") y pulsa "Agregar a «nombre»". Cada pago entra con la fecha de corte como fecha de pago; puedes cambiarla por pago. Con la X quitas un pago y regresa a la lista. Lo que no se agrega queda aplazado.</li>
+            <li><b>Panel de la propuesta.</b> Muestra el total por divisa, lo que equivale en MXN (los pagos sin tipo de cambio se avisan y no se suman), cuántos pagos están en Bloquear o por revisar, y la <b>meta de total (MXN)</b> con el indicador "Excede la meta por $X" o "Dentro de la meta · quedan $X". Abajo, el avance (Borrador → Nivel 1 → Nivel 2 → Aprobada) con quién aprobó cada nivel, y la sección Actividad con los últimos movimientos.</li>
+            <li><b>Acciones de Finanzas:</b> <b>Enviar a aprobación</b> (pasa a Nivel 1); <b>Retirar propuesta</b> (vuelve a Borrador, solo mientras Nivel 1 no la haya aprobado); <b>Cancelar propuesta</b> (en Borrador; sus solicitudes quedan libres para otra propuesta).</li>
+            <li><b>Nivel 1 (admin) y Nivel 2:</b> en su etapa pueden quitar pagos, mover fechas y fijar la meta de total (el total se recalcula y Finanzas ve los cambios). Después, <b>"Aprobar y pasar a Nivel 2"</b> (Nivel 1) o <b>"Aprobar y liberar pagos"</b> (Nivel 2, aprobación final), o <b>"Devolver a Finanzas"</b>, que exige un motivo, regresa la propuesta a Borrador y borra las aprobaciones. Basta que apruebe uno por nivel.</li>
+            <li><b>Al aprobar el Nivel 2</b> los pagos pasan solos a <b>Pago aprobado</b> con su fecha programada y los solicitantes reciben correo. Si alguno no alcanza a sincronizarse, el panel muestra el aviso "Falta dejar pagos listos en Finanzas" con el botón "Reintentar sincronización".</li>
+            <li>Una propuesta Aprobada ya no se edita. Quien no tiene turno de editar ve el panel en solo lectura y un texto de a quién le toca.</li>
           </ol>
         </div>
 
         <div class="feature">
-          <h3>Decisión de Pagos (Admin / Superadmin)</h3>
-          <div class="shot"><span class="placeholder">[Captura — Decisión de Pagos, tarjetas expandibles con datos de NetSuite]</span></div>
-          <p>Segundo filtro: aquí Admin/Superadmin deciden las solicitudes que ya autorizó MAC-Dirección, con el cruce OC/factura/pronóstico de NetSuite visible en cada tarjeta. Analista contable la ve en modo solo lectura.</p>
+          <h3>Finanzas — Ejecución de pagos (Analista contable / Superadmin)</h3>
+          <div class="shot"><span class="placeholder">[Captura — Ejecución de pagos: indicadores arriba, pagos agrupados por fecha y detalle del pago seleccionado]</span></div>
+          <p>Con el flujo nuevo, Finanzas deja de decidir y pasa a <b>ejecutar</b> lo que ya se aprobó. En el menú sigue llamándose "Finanzas"; la pantalla se titula "Ejecución de pagos". Ya no existen "Programar pago" ni "Rechazar": la fecha nace en la propuesta y rechazar es decisión de quien aprueba.</p>
           <ol class="substeps">
-            <li>Cada tarjeta trae OC, factura, monto, tipo de cambio, banco, vencimiento y estatus — la lista pesada (cruce con NetSuite) se carga después de la tabla principal, con el indicador "Cruzando OC/pronóstico…".</li>
-            <li>Al expandir una tarjeta, si existe la factura ya subida en Recepción de Facturas, el campo "Factura" es un link directo al PDF real, no solo el número.</li>
-            <li>Acciones por tarjeta o en lote (con selección múltiple): <b>Aprobar</b> (pasa directo a la bandeja del analista contable, estatus Pago Aprobado), <b>Aclaración</b> (regresa al solicitante), <b>Rechazar</b>.</li>
-            <li>La lista se refresca sola cada 5 minutos y después de cada decisión.</li>
-          </ol>
-        </div>
-
-        <div class="feature">
-          <h3>Finanzas (Analista contable / Superadmin)</h3>
-          <div class="shot"><span class="placeholder">[Captura — Finanzas, bandeja Pago Aprobado con acciones Programar Pago / Marcar Pagado]</span></div>
-          <p>Bandeja operativa donde se procesa el pago. El analista contable solo trabaja el estatus <b>Pago Aprobado</b>; superadmin ve además pestañas de seguimiento de etapas anteriores.</p>
-          <ol class="substeps">
-            <li><b>Programar Pago:</b> define una fecha estimada de pago; se guarda en "Pago Programado" y se le avisa por correo al solicitante con esa fecha.</li>
-            <li><b>Marcar Pagado:</b> abre el modal de registro de pago descrito abajo — es el paso que cierra la solicitud como <b>Pagado</b>.</li>
-            <li>También puede regresar una solicitud a Aclaración o Rechazarla desde aquí si detecta un problema al momento de pagar.</li>
-            <li>"Guardar nota" (Observaciones de Finanzas) está disponible en cualquier momento sin afectar el resto de los datos de la solicitud (fecha programada, estatus del pago, etc.).</li>
+            <li><b>Indicadores:</b> Por pagar hoy, Vencidos, Próximos 7 días y Pagado esta semana (montos en MXN aproximados con el T/C de Banxico, que se muestra arriba a la derecha).</li>
+            <li><b>Lista:</b> los pagos en <b>Pago aprobado</b> agrupados por fecha programada — Vencidos, Hoy, Mañana, Esta semana, Después y Sin fecha — con el conteo y el total aproximado de cada grupo. Cada grupo tiene "Seleccionar grupo".</li>
+            <li><b>Estado de NetSuite por fila</b> (lectura previa): <b>Listo en NetSuite</b>, <b>Monto distinto</b> (con el % de diferencia; típico de una retención), <b>Sin pago en NetSuite</b> (registra el pago allá antes de marcarlo), <b>Pago ya usado</b> (ese pago ya está asignado a otra solicitud), <b>Sin OC en NetSuite</b> o "NetSuite sin verificar". Lo vencido y lo de hoy se verifica automático; el resto con el botón "Verificar NetSuite" del grupo.</li>
+            <li><b>Detalle del pago:</b> al elegir una fila ves monto, fecha, concepto, proyecto, OC, solicitante, el pago de NetSuite al que apunta y la <b>Nota de Finanzas</b> (se guarda sin afectar el resto de los datos).</li>
+            <li><b>Marcar pagado:</b> individual (botón del detalle) o en lote (casillas y "Marcar pagadas (N)"). Abre el modal de registro de pago descrito abajo.</li>
+            <li><b>Reprogramar:</b> cambia la fecha de pago de un pago ya aprobado. Exige nueva fecha (no pasada) y un <b>motivo</b>; el solicitante recibe la nueva fecha por correo.</li>
+            <li><b>Reportar problema:</b> sustituye a Aclaración/Rechazar. Exige describir el problema y eliges a dónde va: <b>(a) al solicitante</b> para que corrija datos (queda en Borrador con tu comentario; al reenviarla vuelve a Solicitada y Finanzas la incluye en una propuesta), o <b>(b) aplazar</b> (vuelve a Planeación como Solicitada para programarla después).</li>
           </ol>
         </div>
 
@@ -473,24 +555,41 @@ footer{
           <p>El paso más controlado del portal: antes de dejar una solicitud como Pagada, el sistema busca en NetSuite el pago real que corresponde a esa OC (por monto, con tolerancia de redondeo/FX) y pre-llena los datos verificados. Todos los campos son obligatorios.</p>
           <ol class="substeps">
             <li><b>Individual:</b> si NetSuite encuentra un pago que coincide en monto (±1%), Monto Pagado, Tipo de Cambio, N° de Factura, Banco, Referencia de Operación y Comprobante de Pago (CEP/Banxico) se llenan solos y quedan de solo lectura, marcados con la etiqueta "NS". Si hay más de una factura/pago candidato, eliges cuál referenciar.</li>
-            <li><b>Si el monto no coincide con ningún pago (por ejemplo, por una retención contractual descontada al momento de facturar), el sistema ya no bloquea el proceso:</b> muestra el pago/factura de NetSuite sin reclamar más cercano y una banda amarilla de advertencia con la diferencia en $ y % contra el monto solicitado, para que confirmes conscientemente antes de continuar.</li>
-            <li>Link Factura se pre-llena con el PDF real de la factura (tomado de Recepción de Facturas) cuando existe, y Cliente con el cliente NetSuite real de la OC — ya no dependen de que la solicitud tuviera un proyecto capturado a mano.</li>
-            <li>Completas los campos que NetSuite no puede resolver por sí solo: Prestación del Bien o Servicio, Estatus OC, Tipo de Operación y Tipo de Gasto. La <b>Propuesta</b> (Autorizado/Aplazado) se calcula sola según si la solicitud pasó por Programar Pago.</li>
-            <li><b>En lote:</b> selecciona varias solicitudes con estatus Pago Aprobado y ábrelas juntas. Cada una tiene su propia tarjeta "Confirmación de Pago por Solicitud (NetSuite)" con su bill/pago de NetSuite, monto, tipo de cambio, banco y referencia — el mismo aviso amarillo de diferencia de monto aparece por tarjeta cuando aplica, y el sistema evita que dos solicitudes se liquiden con el mismo pago de NetSuite (si pasa, la tarjeta se marca en rojo como "Pago duplicado en el lote" y bloquea la confirmación).</li>
-            <li>Al confirmar, la(s) solicitud(es) pasan a estatus <b>Pagado</b>.</li>
+            <li><b>Si el monto no coincide con ningún pago (por ejemplo, por una retención contractual descontada al momento de facturar), el sistema no bloquea el proceso:</b> muestra el pago/factura de NetSuite sin reclamar más cercano y una banda amarilla de advertencia con la diferencia en $ y % contra el monto solicitado, para que confirmes conscientemente antes de continuar.</li>
+            <li>Link Factura se pre-llena con el PDF real de la factura (tomado de Recepción de Facturas) cuando existe, y Cliente con el cliente NetSuite real de la OC.</li>
+            <li>Completas los campos que NetSuite no puede resolver por sí solo: Prestación del Bien o Servicio, Estatus OC, Tipo de Operación y Tipo de Gasto. La <b>Propuesta</b> se calcula sola y no se captura.</li>
+            <li><b>En lote:</b> selecciona varios pagos en Ejecución de pagos y ábrelos juntos. Cada uno tiene su propia tarjeta "Confirmación de Pago por Solicitud (NetSuite)" con su bill/pago de NetSuite, monto, tipo de cambio, banco y referencia — el mismo aviso amarillo de diferencia de monto aparece por tarjeta cuando aplica, y el sistema evita que dos solicitudes se liquiden con el mismo pago de NetSuite (si pasa, la tarjeta se marca en rojo como "Pago duplicado en el lote" y bloquea la confirmación).</li>
+            <li>Al confirmar, la(s) solicitud(es) pasan a estado <b>Pagada</b> y el solicitante recibe el correo de pago realizado.</li>
+          </ol>
+        </div>
+
+        <div class="feature">
+          <h3>Decisión de Pagos (análisis — Admin / Analista contable / Superadmin)</h3>
+          <div class="shot"><span class="placeholder">[Captura — Decisión de Pagos, pestañas y tarjetas expandibles con veredicto y datos de NetSuite]</span></div>
+          <p>Ya <b>no es una pantalla de aprobación</b>: no tiene botón Aprobar (la aprobación ocurre sobre la propuesta, en Planeación). Es la vista de análisis de todo lo abierto, con el cruce OC/factura/pronóstico de NetSuite visible en cada tarjeta.</p>
+          <ol class="substeps">
+            <li><b>Indicadores y pestañas:</b> arriba, los totales (general, propuesta, aplazado, vencido y en ≤ 7 días); abajo, las pestañas <b>Resumen, Proveedores, Clientes y Vencimientos</b> y la lista de tarjetas.</li>
+            <li><b>Veredicto por pago:</b> <b>Procede</b>, <b>Revisar</b> o <b>Bloquear</b> (por ejemplo, OC o avance de proyecto sin aprobar). Puedes filtrar por veredicto y buscar por OC, proveedor, proyecto, factura o concepto. La parte pesada (cruce con NetSuite) carga después con el indicador "Cruzando OC/pronóstico…".</li>
+            <li>Al expandir una tarjeta, si existe la factura subida en Recepción de Facturas, el campo "Factura" es un link directo al PDF real.</li>
+            <li><b>Aclaración y Rechazar</b> se conservan por solicitud (individual o en lote) y solo para admin y superadmin: Aclaración regresa la solicitud al solicitante (Borrador, con tu comentario) y Rechazar la cierra con motivo. El analista contable la ve en solo lectura.</li>
           </ol>
         </div>
 
         <div class="feature">
           <h3>Explorador (Admin / Analista contable / Superadmin)</h3>
           <div class="shot"><span class="placeholder">[Captura — Explorador de Solicitudes con filtros y búsqueda]</span></div>
-          <p>Buscador general de todas las solicitudes del portal, sin importar el estatus — útil para dar seguimiento puntual, auditar un folio o resolver una duda de un solicitante.</p>
+          <p>Buscador general de todas las solicitudes del portal, sin importar el estado — útil para dar seguimiento puntual, auditar un folio o resolver una duda de un solicitante.</p>
         </div>
 
         <div class="feature">
           <h3>Panel general (Dashboard)</h3>
-          <div class="shot"><span class="placeholder">[Captura — Panel general con KPIs de monto por procesar, pagado del mes y T/C]</span></div>
-          <p>Resumen ejecutivo visible para MAC-Dirección, Admin y Superadmin: monto total por procesar, monto pagado en el mes, tipo de cambio Banxico vigente, y conteos por etapa (En autorización, Revisión finanzas, Listas para pagar, Tasa de rechazo).</p>
+          <div class="shot"><span class="placeholder">[Captura — Panel general con el aviso de propuestas por aprobar, KPIs y embudo]</span></div>
+          <p>Resumen visible para Nivel 1 (admin), Nivel 2 (mac, operaciones, ingeniería, servicios, pmo) y Superadmin. Arriba, un mensaje como "N propuestas de pago esperan tu aprobación" (o "Todo está al corriente") con el botón <b>Ir a Planeación</b>, que te lleva a la propuesta que te toca.</p>
+          <ol class="substeps">
+            <li>Indicadores: monto por procesar (solicitudes sin pagar, al T/C actual), pagado este mes, tipo de cambio Banxico vigente, listas para pagar y tasa de rechazo.</li>
+            <li>Cola prioritaria con las solicitudes de las propuestas que esperan tu aprobación.</li>
+            <li>Embudo "Pipeline" con las etapas Borrador → Solicitada → Lista para pago → Pagada.</li>
+          </ol>
         </div>
 
         <div class="feature">
@@ -503,34 +602,81 @@ footer{
       <!-- ═══════════ ESTADOS ═══════════ -->
       <section id="estados">
         <div class="section-head">
-          <span class="section-num">4</span>
+          <span class="section-num">5</span>
           <h2 class="h2">Estados y seguimiento</h2>
         </div>
-        <p class="section-lead">Los estatus que puede tomar una solicitud, en el orden en que normalmente avanzan. El detalle de quién aprueba cada paso y las rutas de aprobación está en la infografía del proceso (<code>infografia-portal-pagos.html</code>).</p>
+        <p class="section-lead">Los estados que ve el solicitante, en el orden en que normalmente avanza una solicitud: Borrador → Solicitada → Pago aprobado → Pagado.</p>
         <div class="states">
           <div class="state">
-            <h4><span class="dot d-proc"></span>Borrador (Draft)</h4>
-            <p>Solicitud recién creada, o regresada por Aclaración a la espera de que el solicitante responda y reenvíe.</p>
+            <h4><span class="dot d-proc"></span>Borrador</h4>
+            <p>La solicitud se regresó con una <b>aclaración</b> y espera que el solicitante responda y la reenvíe.</p>
           </div>
           <div class="state">
-            <h4><span class="dot d-pend"></span>En autorización</h4>
-            <p>MAC-Dirección (mac/operaciones/ingeniería/servicios) está revisándola en Aprobaciones.</p>
+            <h4><span class="dot d-pend"></span>Solicitada</h4>
+            <p>Enviada y visible para Finanzas, que la incluirá en una propuesta de pagos. También es el estado al que vuelve una solicitud aplazada o reenviada tras una aclaración.</p>
           </div>
           <div class="state">
-            <h4><span class="dot d-pend"></span>Revisión Finanzas</h4>
-            <p>Ya la autorizó MAC-Dirección; está en la bandeja de Admin/Superadmin en Decisión de Pagos.</p>
-          </div>
-          <div class="state">
-            <h4><span class="dot d-ok"></span>Pago Aprobado</h4>
-            <p>Admin/Superadmin la aprobó en Decisión de Pagos; está en la bandeja del analista contable en Finanzas, lista para programar o pagar.</p>
+            <h4><span class="dot d-ok"></span>Pago aprobado</h4>
+            <p>Su propuesta ya fue aprobada por Nivel 1 y Nivel 2. Tiene fecha de pago programada y está en la pantalla de Finanzas, lista para ejecutarse.</p>
           </div>
           <div class="state">
             <h4><span class="dot d-ok"></span>Pagada</h4>
-            <p>El analista contable la marcó como pagada tras confirmar el pago contra NetSuite. Estatus final.</p>
+            <p>Finanzas la marcó como pagada tras confirmar el pago contra NetSuite. Estado final.</p>
           </div>
           <div class="state">
             <h4><span class="dot d-no"></span>Rechazada</h4>
-            <p>Cualquier revisor (MAC-Dirección, Admin o Finanzas) puede rechazarla con un motivo. Estatus final.</p>
+            <p>Se rechazó con un motivo (desde Decisión de Pagos, por admin o superadmin). Estado final.</p>
+          </div>
+        </div>
+
+        <p class="section-lead" style="margin-top:28px">Además, cada <b>propuesta de pagos</b> tiene su propio avance, visible en Planeación de pagos.</p>
+        <div class="states">
+          <div class="state">
+            <h4><span class="dot d-proc"></span>Borrador</h4>
+            <p>Finanzas la está armando. Es el único momento en que agrega o quita solicitudes y cambia fechas. Una propuesta devuelta regresa aquí con el motivo.</p>
+          </div>
+          <div class="state">
+            <h4><span class="dot d-pend"></span>Nivel 1</h4>
+            <p>Esperando que apruebe un admin (Dirección). Finanzas aún puede retirarla.</p>
+          </div>
+          <div class="state">
+            <h4><span class="dot d-pend"></span>Nivel 2</h4>
+            <p>Esperando que apruebe alguien de operaciones, ingeniería, servicios, mac o pmo.</p>
+          </div>
+          <div class="state">
+            <h4><span class="dot d-ok"></span>Aprobada</h4>
+            <p>Aprobación final dada: no se edita y sus pagos pasan a Pago aprobado.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════ CORREOS ═══════════ -->
+      <section id="correos">
+        <div class="section-head">
+          <span class="section-num">6</span>
+          <h2 class="h2">Correos y avisos</h2>
+        </div>
+        <p class="section-lead">El portal avisa por correo en cada paso para que nadie tenga que estar revisando la pantalla. Cada correo trae un botón para ir directo al portal.</p>
+        <div class="two-col">
+          <div class="panel">
+            <h3>Para quien aprueba o ejecuta</h3>
+            <ul class="doclist">
+              <li>Solicitud nueva <span class="fmt">· llega a Finanzas (analista contable)</span></li>
+              <li>Propuesta enviada <span class="fmt">· llega a Nivel 1</span></li>
+              <li>Nivel 1 aprobó <span class="fmt">· llega a Nivel 2</span></li>
+              <li>Propuesta aprobada o devuelta <span class="fmt">· llega a Finanzas</span></li>
+            </ul>
+          </div>
+          <div class="panel">
+            <h3>Para el solicitante</h3>
+            <ul class="doclist">
+              <li>Solicitud recibida</li>
+              <li>Solicitud aprobada</li>
+              <li>Pago programado <span class="fmt">· con la fecha</span></li>
+              <li>Pago realizado</li>
+              <li>Solicitud rechazada</li>
+              <li>Aclaración solicitada</li>
+            </ul>
           </div>
         </div>
       </section>
@@ -538,7 +684,7 @@ footer{
       <!-- ═══════════ REQUISITOS Y TIPS ═══════════ -->
       <section id="requisitos">
         <div class="section-head">
-          <span class="section-num">5</span>
+          <span class="section-num">7</span>
           <h2 class="h2">Requisitos y tips</h2>
         </div>
         <div class="two-col">
@@ -557,6 +703,8 @@ footer{
               <li><b>"Estatus OC: Totalmente facturada" no es lo mismo que "ya pagada".</b> El badge amarillo "Ya pagada" en el dropdown de OC es la señal real de que ya no debes solicitar contra esa orden.</li>
               <li><b>Los pagos parciales son válidos.</b> Si ves otras solicitudes abiertas contra la misma OC no es automáticamente un error — revisa que tu monto no sea idéntico a una ya existente.</li>
               <li><b>"Editar solicitud" en Aclaración</b> te permite corregir Concepto, Departamento o Tipo de Pago sin tener que crear una solicitud nueva.</li>
+              <li><b>Aprobar una propuesta es aprobar su total.</b> Antes de aprobar, revisa el equivalente en MXN, los pagos en Bloquear o por revisar y, si hay, la meta de total; puedes quitar pagos y el total se recalcula.</li>
+              <li><b>Si devuelves una propuesta, escribe un motivo claro:</b> Finanzas lo ve tal cual y la propuesta pierde las aprobaciones que ya tenía.</li>
               <li><b>Los campos con "(NS)" en Marcar Pagado</b> vienen verificados de NetSuite y no se pueden editar — si algo se ve mal ahí, repórtalo a TECH en vez de forzarlo.</li>
               <li><b>Una banda amarilla en Marcar Pagado no es un error.</b> Indica que el pago real de NetSuite difiere del monto solicitado (por ejemplo, por una retención) — revisa la diferencia mostrada antes de confirmar, no la ignores.</li>
             </ul>
@@ -567,9 +715,49 @@ footer{
       <!-- ═══════════ FAQ ═══════════ -->
       <section id="preguntas">
         <div class="section-head">
-          <span class="section-num">6</span>
+          <span class="section-num">8</span>
           <h2 class="h2">Preguntas frecuentes</h2>
         </div>
+        <details class="faq-item">
+          <summary>¿Por qué mi solicitud sigue en "Solicitada"?</summary>
+          <div class="a">Porque Finanzas todavía no la incluye en una propuesta aprobada. Un pago solo avanza a "Pago aprobado" cuando su propuesta la aprueban Nivel 1 y Nivel 2. Si Finanzas la deja fuera de una propuesta, queda aplazada y puede entrar a una posterior.</div>
+        </details>
+        <details class="faq-item">
+          <summary>¿Cuándo me van a pagar?</summary>
+          <div class="a">La fecha de pago la fija Finanzas en la propuesta y la verás en "Pago programado" dentro de Mis solicitudes, además de en el correo de pago programado. Si Finanzas la mueve, recibes la nueva fecha por correo.</div>
+        </details>
+        <details class="faq-item">
+          <summary>¿Dónde quedó "Aprobaciones"? ¿Ya no autoriza mi jefe o MAC?</summary>
+          <div class="a">Ya no existe esa pantalla ni la autorización individual. Ahora se aprueba la propuesta semanal completa: primero Nivel 1 (admin) y luego Nivel 2 (mac, operaciones, ingeniería, servicios o pmo), ambos desde "Planeación de pagos".</div>
+        </details>
+        <details class="faq-item">
+          <summary>¿Quién aprueba la propuesta y se necesita que aprueben todos?</summary>
+          <div class="a">No. En cada nivel basta que apruebe <b>una</b> persona del grupo. Nivel 1: rol admin. Nivel 2: roles mac, operaciones, ingeniería, servicios y pmo.</div>
+        </details>
+        <details class="faq-item">
+          <summary>Soy aprobador, ¿puedo cambiar la propuesta antes de aprobar?</summary>
+          <div class="a">Sí, en la etapa que te toca puedes quitar pagos, mover fechas y fijar la meta de total (MXN). El total se recalcula y Finanzas ve tus cambios. Si prefieres que Finanzas la rehaga, usa "Devolver a Finanzas" (el motivo es obligatorio).</div>
+        </details>
+        <details class="faq-item">
+          <summary>¿Qué es la "meta de total"?</summary>
+          <div class="a">Es el monto máximo en MXN que quien edita la propuesta quiere pagar esa semana. El panel compara el equivalente en MXN de la propuesta contra esa meta y muestra "Excede la meta por $X" o "Dentro de la meta · quedan $X" mientras quitas o agregas pagos. Es una guía: no bloquea la aprobación.</div>
+        </details>
+        <details class="faq-item">
+          <summary>¿Qué significan Procede, Revisar y Bloquear?</summary>
+          <div class="a">Es el veredicto de Decisión de Pagos para cada pago, según el cruce con NetSuite. <b>Procede</b>: las verificaciones salen bien. <b>Revisar</b>: falta o hay conflicto en algún dato y conviene revisarlo antes de pagar. <b>Bloquear</b>: nada respalda el pago o la OC o el avance de proyecto no están aprobados. Es información para decidir; no impide agregar un pago a la propuesta.</div>
+        </details>
+        <details class="faq-item">
+          <summary>Soy de Finanzas, ¿cómo muevo la fecha de un pago ya aprobado?</summary>
+          <div class="a">En Finanzas → Ejecución de pagos, elige el pago y pulsa "Reprogramar": eliges la nueva fecha y escribes el motivo (obligatorio). El solicitante recibe la nueva fecha por correo.</div>
+        </details>
+        <details class="faq-item">
+          <summary>¿Por qué Finanzas ya no puede rechazar ni pedir aclaración desde Ejecución de pagos?</summary>
+          <div class="a">Rechazar es decisión de quien aprueba, no de quien ejecuta. Si Finanzas detecta un problema al pagar usa "Reportar problema": lo envía al solicitante para que corrija datos, o lo aplaza (vuelve a Planeación como Solicitada).</div>
+        </details>
+        <details class="faq-item">
+          <summary>Me pidieron una aclaración, ¿qué hago?</summary>
+          <div class="a">Entra a "Mis solicitudes", abre la solicitud marcada y elige "Solo responder y reenviar" (si solo necesitas explicar algo) o "Editar solicitud" (si necesitas corregir Concepto, Departamento o Tipo de Pago). Al reenviar, vuelve a "Solicitada" y Finanzas la puede incluir en una propuesta.</div>
+        </details>
         <details class="faq-item">
           <summary>¿Por qué no encuentro mi OC en el dropdown de Nueva Solicitud?</summary>
           <div class="a">El listado solo muestra OCs abiertas del proyecto seleccionado (excluye rechazadas y cerradas en NetSuite). Verifica que elegiste el proyecto correcto y que la OC no esté ya totalmente facturada/cerrada en NetSuite.</div>
@@ -583,16 +771,12 @@ footer{
           <div class="a">Completo usa el monto total de la OC (el IVA del 16% se calcula automáticamente). Parcial te pide capturar tú el subtotal, que no puede exceder el total de la OC — el sistema calcula el IVA y el monto total sobre ese subtotal.</div>
         </details>
         <details class="faq-item">
-          <summary>Me pidieron una aclaración, ¿qué hago?</summary>
-          <div class="a">Entra a "Mis solicitudes", abre la solicitud marcada y elige "Solo responder y reenviar" (si solo necesitas explicar algo) o "Editar solicitud" (si necesitas corregir Concepto, Departamento o Tipo de Pago). Al reenviar, vuelve a la cola de Autorización.</div>
-        </details>
-        <details class="faq-item">
           <summary>¿Por qué algunos campos de "Marcar Pagado" no se pueden editar?</summary>
           <div class="a">Cuando el portal encuentra en NetSuite el pago exacto que corresponde a esa OC, pre-llena y bloquea esos campos (marcados "NS") para garantizar que lo registrado coincida con lo que realmente pagó Contabilidad. Si NetSuite no tiene esa información (por ejemplo, un método de pago que no genera CEP), el campo queda editable.</div>
         </details>
         <details class="faq-item">
           <summary>El monto de la solicitud no coincide con el pago de NetSuite, ¿puedo marcarla como pagada de todas formas?</summary>
-          <div class="a">Sí. El sistema ya no bloquea el proceso cuando hay una diferencia (por ejemplo, por una retención contractual que NetSuite descontó al facturar) — te muestra el pago/factura más cercano y una banda amarilla con la diferencia en $ y %, y puedes confirmar de forma consciente después de verificar en NetSuite que la diferencia es legítima.</div>
+          <div class="a">Sí. El sistema no bloquea el proceso cuando hay una diferencia (por ejemplo, por una retención contractual que NetSuite descontó al facturar) — te muestra el pago/factura más cercano y una banda amarilla con la diferencia en $ y %, y puedes confirmar de forma consciente después de verificar en NetSuite que la diferencia es legítima.</div>
         </details>
         <details class="faq-item">
           <summary>¿Quién puede publicar avisos en Inicio?</summary>
@@ -600,16 +784,44 @@ footer{
         </details>
         <details class="faq-item">
           <summary>El correo que recibí trae un botón, ¿a dónde me lleva?</summary>
-          <div class="a">Te lleva directo a la pantalla del portal que corresponde a esa notificación (por ejemplo, "Mis solicitudes" si es una confirmación tuya, "Aprobaciones" si eres parte de MAC-Dirección, "Decisión de Pagos" o "Finanzas" según el paso). Si tu rol no tiene acceso a esa pantalla, simplemente no verás contenido ahí — no es un error.</div>
+          <div class="a">Te lleva directo a la pantalla del portal que corresponde a esa notificación (por ejemplo, "Mis solicitudes" si es una confirmación tuya, o "Planeación de pagos" si eres aprobador). Si tu rol no tiene acceso a esa pantalla, verás un aviso de que no tienes acceso — no es un error.</div>
         </details>
       </section>
 
       <!-- ═══════════ SOLUCIÓN DE PROBLEMAS ═══════════ -->
       <section id="problemas">
         <div class="section-head">
-          <span class="section-num">7</span>
+          <span class="section-num">9</span>
           <h2 class="h2">Solución de problemas</h2>
         </div>
+        <details class="faq-item">
+          <summary>Síntoma: en Planeación aparece "No se pudieron cargar las propuestas"</summary>
+          <div class="a"><b>Causa probable:</b> falla temporal de conexión al leer las propuestas. <b>Qué hacer:</b> pulsa "Reintentar"; si persiste más de unos minutos, contacta a TECH.</div>
+        </details>
+        <details class="faq-item">
+          <summary>Síntoma: en Planeación no veo el veredicto ni el vencimiento de las solicitudes</summary>
+          <div class="a"><b>Causa probable:</b> no se pudo cargar la información de Decisión de Pagos (aparece el aviso "No se pudo cargar el veredicto ni el vencimiento"). <b>Qué hacer:</b> pulsa "Reintentar". Mientras tanto puedes planear sin ese dato.</div>
+        </details>
+        <details class="faq-item">
+          <summary>Síntoma: no puedo agregar pagos y dice "No puedes editar esta propuesta en su etapa actual"</summary>
+          <div class="a"><b>Causa probable:</b> solo Finanzas edita la propuesta en Borrador, y cada nivel de aprobación la edita únicamente en su etapa; una propuesta Aprobada ya no se edita. <b>Qué hacer:</b> si hace falta cambiarla, Finanzas puede retirarla (mientras Nivel 1 no la apruebe) o un aprobador devolverla a Finanzas con un motivo.</div>
+        </details>
+        <details class="faq-item">
+          <summary>Síntoma: al agregar una solicitud aparece un error de que ya está tomada</summary>
+          <div class="a"><b>Causa probable:</b> otra persona (u otra pestaña) ya la agregó a una propuesta activa; una solicitud solo puede estar en una a la vez. <b>Qué hacer:</b> la pantalla se resincroniza sola; si la solicitud ya está en otra propuesta, quítala de allí primero.</div>
+        </details>
+        <details class="faq-item">
+          <summary>Síntoma: una propuesta aprobada muestra "Falta dejar pagos listos en Finanzas"</summary>
+          <div class="a"><b>Causa probable:</b> al aprobarse, algunos pagos no alcanzaron a pasar a "Pago aprobado" (falló la sincronización). <b>Qué hacer:</b> pulsa "Reintentar sincronización" en el panel de la propuesta. No afecta a los pagos que ya estaban pagados.</div>
+        </details>
+        <details class="faq-item">
+          <summary>Síntoma: un pago aprobado no aparece en Ejecución de pagos</summary>
+          <div class="a"><b>Causa probable:</b> Ejecución de pagos solo lista solicitudes en "Pago aprobado"; si la propuesta se aprobó pero la sincronización falló, el pago sigue en Solicitada. <b>Qué hacer:</b> revisa la propuesta en Planeación y reintenta la sincronización; si no se resuelve, contacta a TECH.</div>
+        </details>
+        <details class="faq-item">
+          <summary>Síntoma: en Ejecución de pagos un pago dice "Sin pago en NetSuite" o "Pago ya usado"</summary>
+          <div class="a"><b>Sin pago en NetSuite:</b> aún no está registrado el pago de esa OC; regístralo en NetSuite antes de marcar como pagado. <b>Pago ya usado:</b> los pagos de NetSuite de esa OC ya están asignados a otras solicitudes; revisa que no haya un duplicado. Si el estado dice "No se pudo verificar" o "NetSuite sin verificar", usa "Verificar NetSuite" en el grupo.</div>
+        </details>
         <details class="faq-item">
           <summary>Síntoma: "No se pudieron cargar los proyectos/OCs"</summary>
           <div class="a"><b>Causa probable:</b> falla temporal de conexión con NetSuite al abrir Nueva Solicitud. <b>Qué hacer:</b> recarga la página; si persiste más de unos minutos, contacta a TECH — puede ser una caída puntual de la integración con NetSuite.</div>
@@ -620,25 +832,25 @@ footer{
         </details>
         <details class="faq-item">
           <summary>Síntoma: en "Marcar Pagado" aparece una banda amarilla de advertencia con una diferencia de monto</summary>
-          <div class="a"><b>Causa probable:</b> el pago/factura real de NetSuite para esa OC no coincide exactamente con el monto solicitado — con frecuencia por una retención contractual descontada al momento de facturar (por ejemplo, ~4% del subtotal), no necesariamente un error. <b>Qué hacer:</b> revisa en NetSuite el detalle de la factura y el pago para confirmar que la diferencia es legítima antes de continuar; si el monto de la solicitud fue capturado incorrectamente, coordina con Finanzas para corregirlo antes de marcar como pagado.</div>
+          <div class="a"><b>Causa probable:</b> el pago/factura real de NetSuite para esa OC no coincide exactamente con el monto solicitado — con frecuencia por una retención contractual descontada al momento de facturar (por ejemplo, ~4% del subtotal), no necesariamente un error. <b>Qué hacer:</b> revisa en NetSuite el detalle de la factura y el pago para confirmar que la diferencia es legítima antes de continuar; si el monto de la solicitud fue capturado incorrectamente, usa "Reportar problema" para enviarla al solicitante antes de marcar como pagado.</div>
         </details>
         <details class="faq-item">
           <summary>Síntoma: en un pago en lote, una tarjeta se marca en rojo como "Pago duplicado en el lote"</summary>
           <div class="a"><b>Causa probable:</b> dos solicitudes seleccionadas en el mismo lote quedaron apuntando al mismo pago de NetSuite. <b>Qué hacer:</b> en la tarjeta correspondiente, usa el selector "Pago de NetSuite a aplicar" para elegir un pago distinto para una de las dos solicitudes antes de confirmar — el sistema no deja avanzar mientras haya un duplicado.</div>
         </details>
         <details class="faq-item">
-          <summary>Síntoma: no veo cierta sección en el menú (ej. Finanzas, Decisión de Pagos, Aprobaciones)</summary>
-          <div class="a"><b>Causa probable:</b> tu rol no tiene acceso a esa sección — es el comportamiento esperado, no un error (ver la matriz de roles en la sección "Acceso y roles"). <b>Qué hacer:</b> si crees que deberías tener acceso, contacta a TECH para confirmar tu rol asignado.</div>
+          <summary>Síntoma: no veo cierta sección en el menú (ej. Finanzas, Decisión de Pagos, Planeación)</summary>
+          <div class="a"><b>Causa probable:</b> tu rol no tiene acceso a esa sección — es el comportamiento esperado, no un error (ver la tabla de roles en la sección "Acceso y roles"). Si abres un enlace a una pantalla fuera de tu rol, verás un aviso de que no tienes acceso. <b>Qué hacer:</b> si crees que deberías tener acceso, contacta a TECH para confirmar tu rol asignado.</div>
         </details>
         <details class="faq-item">
           <summary>Síntoma: la campana de notificaciones no baja el contador aunque ya leí los avisos</summary>
-          <div class="a"><b>Causa probable:</b> el contador se actualiza cada 90 segundos, no al instante. <b>Qué hacer:</b> espera un momento o vuelve a entrar a Inicio; si el contador sigue sin bajar después de un rato, contacta a TECH.</div>
+          <div class="a"><b>Causa probable:</b> el contador no se actualiza al instante: se refresca al abrir el portal y al volver a la pestaña después de unos minutos. <b>Qué hacer:</b> vuelve a entrar a Inicio o recarga la página; si el contador sigue sin bajar después de un rato, contacta a TECH.</div>
         </details>
       </section>
 
       <!-- ═══════════ FOOTER / CONTACTO ═══════════ -->
       <footer id="contacto">
-        <span class="small">Enlight · Manual del Portal de Pagos · Documentado agosto 2026</span>
+        <span class="small">Enlight · Manual del Portal de Pagos · Actualizado noviembre 2026 (flujo de propuestas de pago)</span>
         <span class="small">¿Dudas? Contacta a <b style="font-weight:700">TECH</b> — tech@enlight.mx</span>
       </footer>
 

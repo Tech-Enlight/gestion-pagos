@@ -282,7 +282,7 @@ footer{
       <div class="hero" id="intro">
         <span class="eyebrow">Manual de usuario · Vista Solicitante</span>
         <h1 class="h1" style="margin-top:10px">Portal de <span class="grad-text">Pagos</span></h1>
-        <p class="lead">Portal para crear y dar seguimiento a solicitudes de pago hacia proveedores. Este manual está dirigido a colaboradores Enlight y cubre únicamente su <b>función de solicitante</b> (el nivel de acceso que comparten todos los roles del portal): enviar una solicitud contra una Orden de Compra (OC), seguir su avance y responder si te piden una aclaración.</p>
+        <p class="lead">Portal para crear y dar seguimiento a solicitudes de pago hacia proveedores. Este manual está dirigido a colaboradores Enlight y cubre únicamente su <b>función de solicitante</b> (el nivel de acceso que comparten todos los roles del portal): enviar una solicitud contra una Orden de Compra (OC), seguir su avance y responder si te piden una aclaración. Desde noviembre 2026 el portal trabaja con <b>propuestas semanales de pago</b>: tu solicitud ya no pasa por la autorización de tu jefe o de Dirección, sino que Finanzas la incluye en una propuesta que se aprueba en dos niveles.</p>
         <div class="meta-row">
           <span class="meta-pill">Acceso&nbsp;→&nbsp;<b>cuenta Google @enlight.mx</b></span>
           <span class="meta-pill">Datos de OC/proveedor&nbsp;→&nbsp;<b>auto-completados desde NetSuite</b></span>
@@ -305,7 +305,7 @@ footer{
           <div class="role-card avanzado">
             <span class="badge-nivel">i</span>
             <h4>Nota sobre el rol</h4>
-            <p>Si además de crear tus propias solicitudes también autorizas las de tu equipo (Dirección/MAC), decides pagos en Decisión de Pagos, o trabajas la bandeja de Finanzas, tu rol tiene pantallas adicionales que no se documentan aquí — pide a TECH el manual correspondiente a tu rol.</p>
+            <p>Si además de crear tus propias solicitudes participas en la aprobación de propuestas de pago (Planeación de pagos), analizas pagos en Decisión de Pagos, o trabajas la bandeja de Finanzas, tu rol tiene pantallas adicionales que no se documentan aquí — pide a TECH el manual correspondiente a tu rol. Como solicitante no necesitas operar esas pantallas.</p>
           </div>
         </div>
       </section>
@@ -336,7 +336,7 @@ footer{
           <div class="step">
             <span class="n">04</span>
             <h3>Envía y da seguimiento</h3>
-            <p>Confirma el envío y sigue el avance desde Mis solicitudes con el ID generado (ej. PAY-123).</p>
+            <p>Al enviar queda en estado Solicitada y Finanzas la incluye en una propuesta de pagos. Sigue su avance en Mis solicitudes con el ID generado (ej. PAY-123).</p>
           </div>
         </div>
       </section>
@@ -359,7 +359,7 @@ footer{
             <li>El ícono de campana (arriba a la derecha) muestra un número si tienes anuncios sin leer.</li>
             <li>Al hacer clic se despliega un resumen de los últimos 5 anuncios; "Ver todo en Inicio" te lleva al feed completo y marca todo como leído.</li>
             <li>Puedes darle "like" (ícono de rayo) a cualquier anuncio — no hay comentarios.</li>
-            <li>Si tienes una solicitud activa (en Autorización, Revisión Finanzas, Aprobada o Pago Aprobado) y se publica un anuncio nuevo, también te llega un correo avisándote.</li>
+            <li>Si tienes una solicitud en curso (por ejemplo Solicitada o Pago aprobado) y se publica un anuncio nuevo, también puede llegarte un correo avisándote.</li>
           </ol>
         </div>
 
@@ -377,7 +377,7 @@ footer{
             <li><b>Concepto de pago:</b> descripción libre de para qué es el pago.</li>
             <li><b>Departamento solicitante:</b> buscador conectado a los Centros de Costo (CeCo) reales de NetSuite — no es texto libre. El código de CeCo aparece como referencia junto al nombre del departamento.</li>
             <li>El botón "Enviar Solicitud" queda deshabilitado mientras se verifica el estatus de pago en NetSuite, si la OC ya está pagada, o si hay un duplicado detectado por monto.</li>
-            <li>Al enviarse, la solicitud queda en estado <b>Autorización</b> y se genera un ID (ej. PAY-123) que puedes usar para darle seguimiento.</li>
+            <li>Al enviarse, la solicitud queda en estado <b>Solicitada</b> y se genera un ID (ej. PAY-123) que puedes usar para darle seguimiento. Ya no hay autorización de tu jefe o de Dirección: la solicitud llega directo a Finanzas, que la incluye en una propuesta semanal de pagos (la aprueban Dirección y luego Operaciones; tú no ves ni operas esas pantallas). Recibes un correo de confirmación.</li>
           </ol>
         </div>
 
@@ -386,7 +386,7 @@ footer{
           <div class="shot">
             <img src="https://drive.google.com/thumbnail?id=1lQPz7dH7bK7qHIsC9ZJGDK7e-H-E5leF&sz=w1600" alt="Mis Solicitudes: tarjetas resumen + tabla + panel lateral">
           </div>
-          <p>Vista personal (solo tus solicitudes, filtradas por tu correo). Incluye 5 tarjetas de resumen: Requieren tu acción (aclaraciones pendientes), En proceso, Pago programado, Pagadas y Rechazadas.</p>
+          <p>Vista personal (solo tus solicitudes, filtradas por tu correo). Incluye 5 tarjetas de resumen: Requieren tu acción (aclaraciones pendientes), En proceso (solicitudes ya enviadas que aún no se pagan), Pago programado (las que ya tienen fecha de pago), Pagadas y Rechazadas.</p>
           <ol class="substeps">
             <li>La tabla muestra ID, # de OC, Proyecto, Beneficiario, Concepto, Monto, Estado y — si ya se programó — la columna "Pago programado" con la fecha.</li>
             <li>Puedes buscar por beneficiario, ID o proyecto, y filtrar por estado.</li>
@@ -400,13 +400,27 @@ footer{
           <div class="shot">
             <img src="https://drive.google.com/thumbnail?id=1_ncAmHABLkDNRtKgytXENRc7b6Go-G0t&sz=w1600" alt="Panel de Aclaración con las dos opciones de reenvío">
           </div>
-          <p>Cuando Dirección o Administración pide una aclaración, tu solicitud pasa a estado "Borrador" con la etiqueta "Aclaración" y recibes un correo con el comentario del revisor. Desde Mis solicitudes, ábrela y verás el panel de Aclaración con dos caminos posibles.</p>
+          <p>Cuando Finanzas o Administración pide una aclaración, tu solicitud pasa a estado "Borrador" con la etiqueta "Aclaración" y recibes un correo con el comentario del revisor. Esto incluye el caso en que Finanzas detecta un problema de datos al momento de pagar (monto, factura, beneficiario): te la regresa como aclaración. Desde Mis solicitudes, ábrela y verás el panel de Aclaración con dos caminos posibles.</p>
           <ol class="substeps">
-            <li><b>"Solo responder y reenviar":</b> escribes tu respuesta/nota en el cuadro de texto y reenvías la solicitud sin tocar sus datos — vuelve a Autorización tal cual estaba.</li>
+            <li><b>"Solo responder y reenviar":</b> escribes tu respuesta/nota en el cuadro de texto y reenvías la solicitud sin tocar sus datos — vuelve a <b>Solicitada</b> tal cual estaba.</li>
             <li><b>"Editar solicitud":</b> además de tu respuesta, puedes corregir el Concepto, el Departamento solicitante (mismo buscador de CeCo) y el Tipo de pago (Completo/Parcial) — si cambias a Parcial, capturas de nuevo el Subtotal y el sistema recalcula IVA y Monto.</li>
             <li>Tu respuesta anterior (si ya habías contestado antes) se muestra arriba, para que no la repitas ni la pierdas de vista.</li>
-            <li>Al reenviar, Dirección/MAC recibe una notificación por correo indicando que la solicitud fue reenviada tras la aclaración, incluyendo tu respuesta.</li>
+            <li>Al reenviar, la solicitud vuelve a <b>Solicitada</b> y Finanzas recibe un aviso indicando que fue reenviada tras la aclaración, con tu respuesta.</li>
           </ol>
+        </div>
+
+        <div class="feature">
+          <h3>Correos que recibes</h3>
+          <p>Todos llegan a tu correo @enlight.mx y traen un botón para abrir la solicitud en el portal.</p>
+          <ol class="substeps">
+            <li><b>Solicitud recibida:</b> confirma que tu solicitud quedó en Solicitada; Finanzas la incluirá en una propuesta de pagos y te avisaremos cuando se apruebe.</li>
+            <li><b>Solicitud aprobada:</b> la propuesta que incluye tu pago fue aprobada.</li>
+            <li><b>Pago programado:</b> te indica la fecha de pago. Esa fecha puede ajustarse; si cambia (reprogramación), recibes otro correo con la nueva fecha.</li>
+            <li><b>Pago realizado:</b> el pago se procesó.</li>
+            <li><b>Solicitud rechazada:</b> con el motivo del rechazo.</li>
+            <li><b>Necesita tu aclaración:</b> con el comentario del revisor; respóndela desde Mis solicitudes.</li>
+          </ol>
+          <p style="margin-top:12px">Si Finanzas aplaza un pago (por ejemplo, no hay fondos esa semana), tu solicitud vuelve a Solicitada y se programa en otra propuesta. <b>Por eso no recibes correo.</b> Si quieres saber en qué va, revísala en Mis solicitudes.</p>
         </div>
 
         <div class="feature">
@@ -432,23 +446,19 @@ footer{
           <span class="section-num">4</span>
           <h2 class="h2">Estados y seguimiento</h2>
         </div>
-        <p class="section-lead">Qué significa cada estado que puede tomar tu solicitud, y cómo lo ves reflejado en el "Seguimiento" (WorkflowTracker) de Mis solicitudes.</p>
+        <p class="section-lead">Qué significa cada estado que puede tomar tu solicitud, y cómo lo ves reflejado en el "Seguimiento" de Mis solicitudes. Las etapas del seguimiento son: Borrador → Solicitada → Pago aprobado → Pagado.</p>
         <div class="states">
           <div class="state">
-            <h4><span class="dot d-proc"></span>Borrador (Draft)</h4>
-            <p>Pendiente de envío, o de vuelta aquí porque te pidieron una aclaración (en ese caso lleva la etiqueta amarilla "Aclaración").</p>
+            <h4><span class="dot d-proc"></span>Borrador</h4>
+            <p>Te pidieron una aclaración (lleva la etiqueta amarilla "Aclaración"). Responde o edita y reenvía desde Mis solicitudes.</p>
           </div>
           <div class="state">
-            <h4><span class="dot d-pend"></span>En autorización</h4>
-            <p>Tu jefe directo / Dirección (MAC) está revisando la solicitud.</p>
+            <h4><span class="dot d-warn"></span>Solicitada</h4>
+            <p>Tu solicitud ya está con Finanzas, que la incluirá en una propuesta semanal de pagos. También vuelve a este estado si respondes una aclaración o si Finanzas aplaza el pago.</p>
           </div>
           <div class="state">
-            <h4><span class="dot d-pend"></span>Revisión Finanzas</h4>
-            <p>El equipo de administración la está revisando en Decisión de Pagos.</p>
-          </div>
-          <div class="state">
-            <h4><span class="dot d-ok"></span>Pago Aprobado</h4>
-            <p>Aprobado, pendiente de que Contabilidad programe y procese el pago. ("Aprobada" es un estado antiguo equivalente a este mismo paso.)</p>
+            <h4><span class="dot d-ok"></span>Pago aprobado</h4>
+            <p>La propuesta que incluye tu pago fue aprobada; Finanzas programa y ejecuta el pago. Aquí verás la fecha de pago programado, que puede ajustarse.</p>
           </div>
           <div class="state">
             <h4><span class="dot d-ok"></span>Pagada</h4>
@@ -456,7 +466,7 @@ footer{
           </div>
           <div class="state">
             <h4><span class="dot d-no"></span>Rechazada</h4>
-            <p>Revisa el motivo del rechazo en el panel lateral y corrige/vuelve a enviar si aplica una nueva solicitud.</p>
+            <p>Revisa el motivo del rechazo en el panel lateral y, si aplica, crea una nueva solicitud con los datos corregidos.</p>
           </div>
         </div>
       </section>
@@ -473,7 +483,7 @@ footer{
             <ul class="doclist">
               <li>Cuenta de Google del dominio @enlight.mx <span class="fmt">· acceso al portal</span></li>
               <li>Proyecto y OC ya dados de alta en NetSuite <span class="fmt">· sin esto, no aparecen en los buscadores</span></li>
-              <li>Concepto claro del pago <span class="fmt">· ayuda a que Dirección/Administración aprueben más rápido</span></li>
+              <li>Concepto claro del pago <span class="fmt">· ayuda a que Finanzas la incluya y se apruebe más rápido</span></li>
             </ul>
           </div>
           <div class="panel">
@@ -481,7 +491,7 @@ footer{
             <ul class="tips">
               <li><b>Revisa "Ya pagada".</b> Si tu OC aparece marcada así en el buscador, ya tiene un pago completo en NetSuite — no insistas, verifica con tu OC correcta.</li>
               <li><b>Pagos parciales son válidos.</b> Puedes tener varias solicitudes abiertas contra la misma OC mientras sean por montos distintos (instalaciones); el sistema solo bloquea si el monto coincide con una ya abierta.</li>
-              <li><b>Elige bien entre responder o editar en una aclaración.</b> Si el revisor solo pidió una nota aclaratoria, usa "Solo responder y reenviar"; si el dato en sí estaba mal (concepto, departamento, monto), usa "Editar solicitud".</li>
+              <li><b>Elige bien entre responder o editar en una aclaración.</b> Si el revisor solo pidió una nota aclaratoria, usa "Solo responder y reenviar"; si el dato en sí estaba mal (concepto, departamento, monto) o Finanzas encontró un problema al pagar, usa "Editar solicitud".</li>
               <li><b>El Departamento no es texto libre.</b> Se elige del buscador de CeCo — si no encuentras el tuyo, contacta a TECH/Finanzas antes de improvisar uno parecido.</li>
             </ul>
           </div>
@@ -496,11 +506,11 @@ footer{
         </div>
         <details class="faq-item">
           <summary>¿Por qué no veo Aprobaciones, Decisión de Pagos o Finanzas en el menú?</summary>
-          <div class="a">Como solicitante ves Inicio, Nueva solicitud, Mis solicitudes, Tipo de cambio, Configuración y Ayuda. Aprobaciones, Decisión de Pagos y Finanzas son pantallas de otros roles (Dirección/MAC, administración y analista contable) — no forman parte de tu flujo como solicitante y no se documentan en este manual.</div>
+          <div class="a">Como solicitante ves Inicio, Nueva solicitud, Mis solicitudes, Tipo de cambio, Configuración y Ayuda. Planeación de pagos, Decisión de Pagos y Finanzas son pantallas de otros roles (quienes arman y aprueban las propuestas de pago y quienes ejecutan los pagos) — no forman parte de tu flujo como solicitante. Ya no hay una autorización de tu jefe o de Dirección antes de que la solicitud llegue a Finanzas.</div>
         </details>
         <details class="faq-item">
           <summary>Mi solicitud está en "Aclaración", ¿qué hago?</summary>
-          <div class="a">Ve a Mis solicitudes, ábrela y en el panel de Aclaración elige "Solo responder y reenviar" (si solo necesitas explicar algo) o "Editar solicitud" (si necesitas corregir Concepto, Departamento, Tipo de pago o montos) antes de reenviarla. Recibiste un correo cuando esto ocurrió, con el comentario del revisor.</div>
+          <div class="a">Ve a Mis solicitudes, ábrela y en el panel de Aclaración elige "Solo responder y reenviar" (si solo necesitas explicar algo) o "Editar solicitud" (si necesitas corregir Concepto, Departamento, Tipo de pago o montos) antes de reenviarla. Recibiste un correo cuando esto ocurrió, con el comentario del revisor. Al reenviar, tu solicitud vuelve a Solicitada. Si Finanzas la regresó al detectar un problema de datos al pagar (monto, factura, beneficiario), se atiende igual.</div>
         </details>
         <details class="faq-item">
           <summary>¿Por qué no puedo enviar mi solicitud contra esta OC?</summary>
@@ -512,7 +522,19 @@ footer{
         </details>
         <details class="faq-item">
           <summary>¿Puedo editar mi solicitud después de enviarla, sin que me pidan aclaración?</summary>
-          <div class="a">No. La edición de Concepto/Departamento/Monto solo está disponible dentro del flujo de aclaración ("Editar solicitud"), después de que Dirección o Administración la regresen a Borrador con un comentario.</div>
+          <div class="a">No. La edición de Concepto/Departamento/Monto solo está disponible dentro del flujo de aclaración ("Editar solicitud"), después de que Finanzas o Administración la regresen a Borrador con un comentario.</div>
+        </details>
+        <details class="faq-item">
+          <summary>¿Mi jefe o Dirección tiene que autorizar mi solicitud?</summary>
+          <div class="a">No. Desde el nuevo flujo de propuestas de pago ya no hay autorización de tu jefe o de MAC. Al enviarla queda en Solicitada y le llega a Finanzas, que la incluye en una propuesta semanal que aprueban dos niveles (Dirección y luego Operaciones). Tú no ves ni operas esas pantallas.</div>
+        </details>
+        <details class="faq-item">
+          <summary>¿Cuándo se paga mi solicitud?</summary>
+          <div class="a">Depende de la propuesta semanal en la que Finanzas la incluya. Cuando la propuesta se aprueba, tu solicitud pasa a Pago aprobado y recibes un correo de pago programado con la fecha. Esa fecha puede ajustarse; si cambia, recibes otro correo con la nueva fecha.</div>
+        </details>
+        <details class="faq-item">
+          <summary>Mi solicitud volvió a "Solicitada" y yo no hice nada, ¿qué pasó?</summary>
+          <div class="a">Probablemente Finanzas aplazó el pago (por ejemplo, no había fondos esa semana). La solicitud se programa en otra propuesta y por eso no se envía correo. Puedes ver su estado en Mis solicitudes.</div>
         </details>
         <details class="faq-item">
           <summary>¿Qué es el ícono de campana en la barra superior?</summary>
@@ -544,13 +566,13 @@ footer{
         </details>
         <details class="faq-item">
           <summary>Síntoma: "Mi solicitud lleva días en el mismo estado y no avanza"</summary>
-          <div class="a"><b>Causa probable:</b> cada etapa (Autorización, Revisión Finanzas, Pago Aprobado) depende de que otro equipo la revise — el portal no la mueve solo. <b>Qué hacer:</b> revisa en Mis solicitudes en qué etapa exacta está (panel lateral → "Seguimiento") y, si crees que lleva más tiempo del esperado, da seguimiento directamente con Dirección/MAC o Finanzas fuera del portal; el portal no tiene un botón de "escalar".</div>
+          <div class="a"><b>Causa probable:</b> tu solicitud espera a que Finanzas la incluya en una propuesta y a que esa propuesta se apruebe; el portal no la mueve solo, y un pago aplazado vuelve a Solicitada sin aviso por correo. <b>Qué hacer:</b> revisa en Mis solicitudes en qué etapa exacta está (panel lateral → "Seguimiento") y, si crees que lleva más tiempo del esperado, da seguimiento directamente con Finanzas fuera del portal; el portal no tiene un botón de "escalar".</div>
         </details>
       </section>
 
       <!-- ═══════════ FOOTER / CONTACTO ═══════════ -->
       <footer id="contacto">
-        <span class="small">Enlight · Manual del Solicitante · Portal de Pagos · Documentado septiembre 2026</span>
+        <span class="small">Enlight · Manual del Solicitante · Portal de Pagos · Actualizado noviembre 2026 (flujo de propuestas de pago)</span>
         <span class="small">¿Dudas? Contacta a <b style="font-weight:700">TECH</b> — tech@enlight.mx</span>
       </footer>
 

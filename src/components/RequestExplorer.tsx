@@ -375,7 +375,7 @@ const RequestExplorer: React.FC<Props> = ({
             hint="Aclaraciones pendientes"
             active={summary.needsAction > 0}
           />
-          <SummaryCard label="En proceso" value={summary.inProgress} color="var(--enl-cerceta)" hint="Autorización y decisión" />
+          <SummaryCard label="En proceso" value={summary.inProgress} color="var(--enl-cerceta)" hint="Solicitada, en propuesta o por pagar" />
           <SummaryCard label="Pago programado" value={summary.scheduled} color={STATUS_HEX["Payment Approved"]} hint="Con fecha de pago" />
           <SummaryCard label="Pagadas" value={summary.paid} color={STATUS_HEX.Paid} hint="Pago procesado" />
           <SummaryCard label="Rechazadas" value={summary.rejected} color={STATUS_HEX.Rejected} hint="Revisa el motivo" />

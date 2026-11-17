@@ -25,48 +25,68 @@ const SECTIONS: Section[] = [
     title: "Mis solicitudes",
     body: (
       <>
-        <p>Consulta el estatus de tus propias solicitudes y su avance paso a paso.</p>
         <p>
-          Si finanzas o administración piden una <strong>aclaración</strong>, puedes elegir entre{" "}
-          <em>"Solo responder y reenviar"</em> (respondes el comentario y la solicitud vuelve al flujo
-          tal cual) o <em>"Editar solicitud"</em> (puedes corregir Concepto, Departamento, Tipo de Pago
-          y montos antes de reenviarla).
+          Consulta el estatus de tus propias solicitudes y su avance: <strong>Solicitada</strong> (Finanzas
+          la incluirá en una propuesta de pagos), <strong>Pago aprobado</strong> (la propuesta ya se aprobó
+          y tu pago tiene fecha programada) y <strong>Pagada</strong>.
+        </p>
+        <p>
+          Si Finanzas detecta algo que corregir, te pide una <strong>aclaración</strong> y la solicitud
+          pasa a <em>Borrador</em>. Puedes elegir entre <em>"Solo responder y reenviar"</em> (respondes el
+          comentario) o <em>"Editar solicitud"</em> (puedes corregir Concepto, Departamento, Tipo de Pago
+          y montos antes de reenviarla). Al reenviarla vuelve a <strong>Solicitada</strong>.
         </p>
       </>
     ),
   },
   {
-    title: "Aprobaciones",
+    title: "Planeación de pagos",
     body: (
-      <p>
-        Vista para MAC/Dirección: autoriza o pide aclaración sobre las solicitudes recién enviadas
-        antes de que pasen a decisión final.
-      </p>
+      <>
+        <p>
+          Aquí se arma y se aprueba la <strong>propuesta semanal de pagos</strong>. Finanzas ve todas las
+          solicitudes abiertas (con el veredicto Procede / Revisar / Bloquear y el vencimiento), crea una
+          propuesta, agrega las que se pagan esa semana y fija la fecha de cada una; lo que no agrega queda
+          aplazado. Al terminar, la envía a aprobación.
+        </p>
+        <p>
+          La propuesta pasa por dos niveles: <strong>Nivel 1</strong> (Dirección: administración) y después{" "}
+          <strong>Nivel 2</strong> (Operaciones, Ingeniería, Servicios y PMO). Basta con que apruebe una
+          persona de cada nivel. Quien aprueba puede quitar pagos, mover fechas o fijar una{" "}
+          <em>meta de total</em> antes de aprobar, o <strong>devolver</strong> la propuesta a Finanzas con un
+          motivo. Con la aprobación del Nivel 2, los pagos pasan a Finanzas con su fecha programada.
+        </p>
+      </>
     ),
   },
   {
     title: "Decisión de Pagos",
     body: (
       <p>
-        Vista de administración/superadmin: Aprobar, pedir Aclaración o Rechazar cada solicitud.
-        Al expandir una tarjeta se muestra el enlace directo a la factura real (PDF) cuando está
-        disponible, junto con el estatus de la OC en NetSuite.
+        Vista de consulta y análisis para administración, analista contable y superadmin: resumen, proveedores,
+        clientes y vencimientos, con el veredicto de cada pago (OC aprobada y avance del proyecto). Aquí ya no se
+        aprueba: la aprobación se hace sobre la propuesta en Planeación de pagos. Sí se puede pedir una
+        Aclaración o Rechazar una solicitud en particular. Al expandir una tarjeta se muestra el enlace directo
+        a la factura real (PDF) cuando está disponible.
       </p>
     ),
   },
   {
-    title: "Finanzas / Marcar Pagado",
+    title: "Finanzas / Ejecución de pagos",
     body: (
       <>
         <p>
-          El analista contable programa la fecha de pago y, cuando corresponde, marca la solicitud
-          como pagada. Al marcar un pago, el sistema busca la factura/pago real en NetSuite y prellena
-          Monto Pagado, Tipo de Cambio, Banco, Referencia y Comprobante de Pago.
+          El analista contable ejecuta lo aprobado: los pagos aparecen agrupados por fecha programada
+          (Vencidos, Hoy, Mañana, Esta semana…), cada uno con su estado en NetSuite. Al marcar un pago, el
+          sistema busca la factura/pago real en NetSuite y prellena Monto Pagado, Tipo de Cambio, Banco,
+          Referencia y Comprobante de Pago.
         </p>
         <p>
           Si el monto de NetSuite no coincide exactamente con el solicitado (por ejemplo, por una
           retención contractual), aparece una advertencia amarilla — revisa el detalle antes de
-          confirmar. También se puede marcar como pagada en lote (varias solicitudes a la vez).
+          confirmar. También se puede marcar como pagada en lote. Si una fecha no se puede cumplir, se
+          usa <em>Reprogramar</em> (con motivo); si hay un problema, <em>Reportar problema</em>: se envía al
+          solicitante para corregir datos o se aplaza y vuelve a Planeación.
         </p>
       </>
     ),
@@ -86,10 +106,22 @@ const SECTIONS: Section[] = [
 const FAQ: { q: string; a: React.ReactNode }[] = [
   {
     q: "¿Por qué no veo cierta sección en el menú lateral?",
-    a: "La visibilidad depende de tu rol. Por ejemplo, Aprobaciones es solo para MAC/Dirección y superadmin; Finanzas es solo para analista contable y superadmin; Decisión de Pagos y Explorador son para administración/analista/superadmin.",
+    a: "La visibilidad depende de tu rol. Planeación de pagos la ven Finanzas, administración, Operaciones, Ingeniería, Servicios y PMO; Finanzas (Ejecución de pagos) es solo para analista contable y superadmin; Decisión de Pagos y Explorador son para administración/analista/superadmin.",
   },
   {
-    q: "Mi solicitud está en 'Aclaración', ¿qué hago?",
+    q: "¿Dónde apruebo una propuesta de pagos?",
+    a: "En Planeación de pagos (menú lateral). La propuesta que espera tu aprobación se abre sola; revisa los pagos, ajusta lo que haga falta y usa «Aprobar», o «Devolver a Finanzas» con un motivo. También te llega un correo cuando una propuesta espera tu aprobación.",
+  },
+  {
+    q: "¿Qué pasó con la pantalla de Aprobaciones?",
+    a: "Ya no existe: ahora no se autoriza cada solicitud por separado, sino la propuesta semanal completa en Planeación de pagos. La aprobación individual en Decisión de Pagos también se retiró; esa vista quedó para consulta y análisis.",
+  },
+  {
+    q: "Mi solicitud sigue en 'Solicitada', ¿es normal?",
+    a: "Sí. Quiere decir que Finanzas todavía no la incluye en una propuesta aprobada. Cuando se apruebe, pasará a «Pago aprobado» y recibirás un correo con la fecha programada.",
+  },
+  {
+    q: "Mi solicitud está en 'Borrador' con una aclaración, ¿qué hago?",
     a: "Ve a Mis solicitudes, ábrela y elige responder el comentario o editar los datos de la solicitud antes de reenviarla. Recibirás un correo cuando esto ocurra.",
   },
   {

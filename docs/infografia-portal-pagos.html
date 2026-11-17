@@ -36,7 +36,7 @@ body{
 /* ── Type presets ── */
 .eyebrow{
   font-family:var(--font-secondary);font-weight:500;font-size:12px;
-  letter-spacing:var(--tracking-eyebrow);text-transform:uppercase;color:var(--enl-gris);
+  letter-spacing:var(--tracking-eyebrow);text-transform:uppercase;color:#5B6770;
 }
 .h1{font-size:clamp(32px,4vw,46px);font-weight:600;line-height:1.1;letter-spacing:-.01em}
 .h2{font-size:clamp(22px,2.6vw,28px);font-weight:600;line-height:1.2;letter-spacing:-.01em}
@@ -44,7 +44,7 @@ body{
   background:var(--grad-jade-to-acero);
   -webkit-background-clip:text;background-clip:text;color:transparent;
 }
-.small{font-family:var(--font-secondary);font-size:13px;color:var(--enl-gris)}
+.small{font-family:var(--font-secondary);font-size:13px;color:#5B6770}
 
 /* ── Header ── */
 header.topbar{
@@ -64,7 +64,7 @@ header.topbar svg{height:32px;width:auto}
   background:var(--enl-jade-20);color:var(--enl-acero);
   border:1px solid var(--enl-jade-40);border-radius:var(--radius-pill);padding:8px 18px;
 }
-.folio-pill b{font-weight:700;color:var(--enl-cerceta)}
+.folio-pill b{font-weight:700;color:var(--enl-acero)}
 
 /* ── Sections ── */
 section{margin-bottom:56px}
@@ -88,7 +88,7 @@ section{margin-bottom:56px}
   color:var(--enl-jade);display:block;margin-bottom:8px;
 }
 .step h3{font-size:15px;font-weight:600;line-height:1.25;margin-bottom:8px}
-.step p{font-family:var(--font-secondary);font-size:12.5px;font-weight:400;color:var(--enl-gris);line-height:1.5}
+.step p{font-family:var(--font-secondary);font-size:12.5px;font-weight:400;color:#5B6770;line-height:1.5}
 .step:not(:last-child)::after{
   content:"";position:absolute;right:-9px;top:50%;width:6px;height:6px;
   border-top:1.5px solid var(--enl-fog);border-right:1.5px solid var(--enl-fog);
@@ -118,7 +118,7 @@ section{margin-bottom:56px}
   letter-spacing:var(--tracking-eyebrow);text-transform:uppercase;
   display:inline-block;margin-bottom:4px;
 }
-.route.alerta .route-tag{color:var(--enl-cerceta)}
+.route.alerta .route-tag{color:var(--enl-acero)}
 .route.directa .route-tag{color:var(--enl-jade)}
 .route h3{font-size:16px;font-weight:600;margin-bottom:16px}
 .approver{
@@ -145,10 +145,10 @@ section{margin-bottom:56px}
   display:flex;align-items:center;justify-content:center;margin-top:2px;
 }
 .approver.excepcional .badge-nivel{background:var(--enl-cerceta)}
-.approver.final .badge-nivel{background:var(--enl-jade)}
+.approver.final .badge-nivel{background:#00785E}
 .approver b{font-weight:600;font-size:14px;display:block}
-.approver .who{font-family:var(--font-secondary);font-size:12px;font-weight:500;color:var(--enl-cerceta);display:block;margin:1px 0 3px}
-.approver .what{font-family:var(--font-secondary);font-size:12px;font-weight:400;color:var(--enl-gris);line-height:1.45}
+.approver .who{font-family:var(--font-secondary);font-size:12px;font-weight:500;color:var(--enl-acero);display:block;margin:1px 0 3px}
+.approver .what{font-family:var(--font-secondary);font-size:12px;font-weight:400;color:#5B6770;line-height:1.45}
 
 /* ── Resultado final ── */
 .outcome{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:24px}
@@ -156,8 +156,8 @@ section{margin-bottom:56px}
 .outcome-card.ok{background:var(--enl-jade-20);border:1px solid var(--enl-jade-40)}
 .outcome-card.no{background:var(--enl-gris-20);border:1px solid var(--enl-fog)}
 .outcome-card h4{font-size:15px;font-weight:700;margin-bottom:6px}
-.outcome-card.ok h4{color:var(--enl-cerceta)}
-.outcome-card.no h4{color:var(--enl-gris)}
+.outcome-card.ok h4{color:var(--enl-acero)}
+.outcome-card.no h4{color:#5B6770}
 .outcome-card p{font-family:var(--font-secondary);font-size:13px;font-weight:400;line-height:1.5}
 .teams{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
 .team-chip{
@@ -165,7 +165,7 @@ section{margin-bottom:56px}
   background:var(--enl-white);border:1px solid var(--enl-jade-40);
   border-radius:var(--radius-pill);padding:6px 14px;
 }
-.team-chip b{font-weight:700;color:var(--enl-cerceta)}
+.team-chip b{font-weight:700;color:var(--enl-acero)}
 
 /* ── Estados ── */
 .states{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
@@ -175,7 +175,7 @@ section{margin-bottom:56px}
 }
 .state .dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:8px;flex:none}
 .state h4{font-family:var(--font-secondary);font-size:13px;font-weight:700;display:flex;align-items:center;margin-bottom:6px}
-.state p{font-family:var(--font-secondary);font-size:12.5px;font-weight:400;color:var(--enl-gris);line-height:1.5}
+.state p{font-family:var(--font-secondary);font-size:12.5px;font-weight:400;color:#5B6770;line-height:1.5}
 .d-proc{background:var(--enl-fog)} .d-pend{background:var(--enl-cerceta)}
 .d-ok{background:var(--enl-jade)} .d-no{background:var(--enl-gris)}
 /* Dots con los colores reales de estado que muestra el portal */
@@ -201,8 +201,8 @@ section{margin-bottom:56px}
   transform:rotate(-45deg);
 }
 .doclist li.opt::before{border-color:var(--enl-fog)}
-.doclist li .fmt{color:var(--enl-gris);font-size:12px}
-.doclist li .actor{font-weight:700;color:var(--enl-cerceta);display:block}
+.doclist li .fmt{color:#5B6770;font-size:12px}
+.doclist li .actor{font-weight:700;color:var(--enl-acero);display:block}
 .tips{list-style:none}
 .tips li{
   font-family:var(--font-secondary);font-size:13px;font-weight:400;color:var(--enl-acero);
@@ -268,44 +268,44 @@ footer{
   <div class="hero">
     <span class="eyebrow">Guía del proceso</span>
     <h1 class="h1" style="margin-top:10px">Portal de <span class="grad-text">Pagos</span></h1>
-    <p class="lead">Solicita pagos a proveedores sobre las Órdenes de Compra de tus proyectos. Eliges proyecto y OC, los datos se llenan solos desde NetSuite, y el portal gestiona la autorización, la decisión de Administración y la programación del pago — con correos automáticos en cada paso.</p>
-    <span class="folio-pill">Tu ID de seguimiento&nbsp;→&nbsp;<b>PAY-NNN</b>&nbsp;· síguelo en «Mis Solicitudes»</span>
+    <p class="lead">Los pagos a proveedores se piden sobre las Órdenes de Compra de tus proyectos y se pagan por <b style="font-weight:600">propuestas semanales</b>: Finanzas arma la propuesta, Dirección y Operaciones la aprueban, y Finanzas ejecuta los pagos. Todo con correos automáticos en cada paso.</p>
+    <span class="folio-pill">Tu ID de seguimiento&nbsp;→&nbsp;<b>PAY-NNN</b>&nbsp;· síguelo en «Mis solicitudes»</span>
   </div>
 
-  <!-- ═══════════ 1 · FORMULARIO ═══════════ -->
+  <!-- ═══════════ 1 · EL PROCESO EN 5 PASOS ═══════════ -->
   <section>
     <div class="section-head">
       <span class="section-num">1</span>
-      <h2 class="h2">Nueva solicitud: 5 pasos</h2>
+      <h2 class="h2">El proceso: 5 pasos</h2>
     </div>
     <div class="steps">
       <div class="step">
         <span class="n">01</span>
-        <h3>Proyecto</h3>
-        <p>Selecciona el proyecto en el buscador. La lista viene directo de NetSuite.</p>
+        <h3>Solicita</h3>
+        <p>Compras o cualquier colaborador crea la solicitud en «Nueva solicitud». Queda en <b style="font-weight:700">Solicitada</b> y Finanzas recibe aviso por correo.</p>
       </div>
       <div class="step">
         <span class="n">02</span>
-        <h3>Orden de Compra</h3>
-        <p>Elige la OC abierta del proyecto. Verás número, monto total y moneda de cada una.</p>
+        <h3>Planea</h3>
+        <p>Finanzas ve todas las solicitudes abiertas en «Planeación de pagos», arma la propuesta semanal con las fechas de pago y la envía.</p>
       </div>
       <div class="step">
         <span class="n">03</span>
-        <h3>Datos automáticos</h3>
-        <p>Beneficiario, RFC, moneda, tipo de cambio, monto y estatus de la OC se cargan solos desde NetSuite. Solo verifica.</p>
+        <h3>Nivel 1 · Dirección</h3>
+        <p>Revisa la propuesta: quita pagos, mueve fechas o fija una meta de total. Aprueba o la devuelve a Finanzas con motivo.</p>
       </div>
       <div class="step">
         <span class="n">04</span>
-        <h3>Detalles del pago</h3>
-        <p>Pago Completo o Parcial. En capturas parciales el subtotal (sin exceder el total de la OC); el IVA 16% se calcula solo.</p>
+        <h3>Nivel 2 · Operaciones</h3>
+        <p>Mismo panel de revisión. Da la aprobación final o la devuelve a Finanzas con motivo.</p>
       </div>
       <div class="step">
         <span class="n">05</span>
-        <h3>Concepto y envío</h3>
-        <p>Describe el concepto, indica tu departamento y envía. Recibes tu ID en pantalla y la solicitud entra a autorización.</p>
+        <h3>Ejecuta</h3>
+        <p>Finanzas paga en «Ejecución de pagos», con cruce contra NetSuite. La solicitud pasa a <b style="font-weight:700">Pago aprobado</b> y luego a <b style="font-weight:700">Pagada</b>.</p>
       </div>
     </div>
-    <p class="small" style="margin-top:14px">Acceso con tu cuenta Google. Al enviar, la solicitud queda en <b style="font-weight:700">Autorización</b> y Dirección (MAC, Operaciones, Ingeniería y Servicios) recibe un correo automáticamente.</p>
+    <p class="small" style="margin-top:14px">Acceso con tu cuenta Google. Para solicitar eliges proyecto y OC, y los datos del proveedor, moneda y montos se cargan solos desde NetSuite; tú indicas Pago completo o parcial, concepto y departamento.</p>
   </section>
 
   <!-- ═══════════ 2 · APROBACIÓN ═══════════ -->
@@ -316,67 +316,67 @@ footer{
     </div>
     <div class="flow-card">
       <div class="decision">
-        <span class="eyebrow" style="display:block;margin-bottom:12px">Toda solicitud sigue la misma cadena — Administración define la ruta</span>
-        <span class="q">En «Decisión de Pagos»: ¿aprobar, pedir aclaración o rechazar?</span>
+        <span class="eyebrow" style="display:block;margin-bottom:12px">Se aprueba la propuesta semanal completa, no cada pago por separado</span>
+        <span class="q">En cada nivel: ¿se aprueba la propuesta o se devuelve a Finanzas?</span>
       </div>
       <div class="routes">
         <div class="route directa">
           <span class="route-tag">Ruta estándar · Aprobación</span>
-          <h3>3 niveles — de la autorización al pago</h3>
+          <h3>2 niveles — basta una persona por nivel</h3>
           <div class="approver">
             <span class="badge-nivel">1</span>
             <div>
               <b>Dirección</b>
-              <span class="who">MAC · Operaciones · Ingeniería · Servicios</span>
-              <span class="what">Autoriza tu solicitud en la vista «Aprobaciones». Al autorizar, pasa a revisión de Administración, que recibe correo de aviso.</span>
+              <span class="who">Admin · Pedro Avalos, Lesly</span>
+              <span class="what">Edita directo: quita pagos, mueve fechas o fija una meta de total (por ejemplo, bajar de $1M a $0.5M). Aprueba y la propuesta pasa al Nivel 2; Finanzas recibe aviso.</span>
             </div>
           </div>
           <div class="connector"><span></span></div>
           <div class="approver">
             <span class="badge-nivel">2</span>
             <div>
-              <b>Administración</b>
-              <span class="who">Admin / Superadmin</span>
-              <span class="what">Decide en «Decisión de Pagos» cruzando OC y pronóstico. Si aprueba → Pago Aprobado: recibes confirmación y el analista contable recibe aviso.</span>
+              <b>Operaciones</b>
+              <span class="who">Operaciones · Ingeniería · Servicios · PMO — Sebas, Isra, Jorge</span>
+              <span class="what">Mismo panel de edición. Es la aprobación final: Finanzas recibe aviso y los pagos quedan listos con su fecha.</span>
             </div>
           </div>
           <div class="connector"><span></span></div>
           <div class="approver final">
             <span class="badge-nivel">3</span>
             <div>
-              <b>Analista contable</b>
-              <span class="who">Vista «Finanzas»</span>
-              <span class="what">Programa el pago (recibes correo con la fecha) y lo marca como pagado — validado contra NetSuite: el pago debe existir ahí.</span>
+              <b>Finanzas ejecuta</b>
+              <span class="who">Analista contable · José Eduardo</span>
+              <span class="what">Ve los pagos aprobados por fecha y su estado en NetSuite. Marca pagado con cruce de NetSuite; puede reprogramar (con motivo) o reportar un problema.</span>
             </div>
           </div>
         </div>
         <div class="route alerta">
-          <span class="route-tag">Ciclo de aclaración · La solicitud vuelve a ti</span>
-          <h3>No es un rechazo — se corrige y se reenvía</h3>
+          <span class="route-tag">Ramas · Cuando algo no pasa a la primera</span>
+          <h3>Nada se pierde: la solicitud o la propuesta regresa</h3>
           <div class="approver excepcional">
-            <span class="badge-nivel">1</span>
+            <span class="badge-nivel">A</span>
             <div>
-              <b>Administración pide aclaración</b>
-              <span class="who">Con comentario</span>
-              <span class="what">Tu solicitud regresa a Borrador y recibes el correo amarillo «Tu solicitud requiere aclaración» con el comentario e instrucciones.</span>
+              <b>Devuelta</b>
+              <span class="who">Nivel 1 o Nivel 2 → Finanzas</span>
+              <span class="what">Con motivo obligatorio. La propuesta vuelve a Borrador, se borran las aprobaciones y Finanzas la ajusta y la reenvía.</span>
             </div>
           </div>
           <div class="connector"><span></span></div>
           <div class="approver excepcional">
-            <span class="badge-nivel">2</span>
+            <span class="badge-nivel">B</span>
             <div>
-              <b>Tú respondes</b>
-              <span class="who">Desde «Mis Solicitudes»</span>
-              <span class="what">Escribes tu respuesta a la aclaración y reenvías la misma solicitud — no necesitas crear una nueva.</span>
+              <b>Problema de datos</b>
+              <span class="who">Finanzas → Solicitante</span>
+              <span class="what">Finanzas reporta el problema al ejecutar: se pide una aclaración al solicitante, la corrige desde «Mis solicitudes» y la solicitud vuelve a Solicitada.</span>
             </div>
           </div>
           <div class="connector"><span></span></div>
           <div class="approver excepcional">
-            <span class="badge-nivel">3</span>
+            <span class="badge-nivel">C</span>
             <div>
-              <b>Dirección re-autoriza</b>
-              <span class="who">MAC · Operaciones · Ingeniería · Servicios</span>
-              <span class="what">Recibe el correo «re-enviada tras aclaración» con tu respuesta, vuelve a autorizar y la solicitud regresa a «Decisión de Pagos».</span>
+              <b>Aplazada</b>
+              <span class="who">Finanzas → Planeación</span>
+              <span class="what">Si el pago no puede hacerse esa semana, Finanzas lo aplaza: vuelve a Solicitada y reaparece en Planeación para otra propuesta.</span>
             </div>
           </div>
         </div>
@@ -384,11 +384,11 @@ footer{
       <div class="outcome">
         <div class="outcome-card ok">
           <h4>✓ Pagada</h4>
-          <p>Recibes dos correos: <b style="font-weight:700">«Tu pago fue programado»</b> con la fecha estimada, y <b style="font-weight:700">«Tu pago fue realizado»</b> cuando el analista lo confirma contra NetSuite. La fecha programada también aparece en «Mis Solicitudes».</p>
+          <p>Recibes correos cuando tu solicitud es <b style="font-weight:700">recibida</b>, <b style="font-weight:700">aprobada</b>, cuando el <b style="font-weight:700">pago queda programado</b> (con la fecha) y cuando se <b style="font-weight:700">paga</b>. Finanzas solo puede marcar pagado con el cruce de NetSuite.</p>
         </div>
         <div class="outcome-card no">
           <h4>✕ Rechazada</h4>
-          <p>Administración o Finanzas pueden rechazar en cualquier punto. Recibes un correo con el motivo del rechazo; si aplica, corrige y crea una nueva solicitud.</p>
+          <p>Una solicitud solo se rechaza desde «Decisión de Pagos», una por una. Recibes el motivo por correo; si aplica, corrige y crea una solicitud nueva.</p>
         </div>
       </div>
     </div>
@@ -398,61 +398,62 @@ footer{
   <section>
     <div class="section-head">
       <span class="section-num">3</span>
-      <h2 class="h2">Estados de tu solicitud</h2>
+      <h2 class="h2">Estados</h2>
     </div>
     <div class="states">
       <div class="state">
-        <h4><span class="dot d-borr"></span>Borrador / Aclaración</h4>
-        <p>Está en tu cancha: responde el comentario de aclaración desde «Mis Solicitudes» y reenvía.</p>
+        <h4><span class="dot d-auth"></span>Solicitada</h4>
+        <p>Tu solicitud ya está con Finanzas, que la ve en Planeación. También es donde queda si la aclaras o si la aplazan.</p>
       </div>
       <div class="state">
-        <h4><span class="dot d-auth"></span>En autorización</h4>
-        <p>Esperando la autorización de Dirección (MAC, Operaciones, Ingeniería o Servicios).</p>
+        <h4><span class="dot d-rev"></span>En propuesta · Nivel 1 / Nivel 2</h4>
+        <p>La propuesta semanal que incluye tu pago está en revisión de Dirección y luego de Operaciones. No requiere acción tuya.</p>
       </div>
       <div class="state">
-        <h4><span class="dot d-rev"></span>En revisión</h4>
-        <p>Autorizada por Dirección; pendiente de decisión de Administración en «Decisión de Pagos».</p>
-      </div>
-      <div class="state">
-        <h4><span class="dot d-pagoapr"></span>Pago Aprobado</h4>
-        <p>En la cola del analista contable. Cuando agende el pago, verás la fecha en «Pago programado».</p>
+        <h4><span class="dot d-pagoapr"></span>Pago aprobado</h4>
+        <p>Ambos niveles aprobaron. Finanzas ejecuta el pago en la fecha programada, que verás en «Mis solicitudes».</p>
       </div>
       <div class="state">
         <h4><span class="dot d-pagada"></span>Pagada</h4>
         <p>El pago se realizó y quedó validado contra NetSuite. Revisa tu correo de confirmación.</p>
       </div>
       <div class="state">
+        <h4><span class="dot d-borr"></span>Borrador / Aclaración</h4>
+        <p>Está en tu cancha: Finanzas reportó un problema de datos. Responde desde «Mis solicitudes» y vuelve a Solicitada. (En una <i>propuesta</i>, Borrador significa que Finanzas la está armando o la ajusta tras una devolución.)</p>
+      </div>
+      <div class="state">
         <h4><span class="dot d-rech"></span>Rechazada</h4>
-        <p>Revisa el motivo en tu correo; si aplica, corrige y crea una nueva solicitud.</p>
+        <p>Rechazada desde «Decisión de Pagos». Revisa el motivo en tu correo y, si aplica, crea una solicitud nueva.</p>
       </div>
     </div>
-    <p class="small" style="margin-top:14px">En <b style="font-weight:700">«Mis Solicitudes»</b> ves cada estado explicado en lenguaje claro, la fecha de pago programada y el historial paso a paso de tu solicitud.</p>
+    <p class="small" style="margin-top:14px">Estados de la <b style="font-weight:700">propuesta</b> semanal: Borrador (Finanzas) → Nivel 1 (Dirección) → Nivel 2 (Operaciones y PMO) → Aprobada (lista para pagar). «Decisión de Pagos» queda como consulta y análisis, sin botón Aprobar, y la vista «Aprobaciones» de MAC ya no existe.</p>
   </section>
 
-  <!-- ═══════════ 4 · VISTAS + TIPS ═══════════ -->
+  <!-- ═══════════ 4 · ENTREGABLES + TIPS ═══════════ -->
   <section>
     <div class="section-head">
       <span class="section-num">4</span>
-      <h2 class="h2">Quién actúa dónde</h2>
+      <h2 class="h2">Quién actúa dónde y con qué</h2>
     </div>
     <div class="two-col">
       <div class="panel">
-        <h3>Tu vista según tu rol</h3>
+        <h3>Tu pantalla según tu rol</h3>
         <ul class="doclist">
-          <li><span class="actor">Solicitante (todos)</span>Crea en «Nueva solicitud» y da seguimiento en «Mis Solicitudes» <span class="fmt">· ahí también respondes aclaraciones</span></li>
-          <li><span class="actor">Dirección · MAC / Operaciones / Ingeniería / Servicios</span>Autoriza (o re-autoriza tras aclaración) en «Aprobaciones»</li>
-          <li><span class="actor">Administración · Admin / Superadmin</span>Aprueba, pide aclaración o rechaza en «Decisión de Pagos» <span class="fmt">· acciones por tarjeta y en lote</span></li>
-          <li><span class="actor">Analista contable</span>Programa el pago y lo marca pagado en «Finanzas» <span class="fmt">· en «Decisión de Pagos» solo consulta</span></li>
+          <li><span class="actor">Solicitante · Compras o cualquier colaborador</span>Crea en «Nueva solicitud» y da seguimiento en «Mis solicitudes» <span class="fmt">· ahí respondes aclaraciones</span></li>
+          <li><span class="actor">Finanzas · Analista contable</span>Arma y envía la propuesta en «Planeación de pagos» y paga en «Ejecución de pagos» <span class="fmt">· la propuesta lleva nombre, fecha de corte, total por divisa y meta</span></li>
+          <li><span class="actor">Nivel 1 · Dirección (admin)</span>Revisa, edita, aprueba o devuelve en «Planeación de pagos» <span class="fmt">· en «Decisión de Pagos» solo consulta y rechaza por solicitud</span></li>
+          <li><span class="actor">Nivel 2 · Operaciones, Ingeniería, Servicios y PMO</span>Revisa, edita, aprueba o devuelve en «Planeación de pagos»</li>
+          <li><span class="actor">Datos que se consultan</span>OC y factura de NetSuite <span class="fmt">· y el comprobante de pago, que se captura al marcar pagado</span></li>
         </ul>
       </div>
       <div class="panel">
         <h3>Tips clave</h3>
         <ul class="tips">
-          <li><b>Todo viene de NetSuite:</b> solo eliges proyecto y OC; beneficiario, RFC, moneda, tipo de cambio y montos se llenan solos. Si un dato está mal, corrígelo en NetSuite, no en el portal.</li>
-          <li><b>Pago Parcial:</b> capturas el subtotal sin IVA y no puede exceder el total de la OC; el IVA del 16% se calcula automáticamente.</li>
-          <li><b>Aclaración no es rechazo:</b> la solicitud vuelve a ti con un comentario; respondes y reenvías la misma solicitud desde «Mis Solicitudes».</li>
-          <li><b>No necesitas vigilar el portal:</b> cada cambio de estado te llega por correo — autorización, decisión, fecha de pago programada y pago realizado.</li>
-          <li><b>«Pagada» es real:</b> el analista solo puede marcar el pago como realizado si ya existe en NetSuite.</li>
+          <li><b>Todo viene de NetSuite:</b> solo eliges proyecto y OC; proveedor, moneda, tipo de cambio y montos se llenan solos. Si un dato está mal, corrígelo en NetSuite, no en el portal.</li>
+          <li><b>Veredicto en Planeación:</b> Finanzas ve cada solicitud como Procede, Revisar o Bloquear, con su vencimiento, para decidir qué entra a la semana.</li>
+          <li><b>Meta de total:</b> quien revisa puede fijar un monto objetivo; el panel muestra cuánto excede o cuánto queda, en equivalente a pesos.</li>
+          <li><b>Aprobada no se edita:</b> si hay cambios después, Finanzas reprograma con motivo o reporta el problema.</li>
+          <li><b>No necesitas vigilar el portal:</b> cada paso te llega por correo — recibida, aprobada, pago programado y pagada.</li>
         </ul>
       </div>
     </div>
@@ -460,7 +461,7 @@ footer{
 
   <!-- ═══════════ FOOTER ═══════════ -->
   <footer>
-    <span class="small">Enlight · Proceso Portal de Pagos · Documentado julio 2026</span>
+    <span class="small">Enlight · Proceso Portal de Pagos · Documentado noviembre 2026</span>
     <span class="small">¿Dudas? Equipo TECH con tu ID <b style="font-weight:700">PAY-…</b></span>
   </footer>
 

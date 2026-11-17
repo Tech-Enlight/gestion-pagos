@@ -364,7 +364,7 @@ const NewRequest: React.FC<Props> = ({ onAddRequest, onNavigate, existingRequest
           <h2 className="text-white text-2xl font-bold mb-2" style={{ fontFamily: "Alexandria, sans-serif" }}>
             ¡Solicitud Enviada!
           </h2>
-          <p className="text-white/60 mb-4">Tu solicitud ha sido registrada y enviada a la cola de autorización.</p>
+          <p className="text-white/60 mb-4">Tu solicitud ha sido registrada y enviada a Finanzas, que la incluirá en una propuesta de pagos.</p>
           <div className="bg-acero rounded-lg px-4 py-3 mb-6">
             <p className="text-white/60 text-xs mb-1">ID de Solicitud</p>
             <p className="text-jade text-2xl font-bold">{generatedId}</p>
