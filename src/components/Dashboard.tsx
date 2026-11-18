@@ -313,6 +313,9 @@ const Dashboard: React.FC<DashboardProps> = ({
       pendingCount: unpaid.length,
       pendingAuth: count(STATUS.AUTORIZACION),
       pendingDecision: count(STATUS.PENDING_FIN),
+      // Flujo de propuestas: lo que espera a Finanzas (las legadas siguen contando) y lo devuelto con aclaración
+      requested: count(STATUS.SOLICITADA, STATUS.AUTORIZACION, STATUS.PENDING_FIN),
+      clarification: count(STATUS.DRAFT),
       readyToPay: count(STATUS.APPROVED, STATUS.PAYMENT_APPROVED),
       rejectRate: rejectionRate(requests),
       total: requests.length,
@@ -471,18 +474,37 @@ const Dashboard: React.FC<DashboardProps> = ({
 
       {/* Secondary KPI strip */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <SecondaryKPI
-          label="En autorización"
-          value={loading ? DASH : String(m.pendingAuth)}
-          icon={<Shield size={16} />}
-          color={STATUS_HEX["Autorización"]}
-        />
-        <SecondaryKPI
-          label="Decisión de pagos"
-          value={loading ? DASH : String(m.pendingDecision)}
-          icon={<ClipboardCheck size={16} />}
-          color={STATUS_HEX["Pending Fin"]}
-        />
+        {FLUJO_PROPUESTAS ? (
+          <>
+            <SecondaryKPI
+              label="Solicitadas"
+              value={loading ? DASH : String(m.requested)}
+              icon={<Shield size={16} />}
+              color={STATUS_HEX.Solicitada}
+            />
+            <SecondaryKPI
+              label="Con aclaración"
+              value={loading ? DASH : String(m.clarification)}
+              icon={<ClipboardCheck size={16} />}
+              color={STATUS_HEX.Draft}
+            />
+          </>
+        ) : (
+          <>
+            <SecondaryKPI
+              label="En autorización"
+              value={loading ? DASH : String(m.pendingAuth)}
+              icon={<Shield size={16} />}
+              color={STATUS_HEX["Autorización"]}
+            />
+            <SecondaryKPI
+              label="Decisión de pagos"
+              value={loading ? DASH : String(m.pendingDecision)}
+              icon={<ClipboardCheck size={16} />}
+              color={STATUS_HEX["Pending Fin"]}
+            />
+          </>
+        )}
         <SecondaryKPI
           label="Listas para pagar"
           value={loading ? DASH : String(m.readyToPay)}
